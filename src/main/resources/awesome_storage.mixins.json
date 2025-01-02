@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "coffee.awesome_storage.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "awesome_storage.refmap.json",
+  "mixins": [
+    "PlayerMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

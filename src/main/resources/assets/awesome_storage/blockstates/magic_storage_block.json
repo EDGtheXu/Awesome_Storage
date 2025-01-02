@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "awesome_storage:block/magic_storage_block"
+    }
+  }
+}
