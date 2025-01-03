@@ -18,6 +18,7 @@ public class ModChineseProvider extends LanguageProvider {
         add("magic_storage.can_craft", "点击制作");
         add("magic_storage_screen.storage", "存储");
         add("magic_storage_screen.craft", "合成");
+        add("magic_craft.no_access", "放置工作方块以启用一键合成");
 
         chineseProviders.forEach(a->a.accept(this));
     }

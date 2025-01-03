@@ -1,12 +1,17 @@
 package coffee.awesome_storage.network.c2s;
 
 import coffee.awesome_storage.Util.Util;
+import coffee.awesome_storage.config.CraftConfig;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,6 +40,24 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
 
             var entity = Util.getStorageEntity(context.player());
             if(id < 10000) {//约定10000以下为存储
+                if(id == 1){
+
+                    if(item.getItem() instanceof BlockItem block &&
+                            CraftConfig.ENABLED_RECIPES.containsKey(block.getBlock())
+
+                    ){
+                        String block_name = String.valueOf(BuiltInRegistries.BLOCK.getKey(block.getBlock()));
+                        if(!entity.getBlock_accessors().contains(block_name)){
+                            context.player().containerMenu.getCarried().shrink(1);
+                            entity.getBlock_accessors().add(block_name);
+                            context.player().level().sendBlockUpdated(entity.getBlockPos(), context.player().level().getBlockState(entity.getBlockPos()), context.player().level().getBlockState(entity.getBlockPos()), 3);
+                        }
+
+                    }
+                    return;
+                }
+
+
                 NonNullList<ItemStack> items = entity.getItems();
 
                 ItemStack item = this.item;
@@ -110,7 +133,7 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
                 level.sendBlockUpdated(entity.getBlockPos(), level.getBlockState(entity.getBlockPos()), level.getBlockState(entity.getBlockPos()), 3);
 
             }
-            else{//10000以上为取出所有
+            else if(id < 20000){//10000 - 19999 为取出物品
                 int index  = id - 10000;
                 ItemStack fetch = entity.getItem(index);
                 context.player().getInventory().add(fetch);
@@ -133,6 +156,17 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
                 var level = context.player().level();
                 level.sendBlockUpdated(entity.getBlockPos(), level.getBlockState(entity.getBlockPos()), level.getBlockState(entity.getBlockPos()), 3);
 
+            } else if (id < 30000) {//20000 - 29999 为取出accessor
+
+                List<String> accessors = entity.getBlock_accessors();
+                if(accessors.size() > id - 20000) {
+                    String block_name =accessors.remove(id - 20000);
+                    Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(block_name));
+                    context.player().level().sendBlockUpdated(entity.getBlockPos(), context.player().level().getBlockState(entity.getBlockPos()), context.player().level().getBlockState(entity.getBlockPos()), 3);
+                    context.player().getInventory().add(new ItemStack(block.asItem()));
+                }
+
+                return;
             }
 
         }).exceptionally(e -> null);

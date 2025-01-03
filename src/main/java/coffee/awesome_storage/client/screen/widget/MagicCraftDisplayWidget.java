@@ -23,13 +23,22 @@ import static net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 @OnlyIn(Dist.CLIENT)
 public class MagicCraftDisplayWidget extends AbstractFloatWidget {
 
+    int craftTabX;
+    int craftTabY;
+    int craftTabWidth;
+    int craftTabHeight;
 
     MagicCraftWidget parent;
     List<ItemStack> cachedItems;
-    boolean isHovered = false;
+    boolean isHoveredResult = false;
     public MagicCraftDisplayWidget(MagicCraftWidget parent, int x, int y, int width, int height, Component message) {
         super(parent.screen, x, y, width, height, message);
         this.parent = parent;
+
+        craftTabX = this.left - 10;
+        craftTabY = this.top + 20;
+        craftTabWidth = this.width;
+        craftTabHeight = 20;
     }
 
     @Override
@@ -51,13 +60,11 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
     }
 
     @Override
-    public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
-        if(isHovered){
+    public boolean mouseClicked(double mouseX, double mouseY, int pButton) {
+        if(isHoveredResult){
             PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id()));
-
             return true;
         }
-
        return false;
     }
 
@@ -89,8 +96,8 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
             renderItemStack(guiGraphics, output, offsetX, offsetY, false);
             guiGraphics.setColor(1,1f,1f,1);
             guiGraphics.blit(Awesome_storage.space("textures/gui/arrow.png"),offsetX - 25,offsetY+2 ,0,0,22,15,22,15);
-            isHovered = mouseX >= offsetX && mouseX <= offsetX + 16 && mouseY >= offsetY && mouseY <= offsetY + 16;
-            if(isHovered && !output.isEmpty()){
+            isHoveredResult = mouseX >= offsetX && mouseX <= offsetX + 16 && mouseY >= offsetY && mouseY <= offsetY + 16;
+            if(isHoveredResult && !output.isEmpty()){
                 renderSlotHighlight(guiGraphics, offsetX, offsetY, internal);
 
                 List<Component> tooltip = output.getTooltipLines(Item.TooltipContext.of(Minecraft.getInstance().level), Minecraft.getInstance().player, TooltipFlag.NORMAL);
@@ -104,11 +111,10 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
 
         }
 
-
     }
     public void mouseMoved(double mouseX, double mouseY) {
         super.mouseMoved(mouseX, mouseY);
-//        if(isHovered){
+//        if(isHoveredResult){
 //            System.out.println("hovered");
 //        }
     }

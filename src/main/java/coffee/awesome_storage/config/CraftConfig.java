@@ -37,7 +37,7 @@ public class CraftConfig {
                 reader = new java.io.FileReader(file);
                 json = new JsonObject();
 
-                json.addProperty("minecraft:crafter","minecraft:crafting");
+                json.addProperty("minecraft:crafting_table","minecraft:crafting");
 
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
                 Writer writer = new java.io.FileWriter(file);

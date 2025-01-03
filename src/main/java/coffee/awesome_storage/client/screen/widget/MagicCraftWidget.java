@@ -1,15 +1,19 @@
 package coffee.awesome_storage.client.screen.widget;
 
+import coffee.awesome_storage.block.MagicStorageBlockEntity;
 import coffee.awesome_storage.client.screen.MagicStorageScreen;
 import coffee.awesome_storage.recipe.MagicCraftRecipeLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.block.Block;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -17,6 +21,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import java.util.*;
 import java.util.function.Predicate;
 
+import static coffee.awesome_storage.Util.Util.getStorageEntity;
 import static coffee.awesome_storage.Util.Util.getStorageItems;
 import static coffee.awesome_storage.config.CraftConfig.ENABLED_RECIPES;
 
@@ -27,7 +32,7 @@ public class MagicCraftWidget extends AbstractFloatWidget {
     List<ItemStack> cachedResults;
     List<ItemStack> cachedAppend;
     int selectedIndex = -1;
-
+    long reloadingTime = 0;
     Map<ItemStack,RecipeHolder<?>> recipeMap = new HashMap<>();
 
     public Map<Item, Integer> haveIngredients = new HashMap<>();
@@ -38,45 +43,35 @@ public class MagicCraftWidget extends AbstractFloatWidget {
 
 
     public final MagicCraftDisplayWidget displayWidget;
+    public final MagicCraftAccessWidget accessWidget;
 
     public MagicCraftWidget(MagicStorageScreen screen, int x, int y, int width, int height, Component message) {
         super(screen, x, y, width, height, message);
+//        reloadRecipes();
+        displayWidget = (MagicCraftDisplayWidget) new MagicCraftDisplayWidget(this, screen.getGuiLeft()+25, screen.getGuiTop()+30, width, height, message)
+                .setNoRenderButton()
+        ;
+        accessWidget = (MagicCraftAccessWidget) new MagicCraftAccessWidget(this, screen.getGuiLeft()+10, screen.getGuiTop()+55, screen.width - 100, 20, message)
+                .setNoRenderButton()
+        ;
+
+    }
+
+    public void reloadRecipes(){
         var allRecipes = Minecraft.getInstance().level.getRecipeManager();
-
-//        recipes.add(RecipeType.CRAFTING);
-//        List<RecipeType<?>> recipes = new ArrayList<>();
-//        recipes.add(RecipeType.SMELTING);
-//        recipes.add(RecipeType.CRAFTING);
-
-//        recipes.forEach(recipeType -> {
-//            List<? extends RecipeHolder<?>> recipes1 = allRecipes.getAllRecipesFor(RecipeType.SMELTING);
-//            recipes1.stream().forEach(e-> {
-//                try {
-//                    Optional.of(e.value().getResultItem(null)).filter(f -> !f.isEmpty() && !e.value().getIngredients().isEmpty()).ifPresent(r->{
-//                        results.add(r);
-//                        recipeMap.put(r,e);
-//                    });
-//                }catch (Exception e1){
-//                    e1.printStackTrace();
-//                }
-//            });
-//        });
-//        var craftss = List.of(
-//                new MagicCraftRecipeLoader<>((RecipeType< Recipe<RecipeInput>>) (BuiltInRegistries.RECIPE_TYPE.get(ResourceLocation.withDefaultNamespace("crafting")))),
-//                new MagicCraftRecipeLoader<>((RecipeType< Recipe<RecipeInput>>) (BuiltInRegistries.RECIPE_TYPE.get(ResourceLocation.withDefaultNamespace("smelting")))),
-//                new MagicCraftRecipeLoader<>( RecipeType.BLASTING),
-//                new MagicCraftRecipeLoader<>((RecipeType< Recipe<RecipeInput>>) (BuiltInRegistries.RECIPE_TYPE.get(ResourceLocation.fromNamespaceAndPath("rhyme","sun_creator"))))
-//        );
-
         List<MagicCraftRecipeLoader<RecipeInput>> craftss = new ArrayList<>();
-        ENABLED_RECIPES.forEach((block,recipe)->{
-            craftss.add(new MagicCraftRecipeLoader<>(recipe));
+        MagicStorageBlockEntity storage = getStorageEntity(Minecraft.getInstance().player);
+        results.clear();
+        recipeMap.clear();
+        storage.getBlock_accessors().forEach(s->{
+            Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(s));
+            if(ENABLED_RECIPES.containsKey(block)){
+                craftss.add(new MagicCraftRecipeLoader<>(ENABLED_RECIPES.get(block)));
+            }
         });
-
 
         craftss.forEach(r->{
             try {
-
                 var recipes2 = allRecipes.getAllRecipesFor(r.getRecipe());
                 recipes2.forEach(e-> {
                     try {
@@ -89,17 +84,8 @@ public class MagicCraftWidget extends AbstractFloatWidget {
             {
                 e.printStackTrace();
             }
-
         });
-
-
-
-        displayWidget = (MagicCraftDisplayWidget) new MagicCraftDisplayWidget(this, screen.getGuiLeft()+25, screen.getGuiTop()+30, width, height, message)
-                .setNoRenderButton()
-        ;
-
     }
-
     @Override
     protected  Predicate<ItemStack> overlay(){
         return e->this.cachedAppend.contains(e);
@@ -108,6 +94,11 @@ public class MagicCraftWidget extends AbstractFloatWidget {
     @Override
     protected void renderWidget(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float v) {
         super.renderWidget(pGuiGraphics, pMouseX, pMouseY, v);
+        reloadingTime++;
+        if(reloadingTime > 10 && reloadingTime < 1000){
+            reloadingTime = 1000;
+            reloadRecipes();
+        }
 //        this.displayWidget.renderWidget(pGuiGraphics, pMouseX, pMouseY, 0);
     }
 

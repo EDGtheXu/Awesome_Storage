@@ -29,6 +29,8 @@ public class ModEnglishProvider extends LanguageProvider {
         add("magic_storage.can_craft", "Click to craft");
         add("magic_storage_screen.storage", "Storage");
         add("magic_storage_screen.craft", "Craft");
+        add("magic_craft.no_access", "Push Work Table to Access Crafting");
+
 
 
         englishProviders.forEach(a->a.accept(this));

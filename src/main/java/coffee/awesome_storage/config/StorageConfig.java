@@ -8,6 +8,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mojang.serialization.codecs.UnboundedMapCodec;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.File;
@@ -42,21 +43,28 @@ public class StorageConfig {
                 CONFIG_PATH.toFile().mkdirs();
                 file.createNewFile();
                 reader = new java.io.FileReader(file);
-                json = new JsonObject();
+//                json = new JsonObject();
+
+                Map<String, UpgradeLine> map = new HashMap<>();
+                map.put("1", new UpgradeLine(new ItemStack(Items.IRON_INGOT,10), 10));
+                map.put("2", new UpgradeLine(new ItemStack(Items.GOLD_INGOT,10), 10));
+                map.put("3", new UpgradeLine(new ItemStack(Items.DIAMOND,10), 10));
+                map.put("4", new UpgradeLine(new ItemStack(Items.EMERALD,10), 10));
+                map.put("5", new UpgradeLine(new ItemStack(Items.NETHERITE_INGOT,10), 10));
+                json = UpgradeLine.MAP_CODEC.encodeStart(JsonOps.INSTANCE, map).result().get().getAsJsonObject() ;
 
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
                 Writer writer = new java.io.FileWriter(file);
                 writer.write(gson.toJson(json));
                 writer.close();
-                reader.close();
             }else{
                 reader = new java.io.FileReader(file);
                 json = GsonHelper.parse(reader);
-
-                var r = UpgradeLine.MAP_CODEC.decode(JsonOps.INSTANCE, json).result();
-                r.get().getFirst().forEach((k,v)->ENABLED_RECIPES.put(Integer.parseInt(k), v));
-                reader.close();
             }
+            var tempMap = UpgradeLine.MAP_CODEC.decode(JsonOps.INSTANCE, json).result();
+            tempMap.get().getFirst().forEach((k, v)->ENABLED_RECIPES.put(Integer.parseInt(k), v));
+            reader.close();
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

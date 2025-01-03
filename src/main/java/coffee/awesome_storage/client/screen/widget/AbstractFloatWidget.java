@@ -208,7 +208,7 @@ public abstract class AbstractFloatWidget extends AbstractContainerWidget {
 
         }
 
-//        if(this.isHovered)
+//        if(this.isHoveredResult)
 //            guiGraphics.drawString(Minecraft.getInstance().font, "Magic Storage", mouseX, mouseY, 0xFFFFFF);
 
     }

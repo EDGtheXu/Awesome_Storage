@@ -6,6 +6,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -21,6 +24,9 @@ import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
     private static final Component CONTAINER_TITLE = Component.translatable("container.awesome_storage.magic_storage");
 
@@ -30,6 +36,8 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
     private final ContainerData dataAccess;
     private NonNullList<ItemStack> items;
 
+    private List<String> block_accessors;
+
 //    public int block_accessor_count = 10;
 //    private NonNullList<ItemStack> blockAccessors;
 
@@ -38,7 +46,8 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         super(type, pos, state);
 
         this.items = NonNullList.withSize(getContainerSize(), ItemStack.EMPTY);
-//        this.blockAccessors = NonNullList.withSize(block_accessor_count, Items.AIR.getDefaultInstance());
+        this.block_accessors = new ArrayList<>();
+
         this.dataAccess = new ContainerData() {
             public int get(int id) {
                 return switch (id) {
@@ -80,21 +89,17 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         this.lvl = tag.getInt("lvl");
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
         ContainerHelper.loadAllItems(tag, this.items, lookupProvider);
-//        this.block_accessor_count = tag.getInt("block_accessor_count");
-//        this.blockAccessors = NonNullList.withSize(tag.getInt("block_accessor"), ItemStack.EMPTY);
 
 
-    }
+        if (tag.contains("BlockAccessors", 9)) {
+            ListTag listTag = tag.getList("BlockAccessors", 8);
+            this.block_accessors = new ArrayList<>();
+            for (Tag tag1 : listTag) {
+                this.block_accessors.add(tag1.getAsString());
+            }
+        }
 
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        tag.putInt("max_size", max_size);
-        tag.putInt("lvl", lvl);
-        ContainerHelper.saveAllItems(tag, this.items, registries);
-//        tag.putInt("block_accessor_count", block_accessor_count);
-//        tag.put("block_accessor", ContainerHelper.saveAllItems(new CompoundTag(), blockAccessors, registries));
-        return tag;
+
     }
 
     @Override
@@ -104,9 +109,36 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         lvl = tag.getInt("lvl");
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
         ContainerHelper.loadAllItems(tag, this.items, registries);
-//        this.block_accessor_count = tag.getInt("block_accessor_count");
-//        this.blockAccessors = NonNullList.withSize(tag.getInt("block_accessor"), ItemStack.EMPTY);
+
+
+
+        if (tag.contains("BlockAccessors", 9)) {
+            ListTag listTag = tag.getList("BlockAccessors", 8);
+            this.block_accessors = new ArrayList<>();
+            for (Tag tag1 : listTag) {
+                this.block_accessors.add(tag1.getAsString());
+            }
+        }
+
     }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.putInt("max_size", max_size);
+        tag.putInt("lvl", lvl);
+        ContainerHelper.saveAllItems(tag, this.items, registries);
+
+        ListTag listTag1 = new ListTag();
+        for (String resource : block_accessors) {
+            listTag1.add(StringTag.valueOf(resource));
+        }
+        tag.put("BlockAccessors", listTag1);
+
+        return tag;
+    }
+
+
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
@@ -114,8 +146,13 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         tag.putInt("max_size", max_size);
         tag.putInt("lvl", lvl);
         ContainerHelper.saveAllItems(tag, this.items, registries);
-//        tag.putInt("block_accessor_count", block_accessor_count);
-//        tag.put("block_accessor", ContainerHelper.saveAllItems(new CompoundTag(), blockAccessors, registries));
+
+        ListTag listTag1 = new ListTag();
+        for (String resource : block_accessors) {
+            listTag1.add(StringTag.valueOf(resource));
+        }
+        tag.put("BlockAccessors", listTag1);
+
     }
 
     @Override
@@ -173,4 +210,7 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
     }
 
 
+    public List<String> getBlock_accessors() {
+        return block_accessors;
+    }
 }
