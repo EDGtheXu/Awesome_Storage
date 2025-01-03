@@ -21,8 +21,8 @@ import net.neoforged.api.distmarker.OnlyIn;
 import java.util.*;
 import java.util.function.Predicate;
 
-import static coffee.awesome_storage.Util.Util.getStorageEntity;
-import static coffee.awesome_storage.Util.Util.getStorageItems;
+import static coffee.awesome_storage.utils.Util.getStorageEntity;
+import static coffee.awesome_storage.utils.Util.getStorageItems;
 import static coffee.awesome_storage.config.CraftConfig.ENABLED_RECIPES;
 
 @OnlyIn(Dist.CLIENT)

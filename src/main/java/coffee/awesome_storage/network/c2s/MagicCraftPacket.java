@@ -15,8 +15,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 import static coffee.awesome_storage.Awesome_storage.space;
-import static coffee.awesome_storage.Util.Util.getStorageEntity;
-import static coffee.awesome_storage.Util.Util.getStorageItems;
+import static coffee.awesome_storage.utils.Util.getStorageEntity;
+import static coffee.awesome_storage.utils.Util.getStorageItems;
 
 public record MagicCraftPacket(ResourceLocation id)  implements CustomPacketPayload {
 

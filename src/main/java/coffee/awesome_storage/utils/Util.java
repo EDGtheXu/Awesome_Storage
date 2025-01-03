@@ -1,6 +1,6 @@
-package coffee.awesome_storage.Util;
+package coffee.awesome_storage.utils;
 
-import coffee.awesome_storage.MixinUtil.IPlayer;
+import coffee.awesome_storage.mix_util.IPlayer;
 import coffee.awesome_storage.block.MagicStorageBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;

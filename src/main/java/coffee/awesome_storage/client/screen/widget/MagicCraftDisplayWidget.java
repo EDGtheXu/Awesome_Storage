@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-import static coffee.awesome_storage.Util.Util.renderItemStack;
+import static coffee.awesome_storage.utils.Util.renderItemStack;
 import static net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.renderSlotHighlight;
 
 @OnlyIn(Dist.CLIENT)

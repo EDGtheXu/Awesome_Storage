@@ -1,6 +1,6 @@
 package coffee.awesome_storage.block;
 
-import coffee.awesome_storage.MixinUtil.IPlayer;
+import coffee.awesome_storage.mix_util.IPlayer;
 import coffee.awesome_storage.config.StorageConfig;
 import coffee.awesome_storage.registry.ModBlocks;
 import com.mojang.serialization.MapCodec;

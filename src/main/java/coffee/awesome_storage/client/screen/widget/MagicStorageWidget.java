@@ -15,7 +15,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
-import static coffee.awesome_storage.Util.Util.*;
+import static coffee.awesome_storage.utils.Util.*;
 
 @OnlyIn(Dist.CLIENT)
 public class MagicStorageWidget extends AbstractFloatWidget {

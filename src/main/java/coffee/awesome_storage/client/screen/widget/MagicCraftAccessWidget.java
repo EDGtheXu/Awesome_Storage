@@ -16,7 +16,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.ArrayList;
 import java.util.List;
 
-import static coffee.awesome_storage.Util.Util.getStorageEntity;
+import static coffee.awesome_storage.utils.Util.getStorageEntity;
 
 public class MagicCraftAccessWidget extends AbstractFloatWidget{
     List<ItemStack> itemStacks;

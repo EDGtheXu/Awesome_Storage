@@ -1,6 +1,6 @@
 package coffee.awesome_storage.network.c2s;
 
-import coffee.awesome_storage.Util.Util;
+import coffee.awesome_storage.utils.Util;
 import coffee.awesome_storage.config.CraftConfig;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;

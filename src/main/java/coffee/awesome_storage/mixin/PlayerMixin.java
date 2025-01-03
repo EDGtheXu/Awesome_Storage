@@ -1,6 +1,6 @@
 package coffee.awesome_storage.mixin;
 
-import coffee.awesome_storage.MixinUtil.IPlayer;
+import coffee.awesome_storage.mix_util.IPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.spongepowered.asm.mixin.Mixin;

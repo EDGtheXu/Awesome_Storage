@@ -1,4 +1,4 @@
-package coffee.awesome_storage.MixinUtil;
+package coffee.awesome_storage.mix_util;
 
 import net.minecraft.world.level.block.entity.BlockEntity;
 
