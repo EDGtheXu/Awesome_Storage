@@ -2,6 +2,7 @@ package coffee.awesome_storage.event;
 
 import coffee.awesome_storage.network.c2s.MagicCraftPacket;
 import coffee.awesome_storage.network.c2s.MagicStoragePacket;
+import coffee.awesome_storage.adapter.AdapterManager;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -23,5 +24,8 @@ public class ModEvent {
 
         readFromJson();
         loadUpgradeLine();
+
+
+        AdapterManager.init();
     }
 }

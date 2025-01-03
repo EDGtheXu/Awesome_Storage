@@ -2,11 +2,13 @@ package coffee.awesome_storage.client.screen.widget;
 
 import coffee.awesome_storage.block.MagicStorageBlockEntity;
 import coffee.awesome_storage.client.screen.MagicStorageScreen;
-import coffee.awesome_storage.recipe.MagicCraftRecipeLoader;
+import coffee.awesome_storage.adapter.AdapterManager;
+import coffee.awesome_storage.adapter.AbstractMagicCraftRecipeAdapter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -16,10 +18,11 @@ import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import oshi.util.tuples.Pair;
 
 
 import java.util.*;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 
 import static coffee.awesome_storage.utils.Util.getStorageEntity;
 import static coffee.awesome_storage.utils.Util.getStorageItems;
@@ -29,19 +32,21 @@ import static coffee.awesome_storage.config.CraftConfig.ENABLED_RECIPES;
 public class MagicCraftWidget extends AbstractFloatWidget {
 
     List<ItemStack> results = new ArrayList<>();
-    List<ItemStack> cachedResults;
-    List<ItemStack> cachedAppend;
+
+    List<Pair<ItemStack,RecipeHolder<?>>> cachedResults;
+    List<Pair<ItemStack,RecipeHolder<?>>> cachedAppend;
+
     int selectedIndex = -1;
     long reloadingTime = 0;
-    Map<ItemStack,RecipeHolder<?>> recipeMap = new HashMap<>();
+    Map<RecipeHolder<?>,AbstractMagicCraftRecipeAdapter> recipeMap = new HashMap<>();
 
     public Map<Item, Integer> haveIngredients = new HashMap<>();
     public ItemStack selectedItem;
     public RecipeHolder<?> selectedRecipe;
+    public AbstractMagicCraftRecipeAdapter<RecipeInput,Recipe<RecipeInput>> selectedAdapter;
     public Map<Ingredient, Integer> realIngredients = new HashMap<>();
 
-
-
+    List<AbstractMagicCraftRecipeAdapter<RecipeInput,Recipe<RecipeInput>>> craftss = new ArrayList<>();
     public final MagicCraftDisplayWidget displayWidget;
     public final MagicCraftAccessWidget accessWidget;
 
@@ -58,37 +63,45 @@ public class MagicCraftWidget extends AbstractFloatWidget {
     }
 
     public void reloadRecipes(){
-        var allRecipes = Minecraft.getInstance().level.getRecipeManager();
-        List<MagicCraftRecipeLoader<RecipeInput>> craftss = new ArrayList<>();
+        craftss.clear();
         MagicStorageBlockEntity storage = getStorageEntity(Minecraft.getInstance().player);
         results.clear();
         recipeMap.clear();
         storage.getBlock_accessors().forEach(s->{
             Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(s));
             if(ENABLED_RECIPES.containsKey(block)){
-                craftss.add(new MagicCraftRecipeLoader<>(ENABLED_RECIPES.get(block)));
+                RecipeType<?> recipeType = ENABLED_RECIPES.get(block);
+                if(AdapterManager.Adapters.containsKey(recipeType)){
+                    var adapter = AdapterManager.Adapters.get(recipeType);
+                    loadRecipeType(adapter);
+               }
+//                if(ENABLED_RECIPES.get(block) == (Object)RecipeType.SMITHING){
+//                    var adapter = new SmithingRecipeAdapter((RecipeType<SmithingRecipe>)(Object) ENABLED_RECIPES.get(block));
+//                    loadRecipeType((AbstractMagicCraftRecipeAdapter<RecipeInput,Recipe<RecipeInput>>) adapter);
+//                    System.out.println("Smithing recipe");
+//                }
+               else{
+//                    AbstractMagicCraftRecipeAdapter<RecipeInput,Recipe<RecipeInput>> adapter = new CommonRecipeAdapter<>(ENABLED_RECIPES.get(block));
+//                    loadRecipeType(adapter);
+                    var adapter = AdapterManager.defaultAdapter;
+                    loadRecipeType((AbstractMagicCraftRecipeAdapter) adapter);
+                }
             }
         });
 
-        craftss.forEach(r->{
-            try {
-                var recipes2 = allRecipes.getAllRecipesFor(r.getRecipe());
-                recipes2.forEach(e-> {
-                    try {
-                        r.loadResults(e,results,recipeMap);
-                    }catch (Exception e1){
-                        e1.printStackTrace();
-                    }
-                });
-            }catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+    }
+
+    public void loadRecipeType(AbstractMagicCraftRecipeAdapter<RecipeInput,Recipe<RecipeInput>> adapter){
+        var recipes = Minecraft.getInstance().level.getRecipeManager().getAllRecipesFor(adapter.getRecipe());
+        recipes.forEach(recipe-> {
+            adapter.loadRecipe(recipe,results, recipeMap);
         });
     }
+
+
     @Override
-    protected  Predicate<ItemStack> overlay(){
-        return e->this.cachedAppend.contains(e);
+    protected BiPredicate<ItemStack,Integer> overlay(){
+        return (e,i)->this.cachedResults.size() - cachedAppend.size() <= i;
     }
 
     @Override
@@ -109,10 +122,12 @@ public class MagicCraftWidget extends AbstractFloatWidget {
     // 计算选中的配方对应的原料Map<Ingredient, Integer>
         if(hoverIt!=null){
             selectedIndex = hoverIndex;
-            selectedItem = cachedResults.get(selectedIndex);
-            selectedRecipe = recipeMap.get(selectedItem);
+            selectedItem = hoverIt;
+            selectedRecipe = cachedResults.get(selectedIndex).getB();
+            AbstractMagicCraftRecipeAdapter<RecipeInput,Recipe<RecipeInput>> adapter = recipeMap.get(selectedRecipe);
+            selectedAdapter = adapter;
             if(selectedRecipe!=null) {
-                var ingredients = selectedRecipe.value().getIngredients();
+                var ingredients = adapter.getIngredients((RecipeHolder<Recipe<RecipeInput>>) selectedRecipe);
                 // 合并相同物品
                 realIngredients.clear();
                 for (Ingredient ingredient : ingredients) {
@@ -140,9 +155,10 @@ public class MagicCraftWidget extends AbstractFloatWidget {
 
     @Override
     protected List<ItemStack> getItems() {
-        List<ItemStack> res = new ArrayList<>();
+        List<Pair<ItemStack,RecipeHolder<?>>> res = new ArrayList<>();
+        List<Pair<ItemStack,RecipeHolder<?>>> append = new ArrayList<>();
         List<ItemStack> have = getStorageItems(Minecraft.getInstance().player);
-        List<ItemStack> append = new ArrayList<>();
+
 
         // 将have中的ItemStack转换为Map<Item, Integer>
         haveIngredients.clear();
@@ -153,14 +169,18 @@ public class MagicCraftWidget extends AbstractFloatWidget {
         }
 
         // 获取所有配方（假设recipeMap是一个Map，存储所有配方）
-        for (RecipeHolder<?> recipe : recipeMap.values()) {
+        for (Map.Entry<RecipeHolder<?>, AbstractMagicCraftRecipeAdapter> pRecipe : recipeMap.entrySet()) {
+            RecipeHolder<?> recipe = pRecipe.getKey();
+            var adapter = pRecipe.getValue();
+            NonNullList<Ingredient> ingredients = adapter.getIngredients(recipe);
+
             // 创建一个临时的原料副本
             Map<Item, Integer> tempIngredients = new HashMap<>(haveIngredients);
 
             // 检查是否能够合成当前配方
             boolean canCraft = true;
             boolean contain = false;
-            for (Ingredient ingredient : recipe.value().getIngredients()) {
+            for (Ingredient ingredient : ingredients) {
                 // 检查配方原料是否在have中
                 boolean ingredientFound = false;
                 var items = ingredient.getItems();
@@ -187,23 +207,25 @@ public class MagicCraftWidget extends AbstractFloatWidget {
                 }
                 // 记录材料包含的物品
                 if(!canCraft && contain) {
-                    append.add(recipe.value().getResultItem(null));
+                    append.add(new Pair<>(adapter.getResult(recipe),recipe));
                     break;
                 }
             }
 
             // 如果能够合成，则添加结果到res中
             if (canCraft) {
-                res.add(recipe.value().getResultItem(null));
+                res.add(new Pair<>(adapter.getResult(recipe),recipe));
             }
         }
 
-        res.sort(Comparator.comparing(a -> a.getDisplayName().getString()));
-        append.sort(Comparator.comparing(a -> a.getDisplayName().getString()));
+        res.sort(Comparator.comparing(a -> a.getA().getDisplayName().getString()));
+        append.sort(Comparator.comparing(a -> a.getA().getDisplayName().getString()));
         res.addAll(append);
         cachedAppend = append;
         cachedResults = res;
-        return res;
+        List<ItemStack> real = new ArrayList<>();
+        res.forEach(l->real.add((l.getA())));
+        return real;
     }
 
 

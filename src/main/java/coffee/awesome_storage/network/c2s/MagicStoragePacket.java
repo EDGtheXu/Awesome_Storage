@@ -136,7 +136,11 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
             else if(id < 20000){//10000 - 19999 为取出物品
                 int index  = id - 10000;
                 ItemStack fetch = entity.getItem(index);
-                context.player().getInventory().add(fetch);
+
+
+                context.player().getInventory().placeItemBackInInventory(fetch.copy());
+                entity.getItem(index).setCount(0);
+
                 List<ItemStack> items = entity.getItems();
                 // 排序
                 items.sort((item1, item2) -> {

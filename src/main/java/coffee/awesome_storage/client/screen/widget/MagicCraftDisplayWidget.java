@@ -4,6 +4,7 @@ import coffee.awesome_storage.Awesome_storage;
 import coffee.awesome_storage.network.c2s.MagicCraftPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -15,7 +16,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 
 import static coffee.awesome_storage.utils.Util.renderItemStack;
 import static net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.renderSlotHighlight;
@@ -62,16 +63,15 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int pButton) {
         if(isHoveredResult){
-            PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id()));
+            PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id(),BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
             return true;
         }
        return false;
     }
 
     @Override
-    protected Predicate<ItemStack> overlay(){
-
-        return it->!(parent.haveIngredients!=null &&
+    protected BiPredicate<ItemStack,Integer> overlay(){
+        return (it,i)->!(parent.haveIngredients!=null &&
                 parent.haveIngredients.containsKey(it.getItem()) &&
                 parent.haveIngredients.get(it.getItem()) >= it.getCount());
     }
@@ -101,7 +101,7 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
                 renderSlotHighlight(guiGraphics, offsetX, offsetY, internal);
 
                 List<Component> tooltip = output.getTooltipLines(Item.TooltipContext.of(Minecraft.getInstance().level), Minecraft.getInstance().player, TooltipFlag.NORMAL);
-                if(parent.cachedAppend.contains(output))
+                if(parent.cachedResults.size() - parent.cachedAppend.size() <= parent.selectedIndex)
                     tooltip.add(Component.translatable("magic_storage.missing_ingredient").withColor(0XFF0000));
                 else
                     tooltip.add(Component.translatable("magic_storage.can_craft").withColor(0X00FF00));

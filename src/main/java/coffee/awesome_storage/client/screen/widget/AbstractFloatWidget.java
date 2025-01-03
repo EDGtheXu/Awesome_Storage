@@ -18,7 +18,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 
 import static coffee.awesome_storage.utils.Util.*;
 import static net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.renderSlotHighlight;
@@ -115,8 +115,8 @@ public abstract class AbstractFloatWidget extends AbstractContainerWidget {
         return count;
     }
 
-    protected  Predicate<ItemStack> overlay(){
-        return it->false;
+    protected BiPredicate<ItemStack, Integer> overlay(){
+        return (it,i)->false;
     }
 
     protected void appendHoverItemTooltip(List<Component> tooltip){
@@ -147,7 +147,7 @@ public abstract class AbstractFloatWidget extends AbstractContainerWidget {
                     break;
                 }
                 if(!items.get(index).isEmpty()){
-                    renderItemStack(guiGraphics,items.get(index),i * internal,j * internal, overlay().test(items.get(index)));
+                    renderItemStack(guiGraphics,items.get(index),i * internal,j * internal, overlay().test(items.get(index),index));
                     count++;
                 }
             }
