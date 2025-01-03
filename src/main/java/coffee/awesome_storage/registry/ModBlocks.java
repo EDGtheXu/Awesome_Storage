@@ -27,7 +27,7 @@ public class ModBlocks {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, Awesome_storage.MODID);
     public static final DeferredRegister.Items BLOCK_ITEMS = DeferredRegister.createItems(Awesome_storage.MODID);
 
-    public static final Supplier<BaseEntityBlock> MAGIC_STORAGE_BLOCK = register("magic_storage_block","魔法存储块", () -> new MagicStorageBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
+    public static final Supplier<BaseEntityBlock> MAGIC_STORAGE_BLOCK = register("magic_storage_block","魔法存储块", () -> new MagicStorageBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).destroyTime(20).noOcclusion()));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MagicStorageBlockEntity>> MAGIC_STORAGE_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("magic_storage_block_entity", () -> BlockEntityType.Builder.of(MagicStorageBlockEntity::new, MAGIC_STORAGE_BLOCK.get()).build(DSL.remainderType()));
 

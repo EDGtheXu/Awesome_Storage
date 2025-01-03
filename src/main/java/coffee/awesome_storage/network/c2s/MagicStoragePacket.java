@@ -1,6 +1,6 @@
 package coffee.awesome_storage.network.c2s;
 
-import coffee.awesome_storage.client.Util;
+import coffee.awesome_storage.Util.Util;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;

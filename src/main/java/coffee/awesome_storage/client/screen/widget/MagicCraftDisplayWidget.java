@@ -9,16 +9,18 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import static coffee.awesome_storage.client.Util.renderItemStack;
+import static coffee.awesome_storage.Util.Util.renderItemStack;
 import static net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.renderSlotHighlight;
 
+@OnlyIn(Dist.CLIENT)
 public class MagicCraftDisplayWidget extends AbstractFloatWidget {
 
 

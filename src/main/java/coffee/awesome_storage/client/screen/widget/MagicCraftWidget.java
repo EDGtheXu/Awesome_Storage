@@ -6,20 +6,21 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 
 import java.util.*;
 import java.util.function.Predicate;
 
-import static coffee.awesome_storage.client.Util.getStorageItems;
-import static coffee.awesome_storage.recipe.MagicCraftRecipeLoader.ENABLED_RECIPES;
+import static coffee.awesome_storage.Util.Util.getStorageItems;
+import static coffee.awesome_storage.config.CraftConfig.ENABLED_RECIPES;
 
+@OnlyIn(Dist.CLIENT)
 public class MagicCraftWidget extends AbstractFloatWidget {
 
     List<ItemStack> results = new ArrayList<>();
@@ -111,27 +112,28 @@ public class MagicCraftWidget extends AbstractFloatWidget {
     }
 
 
+
     @Override
     public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
-
+    // 计算选中的配方对应的原料Map<Ingredient, Integer>
         if(hoverIt!=null){
             selectedIndex = hoverIndex;
             selectedItem = cachedResults.get(selectedIndex);
             selectedRecipe = recipeMap.get(selectedItem);
             if(selectedRecipe!=null) {
                 var ingredients = selectedRecipe.value().getIngredients();
-
                 // 合并相同物品
                 realIngredients.clear();
-
                 for (Ingredient ingredient : ingredients) {
                     if (realIngredients.containsKey(ingredient)) {
-                        // 如果已存在，则将值加1
-                        realIngredients.put(ingredient, realIngredients.get(ingredient) + 1);
+                        // 如果已存在，则将值加
+                        if(ingredient.getItems().length>0)
+                            realIngredients.put(ingredient, realIngredients.get(ingredient) + ingredient.getItems()[0].getCount());
                     } else {
                         // 如果不存在，则插入新的原料
-                        Ingredient ingredient1 = Ingredient.of(ingredient.getItems());
-                        realIngredients.put(ingredient1, 1);
+                        if(ingredient.getItems().length>0){
+                            realIngredients.put(ingredient, ingredient.getItems()[0].getCount());
+                        }
                     }
                 }
             }

@@ -8,7 +8,8 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 import static coffee.awesome_storage.Awesome_storage.MODID;
-import static coffee.awesome_storage.recipe.MagicCraftRecipeLoader.readFromJson;
+import static coffee.awesome_storage.config.StorageConfig.loadUpgradeLine;
+import static coffee.awesome_storage.config.CraftConfig.readFromJson;
 
 @EventBusSubscriber(modid = MODID, bus = EventBusSubscriber.Bus.MOD)
 public class ModEvent {
@@ -21,5 +22,6 @@ public class ModEvent {
 
 
         readFromJson();
+        loadUpgradeLine();
     }
 }

@@ -7,24 +7,23 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.block.AnvilBlock;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import static coffee.awesome_storage.client.Util.*;
+import static coffee.awesome_storage.Util.Util.*;
 import static net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.renderSlotHighlight;
 
+@OnlyIn(Dist.CLIENT)
 public abstract class AbstractFloatWidget extends AbstractContainerWidget {
 
     protected final MagicStorageMenu menu;

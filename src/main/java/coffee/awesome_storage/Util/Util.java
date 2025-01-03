@@ -1,4 +1,4 @@
-package coffee.awesome_storage.client;
+package coffee.awesome_storage.Util;
 
 import coffee.awesome_storage.MixinUtil.IPlayer;
 import coffee.awesome_storage.block.MagicStorageBlockEntity;
@@ -6,13 +6,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.List;
 
-@OnlyIn(Dist.CLIENT)
+
 public class Util {
     public static List<ItemStack> getStorageItems(Player player) {
         var entity = (MagicStorageBlockEntity)((IPlayer)player).awesomeStorage$getContainer();

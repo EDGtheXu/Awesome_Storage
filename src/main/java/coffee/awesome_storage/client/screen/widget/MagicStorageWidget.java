@@ -1,22 +1,28 @@
 package coffee.awesome_storage.client.screen.widget;
 
+import coffee.awesome_storage.block.MagicStorageBlockEntity;
 import coffee.awesome_storage.client.screen.MagicStorageScreen;
+import coffee.awesome_storage.config.StorageConfig;
 import coffee.awesome_storage.network.c2s.MagicStoragePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
-import static coffee.awesome_storage.client.Util.getStorageEntity;
-import static coffee.awesome_storage.client.Util.getStorageItems;
+import static coffee.awesome_storage.Util.Util.*;
 
+@OnlyIn(Dist.CLIENT)
 public class MagicStorageWidget extends AbstractFloatWidget {
+    MagicStorageBlockEntity storageEntity;
     public MagicStorageWidget(MagicStorageScreen screen, int x, int y, int width, int height, Component message) {
         super(screen, x, y, width, height, message);
+        this.storageEntity = getStorageEntity(Minecraft.getInstance().player);
     }
 
     @Override
@@ -28,10 +34,26 @@ public class MagicStorageWidget extends AbstractFloatWidget {
     protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         super.renderWidget(guiGraphics, mouseX, mouseY, partialTicks);
 
-        var size = getStorageEntity(Minecraft.getInstance().player).getContainerSize();
-        String info = getNonEmptyItemsCount() +"/"+size;
-        guiGraphics.drawString(Minecraft.getInstance().font,info ,this.getX()+this.width/2 - Minecraft.getInstance().font.width(info)/2+30,this.getY()-10,0xffffff);
+        var size = storageEntity.getContainerSize();
 
+        String info = getNonEmptyItemsCount() +"/"+size+"  "+"lvl:"+storageEntity.lvl;
+        guiGraphics.drawString(Minecraft.getInstance().font,info ,this.getX()+this.width + 5,this.getY()-10,0xffffff);
+
+        String upgradeInfo;
+        if(StorageConfig.getUpgradeLine().containsKey(storageEntity.lvl+1)){
+            var upgrade = StorageConfig.getUpgradeLine().get(storageEntity.lvl+1);
+            upgradeInfo = "Next: +"+ upgrade.extend() + " <--";
+            ItemStack need = StorageConfig.getUpgradeLine().get(storageEntity.lvl+1).material();
+            int x = this.getX() + this.width + 5 + 70;
+            int y = this.getY() - 1;
+            renderItemStack(guiGraphics,need,x,y,false);
+            if(mouseX > x && mouseY > y  && mouseX < x + 16 && mouseY < y + 16){
+                guiGraphics.renderTooltip(Minecraft.getInstance().font, need,mouseX, mouseY);
+            }
+        }else{
+            upgradeInfo = "Max lvl";
+        }
+        guiGraphics.drawString(Minecraft.getInstance().font, upgradeInfo ,this.getX()+this.width + 5,this.getY() + 4,0xffffff);
 
     }
 

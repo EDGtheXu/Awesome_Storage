@@ -10,18 +10,20 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import static coffee.awesome_storage.Awesome_storage.space;
 
-
+@OnlyIn(Dist.CLIENT)
 public class MagicStorageScreen extends AbstractContainerScreen<MagicStorageMenu> {
     private static final ResourceLocation BACKGROUND = space("textures/gui/magic_storage_menu.png");
 
     private Button switchButton;
     int state;
     private MagicCraftWidget craftWidget;
-    private AbstractContainerWidget creatorWidget;
+    private AbstractContainerWidget storageWidget;
 
     public MagicStorageScreen(MagicStorageMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
@@ -34,26 +36,26 @@ public class MagicStorageScreen extends AbstractContainerScreen<MagicStorageMenu
 
         this.titleLabelX = imageWidth - font.width(title) - 8;
         this.inventoryLabelX = imageWidth - font.width(playerInventoryTitle) - 8;
-        this.creatorWidget = new MagicStorageWidget(this, 0, 20, leftPos, minecraft.getWindow().getHeight() / 2 - 20, Component.literal("creator"));
+        this.storageWidget = new MagicStorageWidget(this, 0, 20, leftPos, minecraft.getWindow().getHeight() / 2 - 20, Component.literal("creator"));
         this.craftWidget = new MagicCraftWidget(this, 0, 20, leftPos, minecraft.getWindow().getHeight() / 2 - 20, Component.literal("craft"));
 
         switchButton = Button.builder(Component.translatable("magic_storage_screen.storage"), (press) -> {
             if (state == 1) {
                 state = 2;
                 this.removeWidget(craftWidget);
-                this.addRenderableWidget(creatorWidget);
+                this.addRenderableWidget(storageWidget);
                 switchButton.setMessage(Component.translatable("magic_storage_screen.storage"));
 
             } else {
                 state = 1;
-                this.removeWidget(creatorWidget);
+                this.removeWidget(storageWidget);
                 this.addRenderableWidget(craftWidget);
                 switchButton.setMessage(Component.translatable("magic_storage_screen.craft"));
             }
-        }).pos(leftPos+5, topPos+ 10).size(25, 16).build();
+        }).pos(leftPos+15, topPos+ 10).size(25, 16).build();
 
 //        this.addRenderableWidget(craftWidget);
-        this.addRenderableWidget(creatorWidget);
+        this.addRenderableWidget(storageWidget);
         this.addRenderableWidget(switchButton);
         this.addRenderableWidget(craftWidget.displayWidget);
     }

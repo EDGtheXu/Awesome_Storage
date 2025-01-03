@@ -12,12 +12,10 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -27,18 +25,20 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
     private static final Component CONTAINER_TITLE = Component.translatable("container.awesome_storage.magic_storage");
 
     public int max_size = 20 ;
-    public int block_accessor_count = 10;
+    public int lvl = 0;
     private int tick_count = 0;
     private final ContainerData dataAccess;
     private NonNullList<ItemStack> items;
-    private NonNullList<ItemStack> blockAccessors;
+
+//    public int block_accessor_count = 10;
+//    private NonNullList<ItemStack> blockAccessors;
 
 
     public MagicStorageBlockEntity(BlockEntityType<MagicStorageBlockEntity> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
 
-        this.items = NonNullList.withSize(getContainerSize(), Items.APPLE.getDefaultInstance());
-        this.blockAccessors = NonNullList.withSize(block_accessor_count, Items.AIR.getDefaultInstance());
+        this.items = NonNullList.withSize(getContainerSize(), ItemStack.EMPTY);
+//        this.blockAccessors = NonNullList.withSize(block_accessor_count, Items.AIR.getDefaultInstance());
         this.dataAccess = new ContainerData() {
             public int get(int id) {
                 return switch (id) {
@@ -77,19 +77,23 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookupProvider) {
         CompoundTag tag = pkt.getTag();
         this.max_size = tag.getInt("max_size");
+        this.lvl = tag.getInt("lvl");
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-        this.block_accessor_count = tag.getInt("block_accessor_count");
-        this.blockAccessors = NonNullList.withSize(tag.getInt("block_accessor"), ItemStack.EMPTY);
         ContainerHelper.loadAllItems(tag, this.items, lookupProvider);
+//        this.block_accessor_count = tag.getInt("block_accessor_count");
+//        this.blockAccessors = NonNullList.withSize(tag.getInt("block_accessor"), ItemStack.EMPTY);
+
+
     }
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         tag.putInt("max_size", max_size);
+        tag.putInt("lvl", lvl);
         ContainerHelper.saveAllItems(tag, this.items, registries);
-        tag.putInt("block_accessor_count", block_accessor_count);
-        tag.put("block_accessor", ContainerHelper.saveAllItems(new CompoundTag(), blockAccessors, registries));
+//        tag.putInt("block_accessor_count", block_accessor_count);
+//        tag.put("block_accessor", ContainerHelper.saveAllItems(new CompoundTag(), blockAccessors, registries));
         return tag;
     }
 
@@ -97,19 +101,21 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         max_size = tag.getInt("max_size");
+        lvl = tag.getInt("lvl");
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-        this.block_accessor_count = tag.getInt("block_accessor_count");
-        this.blockAccessors = NonNullList.withSize(tag.getInt("block_accessor"), ItemStack.EMPTY);
         ContainerHelper.loadAllItems(tag, this.items, registries);
+//        this.block_accessor_count = tag.getInt("block_accessor_count");
+//        this.blockAccessors = NonNullList.withSize(tag.getInt("block_accessor"), ItemStack.EMPTY);
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putInt("max_size", max_size);
+        tag.putInt("lvl", lvl);
         ContainerHelper.saveAllItems(tag, this.items, registries);
-        tag.putInt("block_accessor_count", block_accessor_count);
-        tag.put("block_accessor", ContainerHelper.saveAllItems(new CompoundTag(), blockAccessors, registries));
+//        tag.putInt("block_accessor_count", block_accessor_count);
+//        tag.put("block_accessor", ContainerHelper.saveAllItems(new CompoundTag(), blockAccessors, registries));
     }
 
     @Override
@@ -165,4 +171,6 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         this.max_size += size;
         setChanged();
     }
+
+
 }
