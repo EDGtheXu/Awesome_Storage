@@ -172,16 +172,39 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         }
         return items;
     }
+    public void sortItems() {
+        getItems().sort((item1, item2) -> {
+            // 如果 item1 为空且 item2 不为空，item1 排在后面
+            if (item1.isEmpty() && !item2.isEmpty()) {
+                return 1;
+            }
+            // 如果 item2 为空且 item1 不为空，item2 排在后面
+            if (item2.isEmpty() && !item1.isEmpty()) {
+                return -1;
+            }
+            // 如果两者都为空或都不为空，按名称排序
+            return item1.getDisplayName().getString().compareTo(item2.getDisplayName().getString());
+        });
+        setChanged();
+    }
 
     @Override
     public void setItems(NonNullList<ItemStack> nonNullList) {
         if(items!= nonNullList) {
             setChanged();
             level.sendBlockUpdated(this.getBlockPos(), level.getBlockState(this.getBlockPos()), level.getBlockState(this.getBlockPos()), 3);
-
         }
         items = nonNullList;
+        sortItems();
     }
+    public void setItems(List<ItemStack> items) {
+        NonNullList<ItemStack> nonNullItems = NonNullList.withSize(getItems().size(), ItemStack.EMPTY);
+        for (ItemStack stack : items) {
+            nonNullItems.set(getItems().indexOf(stack), stack);
+        }
+        setItems(nonNullItems);
+    }
+
     @Override
     public void setItem(int index, ItemStack stack) {
         ItemStack itemstack = getItem(index);

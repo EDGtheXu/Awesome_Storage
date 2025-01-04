@@ -18,6 +18,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 import static coffee.awesome_storage.Awesome_storage.space;
+import static coffee.awesome_storage.utils.Util.tryAddItemStackToItemStacks;
+import static coffee.awesome_storage.utils.Util.unionItemStacks;
 
 public record MagicStoragePacket(int id, ItemStack item) implements CustomPacketPayload {
 
@@ -44,7 +46,6 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
 
                     if(item.getItem() instanceof BlockItem block &&
                             CraftConfig.ENABLED_RECIPES.containsKey(block.getBlock())
-
                     ){
                         String block_name = String.valueOf(BuiltInRegistries.BLOCK.getKey(block.getBlock()));
                         if(!entity.getBlock_accessors().contains(block_name)){
@@ -52,47 +53,20 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
                             entity.getBlock_accessors().add(block_name);
                             context.player().level().sendBlockUpdated(entity.getBlockPos(), context.player().level().getBlockState(entity.getBlockPos()), context.player().level().getBlockState(entity.getBlockPos()), 3);
                         }
-
                     }
                     return;
                 }
 
-
                 NonNullList<ItemStack> items = entity.getItems();
-
                 ItemStack item = this.item;
-                // 合并堆叠
-                for (int i = 0; i < items.size(); i++) {
-                    ItemStack current = items.get(i);
-                    if (current.isEmpty()) {
-                        continue; // 跳过空槽
-                    }
-                    for (int j = i + 1; j < items.size(); j++) {
-                        ItemStack next = items.get(j);
-                        if (!next.isEmpty() && current.is(next.getItem()) && current.getCount() < current.getMaxStackSize()) {
-                            // 合并堆叠
-                            int transfer = Math.min(next.getCount(), current.getMaxStackSize() - current.getCount());
-                            current.grow(transfer); // 增加当前物品的数量
-                            next.shrink(transfer);  // 减少下一个物品的数量
-                            if (next.isEmpty()) {
-                                items.set(j, ItemStack.EMPTY); // 如果下一个物品被完全合并，设置为空
-                            }
-                        }
-                    }
-                }
 
-                // 尝试将新物品堆叠到已有的相同物品槽中
-                for (ItemStack current : items) {
-                    if (!current.isEmpty() && current.is(item.getItem()) && current.getCount() < current.getMaxStackSize()) {
-                        // 计算可以堆叠的数量
-                        int transfer = Math.min(item.getCount(), current.getMaxStackSize() - current.getCount());
-                        current.grow(transfer); // 增加当前物品的数量
-                        item.shrink(transfer);  // 减少新物品的数量
-                        if (item.isEmpty()) {
-                            break; // 如果新物品被完全堆叠，退出循环
-                        }
-                    }
-                }
+                // step 1: 合并相同物品槽中的物品
+                unionItemStacks(items);
+
+                // step 2: 尝试将新物品放入空槽
+                tryAddItemStackToItemStacks(item, items);
+
+
 
                 // 如果新物品未被完全堆叠，将其放入第一个空槽
                 if (!item.isEmpty()) {
@@ -104,20 +78,6 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
                         }
                     }
                 }
-
-                // 排序
-                items.sort((item1, item2) -> {
-                    // 如果 item1 为空且 item2 不为空，item1 排在后面
-                    if (item1.isEmpty() && !item2.isEmpty()) {
-                        return 1;
-                    }
-                    // 如果 item2 为空且 item1 不为空，item2 排在后面
-                    if (item2.isEmpty() && !item1.isEmpty()) {
-                        return -1;
-                    }
-                    // 如果两者都为空或都不为空，按名称排序
-                    return item1.getDisplayName().getString().compareTo(item2.getDisplayName().getString());
-                });
 
                 // 如果手持物品未被完全堆叠或放入空槽，保留剩余数量
                 if (!item.isEmpty()) {
@@ -137,25 +97,10 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
                 int index  = id - 10000;
                 ItemStack fetch = entity.getItem(index);
 
-
                 context.player().getInventory().placeItemBackInInventory(fetch.copy());
                 entity.getItem(index).setCount(0);
 
-                List<ItemStack> items = entity.getItems();
-                // 排序
-                items.sort((item1, item2) -> {
-                    // 如果 item1 为空且 item2 不为空，item1 排在后面
-                    if (item1.isEmpty() && !item2.isEmpty()) {
-                        return 1;
-                    }
-                    // 如果 item2 为空且 item1 不为空，item2 排在后面
-                    if (item2.isEmpty() && !item1.isEmpty()) {
-                        return -1;
-                    }
-                    // 如果两者都为空或都不为空，按名称排序
-                    return item1.getDisplayName().getString().compareTo(item2.getDisplayName().getString());
-                });
-
+                entity.sortItems();
 
                 var level = context.player().level();
                 level.sendBlockUpdated(entity.getBlockPos(), level.getBlockState(entity.getBlockPos()), level.getBlockState(entity.getBlockPos()), 3);

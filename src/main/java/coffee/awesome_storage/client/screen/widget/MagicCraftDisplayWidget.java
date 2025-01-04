@@ -2,19 +2,25 @@ package coffee.awesome_storage.client.screen.widget;
 
 import coffee.awesome_storage.Awesome_storage;
 import coffee.awesome_storage.network.c2s.MagicCraftPacket;
+import coffee.awesome_storage.utils.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.BiPredicate;
 
@@ -28,6 +34,9 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
     int craftTabY;
     int craftTabWidth;
     int craftTabHeight;
+    boolean isClicked = false;
+    int clickCount = 0;
+    long lastClickTime = 0;
 
     MagicCraftWidget parent;
     List<ItemStack> cachedItems;
@@ -63,11 +72,31 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int pButton) {
         if(isHoveredResult){
-            PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id(),BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
+            if(pButton == 0){
+                isClicked = true;
+            }
             this.playDownSound(Minecraft.getInstance().getSoundManager());
+
+            PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id(),BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
             return true;
         }
        return false;
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        super.mouseMoved(mouseX, mouseY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int pButton) {
+        if(pButton == 0){
+            if(isClicked) parent.refreshItems();
+            isClicked = false;
+            clickCount = 0;
+        }
+
+        return super.mouseReleased(mouseX, mouseY, pButton);
     }
 
     @Override
@@ -86,6 +115,25 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
     @Override
     protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         super.renderWidget(guiGraphics, mouseX, mouseY, partialTicks);
+        if(isClicked){
+            if(clickCount < 2){
+                if(lastClickTime + 500 < System.currentTimeMillis()){
+                    clickCount++;
+                    lastClickTime = System.currentTimeMillis();
+                }
+            }else{
+                double itnl = Math.max(Math.exp(-(clickCount) /20.0) * 200, 30);
+                if(lastClickTime + itnl < System.currentTimeMillis()){
+                    clickCount++;
+                    Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1F,0.03f));
+                    PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id(),BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
+                    parent.refreshItems();
+                    lastClickTime = System.currentTimeMillis();
+                }
+            }
+
+
+        }
         guiGraphics.pose().pushPose();
 
         int offsetX = this.cachedItems.size() * internal + 30 + left;
@@ -102,7 +150,7 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
                 renderSlotHighlight(guiGraphics, offsetX, offsetY, internal);
 
                 List<Component> tooltip = output.getTooltipLines(Item.TooltipContext.of(Minecraft.getInstance().level), Minecraft.getInstance().player, TooltipFlag.NORMAL);
-                if(parent.cachedResults.size() - parent.cachedAppend.size() <= parent.selectedIndex)
+                if(!Util.canCraftSimple(new HashMap<>(parent.haveIngredients),parent.selectedAdapter.getIngredients((RecipeHolder<Recipe<RecipeInput>>) recipe)))
                     tooltip.add(Component.translatable("magic_storage.missing_ingredient").withColor(0XFF0000));
                 else
                     tooltip.add(Component.translatable("magic_storage.can_craft").withColor(0X00FF00));
@@ -113,12 +161,7 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
         }
 
     }
-    public void mouseMoved(double mouseX, double mouseY) {
-        super.mouseMoved(mouseX, mouseY);
-//        if(isHoveredResult){
-//            System.out.println("hovered");
-//        }
-    }
+
 
 
 }

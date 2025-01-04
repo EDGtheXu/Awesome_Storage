@@ -85,6 +85,9 @@ public class MagicStorageScreen extends AbstractContainerScreen<MagicStorageMenu
                     return true;
             }
         }
+        if(children().contains(craftWidget)){
+            craftWidget.refreshItems();
+        }
         return super.mouseClicked(pMouseX, pMouseY, pButton);
     }
 

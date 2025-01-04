@@ -13,6 +13,7 @@ import net.minecraft.world.item.*;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import org.slf4j.Logger;
@@ -27,7 +28,7 @@ import static coffee.awesome_storage.datagen.lang.ModEnglishProvider.toTitleCase
 @Mod(Awesome_storage.MODID)
 public class Awesome_storage {
     public static final String MODID = "awesome_storage";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public static ResourceLocation space(String path){return ResourceLocation.fromNamespaceAndPath(MODID, path);}
 
@@ -52,7 +53,7 @@ public class Awesome_storage {
 
         ModTabs.TABS.register(modEventBus);
 
-//        modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
+        modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
 //        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
 
 

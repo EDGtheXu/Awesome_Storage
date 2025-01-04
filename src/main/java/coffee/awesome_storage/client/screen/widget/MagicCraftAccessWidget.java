@@ -56,19 +56,22 @@ public class MagicCraftAccessWidget extends AbstractFloatWidget{
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int pButton) {
-        if(!menu.getCarried().isEmpty()){// add work block
-            if(menu.getCarried().getItem() instanceof BlockItem block &&
-                    CraftConfig.ENABLED_RECIPES.containsKey(block.getBlock())){
-                PacketDistributor.sendToServer(new MagicStoragePacket(1,menu.getCarried()));
+        if(isHovered){
+            if(!menu.getCarried().isEmpty()){// add work block
+                if(menu.getCarried().getItem() instanceof BlockItem block &&
+                        CraftConfig.ENABLED_RECIPES.containsKey(block.getBlock())){
+                    PacketDistributor.sendToServer(new MagicStoragePacket(1,menu.getCarried()));
+                    parent.reloadingTime = 0;
+                }
+                return true;
+            }
+            if(hoverIt != null){
+                PacketDistributor.sendToServer(new MagicStoragePacket(20000 + hoverIndex,hoverIt));
                 parent.reloadingTime = 0;
             }
-            return true;
+
         }
-        if(hoverIt != null){
-            System.out.println(hoverIndex);
-            PacketDistributor.sendToServer(new MagicStoragePacket(20000 + hoverIndex,hoverIt));
-            parent.reloadingTime = 0;
-        }
+
         return false;
     }
 }

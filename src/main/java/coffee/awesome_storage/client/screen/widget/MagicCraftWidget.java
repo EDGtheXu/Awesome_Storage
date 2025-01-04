@@ -1,5 +1,6 @@
 package coffee.awesome_storage.client.screen.widget;
 
+import coffee.awesome_storage.Awesome_storage;
 import coffee.awesome_storage.api.adapter.CommonRecipeAdapter;
 import coffee.awesome_storage.block.MagicStorageBlockEntity;
 import coffee.awesome_storage.client.screen.MagicStorageScreen;
@@ -34,6 +35,7 @@ public class MagicCraftWidget extends AbstractFloatWidget {
 
     List<ItemStack> results = new ArrayList<>();
 
+    List<ItemStack> cachedItems = new ArrayList<>();
     List<Pair<ItemStack,RecipeHolder<?>>> cachedResults;
     List<Pair<ItemStack,RecipeHolder<?>>> cachedAppend;
 
@@ -60,7 +62,8 @@ public class MagicCraftWidget extends AbstractFloatWidget {
         accessWidget = (MagicCraftAccessWidget) new MagicCraftAccessWidget(this, screen.getGuiLeft()+10, screen.getGuiTop()+55, screen.width - 100, 20, message)
                 .setNoRenderButton()
         ;
-
+//        reloadRecipes();
+        refreshItems();
     }
 
     public void reloadRecipes(){
@@ -76,15 +79,8 @@ public class MagicCraftWidget extends AbstractFloatWidget {
                     var adapter = AdapterManager.Adapters.get(recipeType);
                     loadRecipeType(adapter);
                }
-//                if(ENABLED_RECIPES.get(block) == (Object)RecipeType.SMITHING){
-//                    var adapter = new SmithingRecipeAdapter((RecipeType<SmithingRecipe>)(Object) ENABLED_RECIPES.get(block));
-//                    loadRecipeType((AbstractMagicCraftRecipeAdapter<RecipeInput,Recipe<RecipeInput>>) adapter);
-//                    System.out.println("Smithing recipe");
-//                }
-               else{
-//                    AbstractMagicCraftRecipeAdapter<RecipeInput,Recipe<RecipeInput>> adapter = new CommonRecipeAdapter<>(ENABLED_RECIPES.get(block));
-//                    loadRecipeType(adapter);
-
+               else{// 不应该出现这种情况
+                    Awesome_storage.LOGGER.error("exception: recipeType not found, replace with CommonRecipeAdapter");
                     var adapter2 = new CommonRecipeAdapter<>(ENABLED_RECIPES.get(block));
 //                    if(!AdapterManager.Adapters.containsKey(recipeType)){
 //                        AdapterManager.Adapters.put(recipeType,adapter2);
@@ -93,7 +89,6 @@ public class MagicCraftWidget extends AbstractFloatWidget {
                 }
             }
         });
-
     }
 
     public void loadRecipeType(AbstractMagicCraftRecipeAdapter<RecipeInput,Recipe<RecipeInput>> adapter){
@@ -116,10 +111,9 @@ public class MagicCraftWidget extends AbstractFloatWidget {
         if(reloadingTime > 10 && reloadingTime < 1000){
             reloadingTime = 1000;
             reloadRecipes();
+            refreshItems();
         }
-//        this.displayWidget.renderWidget(pGuiGraphics, pMouseX, pMouseY, 0);
     }
-
 
 
     @Override
@@ -155,15 +149,14 @@ public class MagicCraftWidget extends AbstractFloatWidget {
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-
+        super.mouseMoved(mouseX, mouseY);
     }
+    public void refreshItems(){
 
-    @Override
-    protected List<ItemStack> getItems() {
+
         List<Pair<ItemStack,RecipeHolder<?>>> res = new ArrayList<>();
         List<Pair<ItemStack,RecipeHolder<?>>> append = new ArrayList<>();
         List<ItemStack> have = getStorageItems(Minecraft.getInstance().player);
-
 
         // 将have中的ItemStack转换为Map<Item, Integer>
         haveIngredients.clear();
@@ -230,7 +223,12 @@ public class MagicCraftWidget extends AbstractFloatWidget {
         cachedResults = res;
         List<ItemStack> real = new ArrayList<>();
         res.forEach(l->real.add((l.getA())));
-        return real;
+        cachedItems = real;
+    }
+
+    @Override
+    protected List<ItemStack> getItems() {
+        return cachedItems;
     }
 
 
