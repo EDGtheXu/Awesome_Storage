@@ -1,4 +1,4 @@
-package coffee.awesome_storage.adapter;
+package coffee.awesome_storage.api.adapter;
 
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;

@@ -1,7 +1,7 @@
 package coffee.awesome_storage.network.c2s;
 
 import coffee.awesome_storage.block.MagicStorageBlockEntity;
-import coffee.awesome_storage.adapter.AdapterManager;
+import coffee.awesome_storage.api.adapter.AdapterManager;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;

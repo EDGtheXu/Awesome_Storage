@@ -32,7 +32,7 @@ public class StorageConfig {
         return JsonParser.parseString(new Gson().toJson(result.result().get()));
     }
 
-    public static void loadUpgradeLine(){
+    public static void loadStorageConfig(){
         Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve(MODID);
         Path configFile = CONFIG_PATH.resolve("magic_storage_config.json");
         File file = configFile.toFile();

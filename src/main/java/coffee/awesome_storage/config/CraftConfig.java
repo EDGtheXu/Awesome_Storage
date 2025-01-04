@@ -24,7 +24,7 @@ import static coffee.awesome_storage.Awesome_storage.MODID;
 public class CraftConfig {
     public static Map<Block, RecipeType<Recipe<RecipeInput>>> ENABLED_RECIPES = new HashMap<>();
 
-    public static void readFromJson(){
+    public static void loadCraftConfig(){
         Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve(MODID);
         Path configFile = CONFIG_PATH.resolve("magic_craft_config.json");
         File file = configFile.toFile();
@@ -38,6 +38,12 @@ public class CraftConfig {
                 json = new JsonObject();
 
                 json.addProperty("minecraft:crafting_table","minecraft:crafting");
+                json.addProperty("minecraft:furnace","minecraft:smelting");
+                json.addProperty("minecraft:blast_furnace","minecraft:blasting");
+                json.addProperty("minecraft:campfire","minecraft:campfire_cooking");
+                json.addProperty("minecraft:smithing_table","minecraft:smithing");
+                json.addProperty("minecraft:smoker","minecraft:smoking");
+
 
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
                 Writer writer = new java.io.FileWriter(file);

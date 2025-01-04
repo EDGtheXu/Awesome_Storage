@@ -1,9 +1,10 @@
 package coffee.awesome_storage.client.screen.widget;
 
+import coffee.awesome_storage.api.adapter.CommonRecipeAdapter;
 import coffee.awesome_storage.block.MagicStorageBlockEntity;
 import coffee.awesome_storage.client.screen.MagicStorageScreen;
-import coffee.awesome_storage.adapter.AdapterManager;
-import coffee.awesome_storage.adapter.AbstractMagicCraftRecipeAdapter;
+import coffee.awesome_storage.api.adapter.AdapterManager;
+import coffee.awesome_storage.api.adapter.AbstractMagicCraftRecipeAdapter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -83,8 +84,12 @@ public class MagicCraftWidget extends AbstractFloatWidget {
                else{
 //                    AbstractMagicCraftRecipeAdapter<RecipeInput,Recipe<RecipeInput>> adapter = new CommonRecipeAdapter<>(ENABLED_RECIPES.get(block));
 //                    loadRecipeType(adapter);
-                    var adapter = AdapterManager.defaultAdapter;
-                    loadRecipeType((AbstractMagicCraftRecipeAdapter) adapter);
+
+                    var adapter2 = new CommonRecipeAdapter<>(ENABLED_RECIPES.get(block));
+//                    if(!AdapterManager.Adapters.containsKey(recipeType)){
+//                        AdapterManager.Adapters.put(recipeType,adapter2);
+//                    }
+                    loadRecipeType(adapter2);
                 }
             }
         });

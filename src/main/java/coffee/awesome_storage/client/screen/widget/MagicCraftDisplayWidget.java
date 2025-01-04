@@ -64,6 +64,7 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
     public boolean mouseClicked(double mouseX, double mouseY, int pButton) {
         if(isHoveredResult){
             PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id(),BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
+            this.playDownSound(Minecraft.getInstance().getSoundManager());
             return true;
         }
        return false;
