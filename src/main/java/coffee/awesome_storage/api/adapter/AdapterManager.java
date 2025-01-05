@@ -22,7 +22,7 @@ public class AdapterManager {
 
         ModLoader.postEvent(new RegisterAdapterEvent());
 
-        for(var recipeType : ENABLED_RECIPES.values()){
+        for(var recipeType : ENABLED_RECIPES.keySet()){
             if(!Adapters.containsKey(recipeType))
                 Adapters.put(recipeType, new CommonRecipeAdapter<>(recipeType));
         }

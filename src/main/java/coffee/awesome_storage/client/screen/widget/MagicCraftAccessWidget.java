@@ -59,7 +59,7 @@ public class MagicCraftAccessWidget extends AbstractFloatWidget{
         if(isHovered){
             if(!menu.getCarried().isEmpty()){// add work block
                 if(menu.getCarried().getItem() instanceof BlockItem block &&
-                        CraftConfig.ENABLED_RECIPES.containsKey(block.getBlock())){
+                        CraftConfig.isEnabledBlock(block.getBlock())){
                     PacketDistributor.sendToServer(new MagicStoragePacket(1,menu.getCarried()));
                     parent.reloadingTime = 0;
                 }

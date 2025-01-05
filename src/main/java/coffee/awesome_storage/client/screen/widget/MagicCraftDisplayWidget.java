@@ -148,7 +148,6 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
             isHoveredResult = mouseX >= offsetX && mouseX <= offsetX + 16 && mouseY >= offsetY && mouseY <= offsetY + 16;
             if(isHoveredResult && !output.isEmpty()){
                 renderSlotHighlight(guiGraphics, offsetX, offsetY, internal);
-
                 List<Component> tooltip = output.getTooltipLines(Item.TooltipContext.of(Minecraft.getInstance().level), Minecraft.getInstance().player, TooltipFlag.NORMAL);
                 if(!Util.canCraftSimple(new HashMap<>(parent.haveIngredients),parent.selectedAdapter.getIngredients((RecipeHolder<Recipe<RecipeInput>>) recipe)))
                     tooltip.add(Component.translatable("magic_storage.missing_ingredient").withColor(0XFF0000));

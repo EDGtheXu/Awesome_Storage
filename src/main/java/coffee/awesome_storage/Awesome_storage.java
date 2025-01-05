@@ -53,7 +53,7 @@ public class Awesome_storage {
 
         ModTabs.TABS.register(modEventBus);
 
-        modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
+//        modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
 //        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
 
 

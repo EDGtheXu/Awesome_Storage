@@ -44,7 +44,7 @@ public class Util {
      * @param have 已有物品
      * @return 物品对应数量
      */
-    public static Map<Item, Integer> getHaveIngredients(List<ItemStack> have) {
+    public static Map<Item, Integer> stacks2ItemAmountMap(List<ItemStack> have) {
         Map<Item, Integer> haveIngredients = new HashMap<>();
         for (ItemStack stack : have) {
             Item item = stack.getItem();
@@ -55,7 +55,6 @@ public class Util {
     }
 
     /**
-
      * 常规物品判断能否合成
      *
      * @param haveIngredients 已有物品的原料数量
@@ -96,8 +95,9 @@ public class Util {
      * @return 能否合成
      */
     public static boolean canCraft(List<ItemStack> have, NonNullList<Ingredient> ingredients) {
-        Map<Item, Integer> haveIngredients = getHaveIngredients(have);
-        return canCraftSimple(haveIngredients, ingredients);
+//        Map<Item, Integer> haveIngredients = stacks2ItemAmountMap(have);
+//        return canCraftSimple(haveIngredients, ingredients);
+        return doCraft(have.stream().map(ItemStack::copy).toList(), ingredients);
     }
 
     /**
@@ -105,21 +105,25 @@ public class Util {
      * @param have 已有物品 原料
      * @param ingredients 物品的原料
      */
-    public static void doCraft(List<ItemStack> have, NonNullList<Ingredient> ingredients) {
+    public static boolean doCraft(List<ItemStack> have, NonNullList<Ingredient> ingredients) {
         // 移除原料
         for (Ingredient ingredient : ingredients) {
             if(ingredient.isEmpty()) continue;
+            boolean ingredientFound = false;
             for (ItemStack ingredientStack : ingredient.getItems()) {
                 Item ingredientItem = ingredientStack.getItem();
                 int requiredCount = ingredientStack.getCount();
 
                 for(int i = 0; i < have.size(); i++){
                     ItemStack stack = have.get(i);
+                    if(stack.isEmpty())
+                        continue;
                     // todo 适配器匹配
                     if(stack.getItem() == ingredientItem){
                         int count = stack.getCount();
                         if(count >= requiredCount){
                             stack.shrink(requiredCount);
+                            ingredientFound = true;
                             break;
                         }else{
                             requiredCount -= count;
@@ -128,7 +132,13 @@ public class Util {
                     }
                 }
             }
+            if (!ingredientFound) {
+                // todo 物品合成失败处理
+                return false;
+            }
+
         }
+        return true;
 
     }
 

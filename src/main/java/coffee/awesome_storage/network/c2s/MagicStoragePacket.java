@@ -22,8 +22,6 @@ import static coffee.awesome_storage.utils.Util.tryAddItemStackToItemStacks;
 import static coffee.awesome_storage.utils.Util.unionItemStacks;
 
 public record MagicStoragePacket(int id, ItemStack item) implements CustomPacketPayload {
-
-
     public static final Type<MagicStoragePacket> TYPE = new Type<>(space("magic_storage_packet_s2c"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MagicStoragePacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, MagicStoragePacket::id,
@@ -45,7 +43,7 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
                 if(id == 1){
 
                     if(item.getItem() instanceof BlockItem block &&
-                            CraftConfig.ENABLED_RECIPES.containsKey(block.getBlock())
+                            CraftConfig.isEnabledBlock(block.getBlock())
                     ){
                         String block_name = String.valueOf(BuiltInRegistries.BLOCK.getKey(block.getBlock()));
                         if(!entity.getBlock_accessors().contains(block_name)){
@@ -118,6 +116,6 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
                 return;
             }
 
-        }).exceptionally(e -> null);
+        });
     }
 }

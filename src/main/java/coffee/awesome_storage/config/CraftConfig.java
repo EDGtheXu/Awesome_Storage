@@ -1,72 +1,75 @@
 package coffee.awesome_storage.config;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.fml.loading.FMLPaths;
+import net.minecraft.world.level.block.Blocks;
 
-import java.io.File;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import static coffee.awesome_storage.Awesome_storage.MODID;
+public class CraftConfig extends AbstractJsonConfig{
 
-public class CraftConfig {
-    public static Map<Block, RecipeType<Recipe<RecipeInput>>> ENABLED_RECIPES = new HashMap<>();
-
-    public static void loadCraftConfig(){
-        Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve(MODID);
-        Path configFile = CONFIG_PATH.resolve("magic_craft_config.json");
-        File file = configFile.toFile();
-        try {
-            Reader reader;
-            JsonObject json;
-            if (!file.exists()) {
-                CONFIG_PATH.toFile().mkdirs();
-                file.createNewFile();
-                reader = new java.io.FileReader(file);
-                json = new JsonObject();
-
-                json.addProperty("minecraft:crafting_table","minecraft:crafting");
-                json.addProperty("minecraft:furnace","minecraft:smelting");
-                json.addProperty("minecraft:blast_furnace","minecraft:blasting");
-                json.addProperty("minecraft:campfire","minecraft:campfire_cooking");
-                json.addProperty("minecraft:smithing_table","minecraft:smithing");
-                json.addProperty("minecraft:smoker","minecraft:smoking");
-
-
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                Writer writer = new java.io.FileWriter(file);
-                writer.write(gson.toJson(json));
-                writer.close();
-                reader.close();
-            }else{
-                reader = new java.io.FileReader(file);
-                json = GsonHelper.parse(reader);
-            }
-
-            var map = json.asMap();
-            for (var entry : map.entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue().getAsString();
-                ENABLED_RECIPES.put(
-                        BuiltInRegistries.BLOCK.get(ResourceLocation.parse(key)),
-                        (RecipeType<Recipe<RecipeInput>>)BuiltInRegistries.RECIPE_TYPE.get(ResourceLocation.parse(value))
-                );
-            }
-            reader.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public static Map<RecipeType<Recipe<RecipeInput>>,List<Block>> ENABLED_RECIPES = new HashMap<>();
+    private static final List<Block> ENABLED_BLOCKS = new ArrayList<>();
+    public static boolean isEnabledBlock(Block block){
+        return ENABLED_BLOCKS.contains(block);
     }
+    private static final CraftConfig instance = new CraftConfig("magic_craft_config");
+    public static CraftConfig INSTANCE() {return instance;}
+
+    protected CraftConfig(String name) {
+        super(name);
+    }
+    public CraftConfig(JsonObject config){
+        super(config);
+    }
+
+    @Override
+    protected JsonObject defaultConfig() {
+        JsonObject json = new JsonObject();
+        List<RecipeAccess> list = new ArrayList<>();
+        list.add(new RecipeAccess(List.of(
+                BuiltInRegistries.BLOCK.getKey(Blocks.CRAFTING_TABLE)
+        ),
+                BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.CRAFTING)));
+        list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.FURNACE)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.SMELTING)));
+        list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.BLAST_FURNACE)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.BLASTING)));
+        list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.CAMPFIRE)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.CAMPFIRE_COOKING)));
+        list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.SMITHING_TABLE)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.SMITHING)));
+        list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.SMOKER)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.SMOKING)));
+        json.add("enabled_recipes", RecipeAccess.LIST_CODEC.encodeStart(JsonOps.INSTANCE,list).result().get());
+        return json;
+    }
+
+    @Override
+    protected void initConfig(JsonObject json) {
+        var map = RecipeAccess.LIST_CODEC.decode(JsonOps.INSTANCE, json.get("enabled_recipes")).result().get();
+        map.getFirst().stream().forEach(access ->
+                ENABLED_RECIPES.put(
+                        (RecipeType<Recipe<RecipeInput>>) BuiltInRegistries.RECIPE_TYPE.get(access.recipeType),
+                        access.blocks.stream().map(BuiltInRegistries.BLOCK::get).toList()));
+        ENABLED_BLOCKS.addAll(ENABLED_RECIPES.values().stream().flatMap(List::stream).toList());
+
+    }
+
+    public record RecipeAccess(List<ResourceLocation> blocks, ResourceLocation recipeType){
+        public static final Codec<RecipeAccess> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                ResourceLocation.CODEC.listOf().fieldOf("blocks").forGetter(RecipeAccess::blocks),
+                ResourceLocation.CODEC.fieldOf("recipe_type").forGetter(RecipeAccess::recipeType)
+        ).apply(instance, RecipeAccess::new));
+
+        public static final Codec<List<RecipeAccess>> LIST_CODEC = CODEC.listOf();
+
+    }
+
 }

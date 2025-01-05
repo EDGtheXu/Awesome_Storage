@@ -57,18 +57,20 @@ public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID) 
 
                      //step 4: 合成的物品放入存储空间
                     Util.tryAddItemStackToItemStacks(result, entity.getItems());
-                    boolean c = false;
-                    for(ItemStack stack : entity.getItems()){
-                        if(stack.isEmpty()){
-                            c=true;
-                            PacketDistributor.sendToServer(new MagicStoragePacket(0,result));
-                            break;
+                    if(!result.isEmpty()){
+                        //step 5: 现有堆叠不够，放入空物品栏
+                        boolean c = false;
+                        for(ItemStack stack : entity.getItems()){
+                            if(stack.isEmpty()){
+                                c=true;
+                                PacketDistributor.sendToServer(new MagicStoragePacket(0,result.copy()));
+                                break;
+                            }
+                        }
+                        if(!c){
+                            context.player().getInventory().placeItemBackInInventory(result);
                         }
                     }
-                    if(!c){
-                        context.player().getInventory().placeItemBackInInventory(result);
-                    }
-
 
                     // step 5: 更新拥有的物品
                     Util.doCraft(have, ingredients);

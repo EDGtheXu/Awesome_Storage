@@ -43,14 +43,14 @@ public class MagicStorageScreen extends AbstractContainerScreen<MagicStorageMenu
             if (state == 1) {
                 state = 2;
                 this.removeWidget(craftWidget);
-                this.removeWidget(craftWidget.accessWidget);
+//                this.removeWidget(craftWidget.accessWidget);
                 this.addRenderableWidget(storageWidget);
                 switchButton.setMessage(Component.translatable("magic_storage_screen.storage"));
 
             } else {
                 state = 1;
                 this.removeWidget(storageWidget);
-                this.addRenderableWidget(craftWidget.accessWidget);
+//                this.addRenderableWidget(craftWidget.accessWidget);
                 this.addRenderableWidget(craftWidget);
                 switchButton.setMessage(Component.translatable("magic_storage_screen.craft"));
             }
@@ -60,6 +60,7 @@ public class MagicStorageScreen extends AbstractContainerScreen<MagicStorageMenu
         this.addRenderableWidget(storageWidget);
         this.addRenderableWidget(switchButton);
         this.addRenderableWidget(craftWidget.displayWidget);
+        this.addRenderableWidget(craftWidget.accessWidget);
     }
 
     @Override

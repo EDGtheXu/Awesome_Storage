@@ -4,7 +4,7 @@ import coffee.awesome_storage.api.adapter.SmithingRecipeAdapter;
 import coffee.awesome_storage.api.event.RegisterAdapterEvent;
 import coffee.awesome_storage.network.c2s.MagicCraftPacket;
 import coffee.awesome_storage.network.c2s.MagicStoragePacket;
-import coffee.awesome_storage.api.adapter.AdapterManager;
+import coffee.awesome_storage.network.s2c.ConfigSyncPacket;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -13,8 +13,6 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 import static coffee.awesome_storage.Awesome_storage.MODID;
 import static coffee.awesome_storage.api.adapter.AdapterManager.defaultAdapter;
-import static coffee.awesome_storage.config.StorageConfig.loadStorageConfig;
-import static coffee.awesome_storage.config.CraftConfig.loadCraftConfig;
 
 @EventBusSubscriber(modid = MODID, bus = EventBusSubscriber.Bus.MOD)
 public class ModEvent {
@@ -24,15 +22,11 @@ public class ModEvent {
 
         registrar.playToServer(MagicStoragePacket.TYPE, MagicStoragePacket.STREAM_CODEC, MagicStoragePacket::handle);
         registrar.playToServer(MagicCraftPacket.TYPE, MagicCraftPacket.STREAM_CODEC, MagicCraftPacket::handle);
-
-        loadStorageConfig();
-        loadCraftConfig();
-
-        AdapterManager.init();
+        registrar.playToClient(ConfigSyncPacket.TYPE, ConfigSyncPacket.STREAM_CODEC, ConfigSyncPacket::handle);
     }
 
     @SubscribeEvent
-    public static void onConfigReload(RegisterAdapterEvent event) {
+    public static void onRegisterAdapter(RegisterAdapterEvent event) {
         event.register(RecipeType.CRAFTING, defaultAdapter);
         event.register(RecipeType.SMITHING, new SmithingRecipeAdapter<>(RecipeType.SMITHING));
     }

@@ -10,7 +10,6 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
 // Demonstrates how to use Neo's config APIs
@@ -40,11 +39,11 @@ public class Config {
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
-        logDirtBlock = LOG_DIRT_BLOCK.get();
-        magicNumber = MAGIC_NUMBER.get();
-        magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
+//        logDirtBlock = LOG_DIRT_BLOCK.get();
+//        magicNumber = MAGIC_NUMBER.get();
+//        magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
+//        // convert the list of strings into a set of items
+//        items = ITEM_STRINGS.get().stream().map(itemName -> BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemName))).collect(Collectors.toSet());
 
-        // convert the list of strings into a set of items
-        items = ITEM_STRINGS.get().stream().map(itemName -> BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemName))).collect(Collectors.toSet());
     }
 }

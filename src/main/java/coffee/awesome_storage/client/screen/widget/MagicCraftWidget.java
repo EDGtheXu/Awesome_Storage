@@ -71,23 +71,51 @@ public class MagicCraftWidget extends AbstractFloatWidget {
         MagicStorageBlockEntity storage = getStorageEntity(Minecraft.getInstance().player);
         results.clear();
         recipeMap.clear();
-        storage.getBlock_accessors().forEach(s->{
-            Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(s));
-            if(ENABLED_RECIPES.containsKey(block)){
-                RecipeType<?> recipeType = ENABLED_RECIPES.get(block);
-                if(AdapterManager.Adapters.containsKey(recipeType)){
-                    var adapter = AdapterManager.Adapters.get(recipeType);
-                    loadRecipeType(adapter);
-               }
-               else{// 不应该出现这种情况
-                    Awesome_storage.LOGGER.error("exception: recipeType not found, replace with CommonRecipeAdapter");
-                    var adapter2 = new CommonRecipeAdapter<>(ENABLED_RECIPES.get(block));
-//                    if(!AdapterManager.Adapters.containsKey(recipeType)){
-//                        AdapterManager.Adapters.put(recipeType,adapter2);
-//                    }
-                    loadRecipeType(adapter2);
+
+        List<Block> accessors = storage.getBlock_accessors().stream().map(s->BuiltInRegistries.BLOCK.get(ResourceLocation.parse(s))).toList();
+
+        for(var Entry : BuiltInRegistries.RECIPE_TYPE.entrySet()){
+            RecipeType recipeType = Entry.getValue();
+            if(ENABLED_RECIPES.containsKey(recipeType)){
+
+                List<Block> require = ENABLED_RECIPES.get(recipeType);
+                boolean accept = true;
+                for(var block : require){
+                    if(!accessors.contains(block)){
+                        accept = false;
+                        break;
+                    }
+                }
+                if(accept){
+                    if(AdapterManager.Adapters.containsKey(recipeType)){
+                        var adapter = AdapterManager.Adapters.get(recipeType);
+                        loadRecipeType(adapter);
+                    }else{// 不应该出现这种情况
+                        Awesome_storage.LOGGER.error("exception: recipeType not found, replace with CommonRecipeAdapter");
+                        var adapter2 = new CommonRecipeAdapter(recipeType);
+                        loadRecipeType((AbstractMagicCraftRecipeAdapter<RecipeInput, Recipe<RecipeInput>>) adapter2);
+                    }
                 }
             }
+        }
+
+        storage.getBlock_accessors().forEach(s->{
+            Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(s));
+//            if(ENABLED_RECIPES.containsKey(block)){
+//                RecipeType<?> recipeType = ENABLED_RECIPES.get(block);
+//                if(AdapterManager.Adapters.containsKey(recipeType)){
+//                    var adapter = AdapterManager.Adapters.get(recipeType);
+//                    loadRecipeType(adapter);
+//               }
+//               else{// 不应该出现这种情况
+//                    Awesome_storage.LOGGER.error("exception: recipeType not found, replace with CommonRecipeAdapter");
+//                    var adapter2 = new CommonRecipeAdapter<>(ENABLED_RECIPES.get(block));
+////                    if(!AdapterManager.Adapters.containsKey(recipeType)){
+////                        AdapterManager.Adapters.put(recipeType,adapter2);
+////                    }
+//                    loadRecipeType(adapter2);
+//                }
+//            }
         });
     }
 
