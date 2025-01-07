@@ -45,7 +45,7 @@ public class CraftConfig extends AbstractJsonConfig{
         list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.FURNACE)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.SMELTING)));
         list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.BLAST_FURNACE)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.BLASTING)));
         list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.CAMPFIRE)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.CAMPFIRE_COOKING)));
-        list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.SMITHING_TABLE)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.SMITHING)));
+//        list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.SMITHING_TABLE)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.SMITHING)));
         list.add(new RecipeAccess(List.of(BuiltInRegistries.BLOCK.getKey(Blocks.SMOKER)), BuiltInRegistries.RECIPE_TYPE.getKey(RecipeType.SMOKING)));
         json.add("enabled_recipes", RecipeAccess.LIST_CODEC.encodeStart(JsonOps.INSTANCE,list).result().get());
         return json;

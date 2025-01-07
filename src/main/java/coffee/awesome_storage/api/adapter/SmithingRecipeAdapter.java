@@ -19,11 +19,21 @@ public class SmithingRecipeAdapter<R extends SmithingRecipe> extends AbstractMag
     @Override
     public ItemStack getResult(RecipeHolder<R> recipe){
         ItemStack res = recipe.value().getResultItem(Minecraft.getInstance().level.registryAccess());
-
-        if(!res.isEmpty()){
-            return res;
+//
+//        if(!res.isEmpty()){
+//            return res;
+//        }
+//        return ItemStack.EMPTY;
+        if(recipe.value() instanceof SmithingTransformRecipe transform){
+            ItemStack itemstack = transform.base.getItems()[0].transmuteCopy(res.getItem(),res.getCount());
+            itemstack.applyComponents(res.getComponentsPatch());
+            return itemstack;
         }
-        return ItemStack.EMPTY;
+        else if(recipe.value() instanceof SmithingTrimRecipe trim){
+
+            return ItemStack.EMPTY;
+        }
+        return res;
     }
 
     @Override
