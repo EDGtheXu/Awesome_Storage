@@ -5,26 +5,23 @@ import coffee.awesome_storage.menu.MagicStorageMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
-import net.minecraft.client.gui.components.AbstractContainerWidget;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiPredicate;
 
-import static coffee.awesome_storage.utils.Util.*;
+import static coffee.awesome_storage.utils.Util.renderItemStack;
 import static net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.renderSlotHighlight;
 
 @OnlyIn(Dist.CLIENT)
-public abstract class AbstractFloatWidget extends AbstractContainerWidget {
+public abstract class AbstractFloatWidget extends AbstractWidget {
 
     protected final MagicStorageMenu menu;
     protected final MagicStorageScreen screen;
@@ -180,7 +177,7 @@ public abstract class AbstractFloatWidget extends AbstractContainerWidget {
                         renderSlotHighlight(guiGraphics, x, y, internal);
 //                        guiGraphics.renderTooltip(Minecraft.getInstance().font, hoverIt, mouseX, mouseY);
 
-                        List<Component> tooltip = hoverIt.getTooltipLines(Item.TooltipContext.of(Minecraft.getInstance().level), Minecraft.getInstance().player, TooltipFlag.NORMAL);
+                        List<Component> tooltip = hoverIt.getTooltipLines( Minecraft.getInstance().player, TooltipFlag.NORMAL);
 
                         appendHoverItemTooltip(tooltip);
 //                        tooltip.add(Component.literal("missing").withColor(0XFF0000));
@@ -217,12 +214,5 @@ public abstract class AbstractFloatWidget extends AbstractContainerWidget {
     protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
 
     }
-
-    @Override
-    public List<AbstractWidget> children() {
-        return List.of(lastBt,nextBt);
-    }
-
-
 
 }

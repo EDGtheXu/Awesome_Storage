@@ -1,12 +1,13 @@
 package coffee.awesome_storage.block;
 
-import coffee.awesome_storage.mix_util.IPlayer;
 import coffee.awesome_storage.config.StorageConfig;
+import coffee.awesome_storage.mix_util.IPlayer;
 import coffee.awesome_storage.registry.ModBlocks;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.*;
+import net.minecraft.world.Containers;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -22,38 +23,29 @@ import org.jetbrains.annotations.NotNull;
 
 public class MagicStorageBlock extends BaseEntityBlock  {
 
-
     public MagicStorageBlock(Properties properties) {
         super(properties);
     }
 
-    public static final MapCodec<MagicStorageBlock> CODEC = simpleCodec(MagicStorageBlock::new);
-
-    @Override
-    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
-
-
-//    @Override
-//    public @Nullable MenuProvider getMenuProvider(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos) {
-//        return new SimpleMenuProvider((pContainerId, pPlayerInventory, pPlayer) -> new MagicStorageMenu(pContainerId, pPlayerInventory), CONTAINER_TITLE);
-//    }
 
     @Override
     public <T extends BlockEntity> BlockEntityTicker getTicker(@NotNull Level pLevel, @NotNull BlockState pState, @NotNull BlockEntityType<T> pBlockEntityType) {
         return pLevel.isClientSide ? null : createTickerHelper(pBlockEntityType, ModBlocks.MAGIC_STORAGE_BLOCK_ENTITY.get(), MagicStorageBlockEntity::serverTick);
     }
 
+
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand pHand, BlockHitResult pHit) {
         if(state.hasBlockEntity()){
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if(blockEntity instanceof MagicStorageBlockEntity magic){
-                // 存储升级
+                // 存储升级      public InteractionResult use(Level p_60665_, Player p_60666_, InteractionHand p_60667_, BlockHitResult p_60668_) {
+                //         return this.getBlock().use(this.asState(), p_60665_, p_60668_.getBlockPos(), p_60666_, p_60667_, p_60668_);
+                //      }
                 int lvl = magic.lvl;
                 if(StorageConfig.getUpgradeLine().containsKey(lvl+1)){
                     var upgrade = StorageConfig.getUpgradeLine().get(lvl+1);
+                    ItemStack stack = player.getItemInHand(pHand);
                     if(upgrade.material().is(stack.getItem())&& stack.getCount()>=upgrade.material().getCount()){
                         magic.addContainerSize(upgrade.extend());
                         magic.lvl++;
@@ -61,7 +53,7 @@ public class MagicStorageBlock extends BaseEntityBlock  {
                         if(level.isClientSide)
                             player.sendSystemMessage(Component.literal("Upgrade added!"));
                         stack.shrink(upgrade.material().getCount());
-                        return ItemInteractionResult.SUCCESS;
+                        return InteractionResult.SUCCESS;
                     }
                 }
                 // 合成升级
@@ -73,15 +65,15 @@ public class MagicStorageBlock extends BaseEntityBlock  {
                     player.openMenu(state.getMenuProvider(level, pos));
                 }
             }
-            return ItemInteractionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return InteractionResult.PASS;
 
     }
 
 
     @Override
-    protected RenderShape getRenderShape(@NotNull BlockState state) {
+    public RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.MODEL;
     }
 
@@ -91,12 +83,12 @@ public class MagicStorageBlock extends BaseEntityBlock  {
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
 
         if (state.hasBlockEntity() && !state.is(newState.getBlock())) {
             MagicStorageBlockEntity blockEntity = (MagicStorageBlockEntity) level.getBlockEntity(pos);
             if (blockEntity != null) {
-                Containers.dropContentsOnDestroy(state, newState, level, pos);
+                Containers.dropContents(level, pos,blockEntity);
                 int lvl = blockEntity.lvl;
 
                 for(int i=1;i<=lvl;i++){

@@ -2,20 +2,23 @@ package coffee.awesome_storage.api.adapter;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeType;
 
-public class CommonRecipeAdapter<I extends RecipeInput,R extends Recipe<I>> extends  AbstractMagicCraftRecipeAdapter<I,R> {
+public class CommonRecipeAdapter<C extends Container,R extends Recipe<C>> extends  AbstractMagicCraftRecipeAdapter<C,R> {
 
     public CommonRecipeAdapter(RecipeType<R> recipeType){
         super(recipeType);
 
     }
 
-    public ItemStack getResult(RecipeHolder<R> recipe){
+    public ItemStack getResult(Recipe<C> recipe){
 
-        ItemStack res = recipe.value().getResultItem(Minecraft.getInstance().level.registryAccess());
-        if(!res.isEmpty() && !recipe.value().getIngredients().isEmpty()){
+        ItemStack res = recipe.getResultItem(Minecraft.getInstance().level.registryAccess());
+        if(!res.isEmpty() && !recipe.getIngredients().isEmpty()){
             return res;
         }
         return ItemStack.EMPTY;
@@ -23,8 +26,8 @@ public class CommonRecipeAdapter<I extends RecipeInput,R extends Recipe<I>> exte
     }
 
     @Override
-    public NonNullList<Ingredient> getIngredients(RecipeHolder<R> recipe){
-        return recipe.value().getIngredients();
+    public NonNullList<Ingredient> getIngredients(Recipe<C> recipe){
+        return recipe.getIngredients();
     }
 
 }

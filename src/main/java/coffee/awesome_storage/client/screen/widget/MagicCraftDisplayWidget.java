@@ -1,6 +1,7 @@
 package coffee.awesome_storage.client.screen.widget;
 
 import coffee.awesome_storage.Awesome_storage;
+import coffee.awesome_storage.network.NetworkHandler;
 import coffee.awesome_storage.network.c2s.MagicCraftPacket;
 import coffee.awesome_storage.utils.Util;
 import net.minecraft.client.Minecraft;
@@ -8,16 +9,13 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeInput;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -76,8 +74,7 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
                 isClicked = true;
             }
             this.playDownSound(Minecraft.getInstance().getSoundManager());
-
-            PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id(),BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
+            NetworkHandler.CHANNEL.sendToServer(new MagicCraftPacket(parent.selectedRecipe.getId(), BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
             return true;
         }
        return false;
@@ -109,7 +106,7 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
     @Override
     protected void appendHoverItemTooltip(List<Component> tooltip){
         if(!parent.haveIngredients.containsKey(hoverIt.getItem()) || parent.haveIngredients.containsKey(hoverIt.getItem()) && parent.haveIngredients.get(hoverIt.getItem())<hoverIt.getCount())
-            tooltip.add(Component.literal("missing  x "+(hoverIt.getCount() - (parent.haveIngredients.getOrDefault(hoverIt.getItem(), 0)))).withColor(0XFF0000));
+            tooltip.add(Component.literal("missing  x "+(hoverIt.getCount() - (parent.haveIngredients.getOrDefault(hoverIt.getItem(), 0)))).setStyle(Style.EMPTY.withColor(0XFF0000)));
     }
 
     @Override
@@ -126,7 +123,7 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
                 if(lastClickTime + itnl < System.currentTimeMillis()){
                     clickCount++;
                     Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1F,0.03f));
-                    PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id(),BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
+                    NetworkHandler.CHANNEL.sendToServer(new MagicCraftPacket(parent.selectedRecipe.getId(), BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
                     parent.refreshItems();
                     lastClickTime = System.currentTimeMillis();
                 }
@@ -139,7 +136,8 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
         int offsetX = this.cachedItems.size() * internal + 30 + left;
         int offsetY = top;
 
-        RecipeHolder<?> recipe = parent.selectedRecipe;
+        Recipe recipe = parent.selectedRecipe;
+
         if(recipe!=null){
             ItemStack output = parent.selectedItem;
             renderItemStack(guiGraphics, output, offsetX, offsetY, false);
@@ -148,11 +146,11 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
             isHoveredResult = mouseX >= offsetX && mouseX <= offsetX + 16 && mouseY >= offsetY && mouseY <= offsetY + 16;
             if(isHoveredResult && !output.isEmpty()){
                 renderSlotHighlight(guiGraphics, offsetX, offsetY, internal);
-                List<Component> tooltip = output.getTooltipLines(Item.TooltipContext.of(Minecraft.getInstance().level), Minecraft.getInstance().player, TooltipFlag.NORMAL);
-                if(!Util.canCraftSimple(new HashMap<>(parent.haveIngredients),parent.selectedAdapter.getIngredients((RecipeHolder<Recipe<RecipeInput>>) recipe)))
-                    tooltip.add(Component.translatable("magic_storage.missing_ingredient").withColor(0XFF0000));
+                List<Component> tooltip = output.getTooltipLines( Minecraft.getInstance().player, TooltipFlag.NORMAL);
+                if(!Util.canCraftSimple(new HashMap<>(parent.haveIngredients),parent.selectedAdapter.getIngredients(recipe)))
+                    tooltip.add(Component.translatable("magic_storage.missing_ingredient").withStyle(Style.EMPTY.withColor(0XFF0000)));
                 else
-                    tooltip.add(Component.translatable("magic_storage.can_craft").withColor(0X00FF00));
+                    tooltip.add(Component.translatable("magic_storage.can_craft").withStyle(Style.EMPTY.withColor(0X00FF00)));
                 guiGraphics.renderTooltip(Minecraft.getInstance().font, tooltip,
                         output.getTooltipImage(),mouseX, mouseY);
             }

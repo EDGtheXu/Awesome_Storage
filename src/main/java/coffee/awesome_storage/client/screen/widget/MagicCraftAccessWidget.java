@@ -2,6 +2,7 @@ package coffee.awesome_storage.client.screen.widget;
 
 import coffee.awesome_storage.block.MagicStorageBlockEntity;
 import coffee.awesome_storage.config.CraftConfig;
+import coffee.awesome_storage.network.NetworkHandler;
 import coffee.awesome_storage.network.c2s.MagicStoragePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -11,7 +12,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,7 @@ public class MagicCraftAccessWidget extends AbstractFloatWidget{
         MagicStorageBlockEntity storage = getStorageEntity(Minecraft.getInstance().player);
         itemStacks.clear();
         for(String str : storage.getBlock_accessors()){
-            Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(str));
+            Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.tryParse(str));
             itemStacks.add(new ItemStack(block));
         }
         return itemStacks;
@@ -60,13 +60,14 @@ public class MagicCraftAccessWidget extends AbstractFloatWidget{
             if(!menu.getCarried().isEmpty()){// add work block
                 if(menu.getCarried().getItem() instanceof BlockItem block &&
                         CraftConfig.isEnabledBlock(block.getBlock())){
-                    PacketDistributor.sendToServer(new MagicStoragePacket(1,menu.getCarried()));
+                    NetworkHandler.CHANNEL.sendToServer(new MagicStoragePacket(1,menu.getCarried()));
                     parent.reloadingTime = 0;
                 }
                 return true;
             }
             if(hoverIt != null){
-                PacketDistributor.sendToServer(new MagicStoragePacket(20000 + hoverIndex,hoverIt));
+
+                NetworkHandler.CHANNEL.sendToServer(new MagicStoragePacket(20000 + hoverIndex,hoverIt));
                 parent.reloadingTime = 0;
             }
 

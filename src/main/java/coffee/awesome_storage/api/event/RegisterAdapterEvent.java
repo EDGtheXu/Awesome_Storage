@@ -3,8 +3,8 @@ package coffee.awesome_storage.api.event;
 import coffee.awesome_storage.api.adapter.AbstractMagicCraftRecipeAdapter;
 import coffee.awesome_storage.api.adapter.AdapterManager;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.neoforged.bus.api.Event;
-import net.neoforged.fml.event.IModBusEvent;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.fml.event.IModBusEvent;
 
 
 public class RegisterAdapterEvent extends Event implements IModBusEvent {

@@ -4,14 +4,14 @@ import coffee.awesome_storage.client.screen.widget.MagicCraftWidget;
 import coffee.awesome_storage.client.screen.widget.MagicStorageWidget;
 import coffee.awesome_storage.menu.MagicStorageMenu;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractContainerWidget;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import static coffee.awesome_storage.Awesome_storage.space;
@@ -22,8 +22,10 @@ public class MagicStorageScreen extends AbstractContainerScreen<MagicStorageMenu
 
     private Button switchButton;
     int state;
+    long clickTimes = 0; // 延迟刷新
+
     private MagicCraftWidget craftWidget;
-    private AbstractContainerWidget storageWidget;
+    private AbstractWidget storageWidget;
 
     public MagicStorageScreen(MagicStorageMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
@@ -68,20 +70,25 @@ public class MagicStorageScreen extends AbstractContainerScreen<MagicStorageMenu
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         renderTooltip(pGuiGraphics, pMouseX, pMouseY);
 
-
+        if(clickTimes < System.currentTimeMillis()) {
+            craftWidget.refreshItems();
+            clickTimes = System.currentTimeMillis() *2;
+        }
     }
+    private static final ResourceLocation CONTAINER_BACKGROUND = new ResourceLocation("textures/gui/container/generic_54.png");
 
     @Override
     protected void renderBg(@NotNull GuiGraphics pGuiGraphics, float pPartialTick, int pMouseX, int pMouseY) {
+        this.renderBackground(pGuiGraphics);
         pGuiGraphics.blit(BACKGROUND, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
     }
 
     @Override
     public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
-
+        clickTimes = System.currentTimeMillis() + 100;
         for(var widget : this.children()){
-            if(widget instanceof AbstractContainerWidget widget1){
+            if(widget instanceof AbstractWidget widget1){
                 if(widget1.isHovered() && widget1.mouseClicked(pMouseX, pMouseY, pButton))
                     return true;
             }

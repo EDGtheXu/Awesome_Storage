@@ -1,6 +1,6 @@
 package coffee.awesome_storage.datagen.lang;
 import net.minecraft.data.PackOutput;
-import net.neoforged.neoforge.common.data.LanguageProvider;
+import net.minecraftforge.common.data.LanguageProvider;
 
 import static coffee.awesome_storage.Awesome_storage.MODID;
 import static coffee.awesome_storage.Awesome_storage.chineseProviders;

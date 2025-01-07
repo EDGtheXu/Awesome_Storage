@@ -1,5 +1,6 @@
 package coffee.awesome_storage.menu;
 
+import coffee.awesome_storage.network.NetworkHandler;
 import coffee.awesome_storage.network.c2s.MagicStoragePacket;
 import coffee.awesome_storage.registry.ModMenus;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,7 +10,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 public class MagicStorageMenu extends AbstractContainerMenu {
@@ -80,7 +80,7 @@ public class MagicStorageMenu extends AbstractContainerMenu {
             this.setCarried(itemStack);
             slots.get(index).set(ItemStack.EMPTY);
             this.broadcastChanges();
-            PacketDistributor.sendToServer(new MagicStoragePacket(0, itemStack));
+            NetworkHandler.CHANNEL.sendToServer(new MagicStoragePacket(0, itemStack));
         }
 
 //        itemStack.setCount(0);

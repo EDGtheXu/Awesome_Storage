@@ -1,45 +1,53 @@
 package coffee.awesome_storage.network.c2s;
 
-import coffee.awesome_storage.block.MagicStorageBlockEntity;
 import coffee.awesome_storage.api.adapter.AdapterManager;
+import coffee.awesome_storage.block.MagicStorageBlockEntity;
+import coffee.awesome_storage.network.NetworkHandler;
 import coffee.awesome_storage.utils.Util;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.*;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraftforge.network.NetworkEvent;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Supplier;
 
-import static coffee.awesome_storage.Awesome_storage.space;
 import static coffee.awesome_storage.utils.Util.getStorageEntity;
+import static net.minecraftforge.event.ForgeEventFactory.firePlayerCraftingEvent;
 
-public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID)  implements CustomPacketPayload {
+public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID){
+    
+    public static void encode(MagicCraftPacket packet, FriendlyByteBuf friendlyByteBuf) {
+        friendlyByteBuf.writeResourceLocation(packet.id());
+        friendlyByteBuf.writeResourceLocation(packet.adapterID());
+    }
 
-
-    public static final Type<MagicCraftPacket> TYPE = new Type<>(space("magic_craft_packet_s2c"));
-    public static final StreamCodec<ByteBuf, MagicCraftPacket> STREAM_CODEC = StreamCodec.composite(
-            ResourceLocation.STREAM_CODEC,MagicCraftPacket::id,
-            ResourceLocation.STREAM_CODEC,MagicCraftPacket::adapterID,
-            MagicCraftPacket::new
-    ).cast();
-
-    public void handle(IPayloadContext context) {
+    public static MagicCraftPacket decode(FriendlyByteBuf friendlyByteBuf) {
+        return new MagicCraftPacket(friendlyByteBuf.readResourceLocation(), friendlyByteBuf.readResourceLocation());
+    }
+    
+    public static void handle(MagicCraftPacket packet, Supplier<NetworkEvent.Context> ctx) {
+        NetworkEvent.Context context = ctx.get();
         context.enqueueWork(() -> {
-            var recipe = context.player().level().getRecipeManager().byKey(id);
+            ResourceLocation id = packet.id();
+            ResourceLocation adapterID = packet.adapterID();
+            Player player = context.getSender();
+            var recipe = player.level().getRecipeManager().byKey(id);
             if(recipe.isPresent()){
                 var adapter = AdapterManager.Adapters.get(BuiltInRegistries.RECIPE_TYPE.get(adapterID));
-                NonNullList<Ingredient> ingredients = adapter.getIngredients((RecipeHolder<Recipe<RecipeInput>>) recipe.get());
-                MagicStorageBlockEntity entity =  getStorageEntity(context.player());
+                NonNullList<Ingredient> ingredients = adapter.getIngredients((Recipe<Container>) recipe.get());
+                MagicStorageBlockEntity entity =  getStorageEntity(player);
 
                 // step 1: 获取拥有的物品
-                List<ItemStack> have = new ArrayList<>(Util.getStorageItems(context.player()));
+                List<ItemStack> have = new ArrayList<>(Util.getStorageItems(player));
 
                 // step 2: 检查是否可以合成
                 boolean canCraft = Util.canCraft(have, ingredients);
@@ -47,10 +55,10 @@ public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID) 
                 if (canCraft) {
 
                     // step 3: 获取合成的物品
-                    context.player().awardRecipes(Collections.singleton(recipe.get()));
-                    ItemStack result = recipe.get().value().getResultItem(context.player().level().registryAccess()).copy();
-                    result.onCraftedBy(context.player().level(), context.player(), result.getCount());
-                    net.neoforged.neoforge.event.EventHooks.firePlayerCraftingEvent(context.player(), result, entity);
+                    player.awardRecipes(Collections.singleton(recipe.get()));
+                    ItemStack result = recipe.get().getResultItem(player.level().registryAccess()).copy();
+                    result.onCraftedBy(player.level(), player, result.getCount());
+                    firePlayerCraftingEvent(player, result, entity);
 
                      //step 4: 合成的物品放入存储空间
                     Util.tryAddItemStackToItemStacks(result, entity.getItems());
@@ -60,12 +68,12 @@ public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID) 
                         for(ItemStack stack : entity.getItems()){
                             if(stack.isEmpty()){
                                 c=true;
-                                PacketDistributor.sendToServer(new MagicStoragePacket(0,result.copy()));
+                                NetworkHandler.CHANNEL.sendToServer(new MagicStoragePacket(0,result.copy()));
                                 break;
                             }
                         }
                         if(!c){
-                            context.player().getInventory().placeItemBackInInventory(result);
+                            player.getInventory().placeItemBackInInventory(result);
                         }
                     }
 
@@ -82,11 +90,6 @@ public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID) 
                 }
             }
         });
-    }
-
-    @Override
-    public @NotNull Type<MagicCraftPacket> type() {
-        return TYPE;
     }
 
 }

@@ -6,8 +6,8 @@ import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -19,7 +19,7 @@ import java.util.Map;
 
 public class CraftConfig extends AbstractJsonConfig{
 
-    public static Map<RecipeType<Recipe<RecipeInput>>,List<Block>> ENABLED_RECIPES = new HashMap<>();
+    public static Map<RecipeType<Recipe<Container>>,List<Block>> ENABLED_RECIPES = new HashMap<>();
     private static final List<Block> ENABLED_BLOCKS = new ArrayList<>();
     public static boolean isEnabledBlock(Block block){
         return ENABLED_BLOCKS.contains(block);
@@ -56,7 +56,7 @@ public class CraftConfig extends AbstractJsonConfig{
         var map = RecipeAccess.LIST_CODEC.decode(JsonOps.INSTANCE, json.get("enabled_recipes")).result().get();
         map.getFirst().stream().forEach(access ->
                 ENABLED_RECIPES.put(
-                        (RecipeType<Recipe<RecipeInput>>) BuiltInRegistries.RECIPE_TYPE.get(access.recipeType),
+                        (RecipeType<Recipe<Container>>) BuiltInRegistries.RECIPE_TYPE.get(access.recipeType),
                         access.blocks.stream().map(BuiltInRegistries.BLOCK::get).toList()));
         ENABLED_BLOCKS.addAll(ENABLED_RECIPES.values().stream().flatMap(List::stream).toList());
 

@@ -3,7 +3,7 @@ package coffee.awesome_storage.config;
 import com.google.gson.*;
 import com.mojang.serialization.DataResult;
 import net.minecraft.util.GsonHelper;
-import net.neoforged.fml.loading.FMLPaths;
+import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.io.File;
 import java.io.Reader;
@@ -72,7 +72,9 @@ public abstract class AbstractJsonConfig {
 
             reader.close();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            initConfig(defaultConfig());
+
+//            throw new RuntimeException(e);
         }
     }
 

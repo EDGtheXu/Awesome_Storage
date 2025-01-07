@@ -3,15 +3,15 @@ package coffee.awesome_storage.client.screen.widget;
 import coffee.awesome_storage.block.MagicStorageBlockEntity;
 import coffee.awesome_storage.client.screen.MagicStorageScreen;
 import coffee.awesome_storage.config.StorageConfig;
+import coffee.awesome_storage.network.NetworkHandler;
 import coffee.awesome_storage.network.c2s.MagicStoragePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
 
@@ -20,6 +20,7 @@ import static coffee.awesome_storage.utils.Util.*;
 @OnlyIn(Dist.CLIENT)
 public class MagicStorageWidget extends AbstractFloatWidget {
     MagicStorageBlockEntity storageEntity;
+
     public MagicStorageWidget(MagicStorageScreen screen, int x, int y, int width, int height, Component message) {
         super(screen, x, y, width, height, message);
         this.storageEntity = getStorageEntity(Minecraft.getInstance().player);
@@ -59,17 +60,19 @@ public class MagicStorageWidget extends AbstractFloatWidget {
 
     @Override
     public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
+
         // 取
         if(screen.getMenu().getCarried().isEmpty()) {
             if (hoverIt != null) {
-                PacketDistributor.sendToServer(new MagicStoragePacket(hoverIndex + 10000, new ItemStack(Items.WOODEN_AXE)));
+                NetworkHandler.CHANNEL.sendToServer(new MagicStoragePacket(hoverIndex + 10000, new ItemStack(Items.WOODEN_AXE)));
                 return true;
             }
         }
         // 存
         else{
             if(this.isHovered){
-                PacketDistributor.sendToServer(new MagicStoragePacket(0, screen.getMenu().getCarried()));
+
+                NetworkHandler.CHANNEL.sendToServer(new MagicStoragePacket(0, screen.getMenu().getCarried()));
                 return true;
             }
         }

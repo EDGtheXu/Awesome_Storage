@@ -1,6 +1,6 @@
 package coffee.awesome_storage.config;
 
-import com.google.gson.*;
+import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

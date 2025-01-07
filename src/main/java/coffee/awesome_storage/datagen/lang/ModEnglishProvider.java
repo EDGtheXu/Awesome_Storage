@@ -1,7 +1,7 @@
 package coffee.awesome_storage.datagen.lang;
 
 import net.minecraft.data.PackOutput;
-import net.neoforged.neoforge.common.data.LanguageProvider;
+import net.minecraftforge.common.data.LanguageProvider;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;

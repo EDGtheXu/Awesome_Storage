@@ -3,7 +3,6 @@ package coffee.awesome_storage.block;
 import coffee.awesome_storage.menu.MagicStorageMenu;
 import coffee.awesome_storage.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -16,6 +15,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
@@ -83,12 +83,12 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
     }
 
     @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookupProvider) {
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
         this.max_size = tag.getInt("max_size");
         this.lvl = tag.getInt("lvl");
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag, this.items, lookupProvider);
+        ContainerHelper.loadAllItems(tag, this.items);
 
 
         if (tag.contains("BlockAccessors", 9)) {
@@ -102,13 +102,16 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
 
     }
 
+
+
+
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         max_size = tag.getInt("max_size");
         lvl = tag.getInt("lvl");
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag, this.items, registries);
+        ContainerHelper.loadAllItems(tag, this.items);
 
 
 
@@ -123,11 +126,11 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag();
         tag.putInt("max_size", max_size);
         tag.putInt("lvl", lvl);
-        ContainerHelper.saveAllItems(tag, this.items, registries);
+        ContainerHelper.saveAllItems(tag, this.items);
 
         ListTag listTag1 = new ListTag();
         for (String resource : block_accessors) {
@@ -141,11 +144,11 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
 
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         tag.putInt("max_size", max_size);
         tag.putInt("lvl", lvl);
-        ContainerHelper.saveAllItems(tag, this.items, registries);
+        ContainerHelper.saveAllItems(tag, this.items);
 
         ListTag listTag1 = new ListTag();
         for (String resource : block_accessors) {
@@ -160,7 +163,7 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         return CONTAINER_TITLE;
     }
 
-    @Override
+
     public NonNullList<ItemStack> getItems() {
         setChanged();
         if(items.size() != getContainerSize()){
@@ -188,7 +191,6 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         setChanged();
     }
 
-    @Override
     public void setItems(NonNullList<ItemStack> nonNullList) {
         if(items!= nonNullList) {
             setChanged();
@@ -208,15 +210,20 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
     @Override
     public void setItem(int index, ItemStack stack) {
         ItemStack itemstack = getItem(index);
-        boolean flag = !stack.isEmpty() && ItemStack.isSameItemSameComponents(itemstack, stack);
+        boolean flag = !stack.isEmpty() && ItemStack.isSameItemSameTags(itemstack, stack);
         getItems().set(index, stack);
-        stack.limitSize(getMaxStackSize(stack));
         if (index < max_size && !flag) {
             setChanged();
             level.sendBlockUpdated(this.getBlockPos(), level.getBlockState(this.getBlockPos()), level.getBlockState(this.getBlockPos()), 3);
         }
 
     }
+
+    @Override
+    public boolean stillValid(Player p_18946_) {
+        return true;
+    }
+
     @Override
     protected AbstractContainerMenu createMenu(int id, Inventory inventory) {
         return new MagicStorageMenu(id, inventory, this,this.dataAccess);
@@ -227,6 +234,27 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         return max_size;
     }
 
+
+    @Override
+    public boolean isEmpty() {
+        return false;
+    }
+
+    @Override
+    public ItemStack getItem(int i) {
+        return getItems().get(i);
+    }
+
+    @Override
+    public ItemStack removeItem(int p_18942_, int p_18943_) {
+        return null;
+    }
+
+    @Override
+    public ItemStack removeItemNoUpdate(int p_18951_) {
+        return null;
+    }
+
     public void addContainerSize(int size ) {
         this.max_size += size;
         setChanged();
@@ -235,5 +263,10 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
 
     public List<String> getBlock_accessors() {
         return block_accessors;
+    }
+
+    @Override
+    public void clearContent() {
+
     }
 }
