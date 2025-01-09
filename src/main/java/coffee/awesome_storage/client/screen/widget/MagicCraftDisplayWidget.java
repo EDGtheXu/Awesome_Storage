@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.BiPredicate;
 
+import static coffee.awesome_storage.utils.Util.getStorageEntity;
 import static coffee.awesome_storage.utils.Util.renderItemStack;
 import static net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.renderSlotHighlight;
 
@@ -76,8 +77,8 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
                 isClicked = true;
             }
             this.playDownSound(Minecraft.getInstance().getSoundManager());
-
             PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id(),BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
+            parent.refreshItems();
             return true;
         }
        return false;
@@ -127,6 +128,7 @@ public class MagicCraftDisplayWidget extends AbstractFloatWidget {
                     clickCount++;
                     Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1F,0.03f));
                     PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id(),BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
+                    Util.getStorageEntity(Minecraft.getInstance().player).setChanged();
                     parent.refreshItems();
                     lastClickTime = System.currentTimeMillis();
                 }

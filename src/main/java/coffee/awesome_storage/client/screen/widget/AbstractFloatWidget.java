@@ -125,8 +125,14 @@ public abstract class AbstractFloatWidget extends AbstractContainerWidget {
 
     @Override
     protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-
+        if(menu.isDirty()){
+            this.menu.setDirty(false);
+        }
         List<ItemStack> items = getItems();
+        if(items == null) {
+            guiGraphics.drawString(Minecraft.getInstance().font, "Too Remote", this.getX() + this.width / 2 , this.getY() + this.height / 2 , 0xffffff);
+            return;
+        }
 
         lineCount = width / internal;
         pageCount = lineCount * rowCount;

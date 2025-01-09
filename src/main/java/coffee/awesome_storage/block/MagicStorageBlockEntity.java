@@ -1,7 +1,11 @@
 package coffee.awesome_storage.block;
 
 import coffee.awesome_storage.menu.MagicStorageMenu;
+import coffee.awesome_storage.network.s2c.BlockPosSyncPacket;
+import coffee.awesome_storage.network.s2c.ChunkPacket;
 import coffee.awesome_storage.registry.ModBlocks;
+import coffee.awesome_storage.registry.ModDataComponent;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -14,8 +18,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
@@ -23,9 +31,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
     private static final Component CONTAINER_TITLE = Component.translatable("container.awesome_storage.magic_storage");
@@ -41,6 +53,7 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
 //    public int block_accessor_count = 10;
 //    private NonNullList<ItemStack> blockAccessors;
 
+    boolean fake = false;
 
     public MagicStorageBlockEntity(BlockEntityType<MagicStorageBlockEntity> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -98,8 +111,11 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
                 this.block_accessors.add(tag1.getAsString());
             }
         }
+    }
 
-
+    @Override
+    public boolean stillValid(Player player) {
+        return true;
     }
 
     @Override
@@ -109,6 +125,7 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         lvl = tag.getInt("lvl");
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
         ContainerHelper.loadAllItems(tag, this.items, registries);
+
 
 
 
@@ -141,7 +158,7 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
 
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putInt("max_size", max_size);
         tag.putInt("lvl", lvl);
@@ -162,8 +179,9 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
 
     @Override
     public NonNullList<ItemStack> getItems() {
-        setChanged();
+//        setChanged();
         if(items.size() != getContainerSize()){
+            setChanged();
             NonNullList<ItemStack> filledItems = NonNullList.withSize(getContainerSize(), ItemStack.EMPTY);
             for (int i = 0; i < items.size() && i < getContainerSize(); i++) {
                 filledItems.set(i, items.get(i));
@@ -185,7 +203,6 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
             // 如果两者都为空或都不为空，按名称排序
             return item1.getDisplayName().getString().compareTo(item2.getDisplayName().getString());
         });
-        setChanged();
     }
 
     @Override
@@ -196,6 +213,8 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         }
         items = nonNullList;
         sortItems();
+
+
     }
     public void setItems(List<ItemStack> items) {
         NonNullList<ItemStack> nonNullItems = NonNullList.withSize(getItems().size(), ItemStack.EMPTY);
@@ -204,6 +223,12 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
         }
         setItems(nonNullItems);
     }
+
+//    public void syncFromRemote(){
+//        if(fake && (level==null || level.isClientSide())){
+//            PacketDistributor.sendToServer(new BlockPosSyncPacket(this.getBlockPos(),0));
+//        }
+//    }
 
     @Override
     public void setItem(int index, ItemStack stack) {
@@ -235,5 +260,27 @@ public final class MagicStorageBlockEntity extends BaseContainerBlockEntity {
 
     public List<String> getBlock_accessors() {
         return block_accessors;
+    }
+
+    public void setFake(boolean fake){
+        this.fake = fake;
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        if(fake && (level==null || level.isClientSide())){
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    ItemStack stack = Minecraft.getInstance().player.getItemInHand(InteractionHand.MAIN_HAND);
+                    var levelData = stack.getComponents().get(ModDataComponent.LEVEL_ACCESSOR.get());
+                    if(levelData!= null)
+                        PacketDistributor.sendToServer(new BlockPosSyncPacket(getBlockPos(),levelData.key(),0));
+                    else
+                        PacketDistributor.sendToServer(new BlockPosSyncPacket(getBlockPos(),level.dimension(),0));
+                }
+            }, 10);
+        }
     }
 }

@@ -2,13 +2,17 @@ package coffee.awesome_storage.utils;
 
 import coffee.awesome_storage.mix_util.IPlayer;
 import coffee.awesome_storage.block.MagicStorageBlockEntity;
+import coffee.awesome_storage.registry.ModDataComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.Level;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,14 +20,37 @@ import java.util.Map;
 
 
 public class Util {
+
+    public static void setStorageEntity(Player player, MagicStorageBlockEntity entity){
+        ((IPlayer) player).awesomeStorage$setContainer(entity);
+    }
     public static List<ItemStack> getStorageItems(Player player) {
         var entity = (MagicStorageBlockEntity) ((IPlayer) player).awesomeStorage$getContainer();
+        if (entity == null) return null;
         return entity.getItems();
     }
 
     public static MagicStorageBlockEntity getStorageEntity(Player player) {
         if (((IPlayer) player).awesomeStorage$getContainer() instanceof MagicStorageBlockEntity entity)
             return entity;
+        return null;
+    }
+
+    //
+    public static Level getTargetLevel(Player player){
+        ItemStack stack = player.getItemInHand(InteractionHand.MAIN_HAND);
+        var levelData = stack.getComponents().get(ModDataComponent.LEVEL_ACCESSOR.get());
+        if(levelData!= null)
+            return player.getServer().getLevel(levelData.key());
+        else
+            return player.level();
+    }
+
+    public static MagicStorageBlockEntity getStorageEntityAccess(BlockPos pos) {
+
+//        if (((IPlayer) player).awesomeStorage$getContainer() instanceof MagicStorageBlockEntity entity)
+//            return entity;
+
         return null;
     }
 

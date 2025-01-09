@@ -21,7 +21,7 @@ public class ModTabs {
                     .title(Component.translatable("creativetab.magic_storage.cards"))
                     .displayItems((parameters, output) -> {
                         ModBlocks.BLOCKS.getEntries().forEach(item -> output.accept(item.get()));
-
+                        ModItems.ITEMS.getEntries().forEach(item -> output.accept(item.get()));
                     })
                     .build()
     );

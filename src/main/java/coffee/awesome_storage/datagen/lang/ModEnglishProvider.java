@@ -25,11 +25,26 @@ public class ModEnglishProvider extends LanguageProvider {
     protected void addTranslations() {
         add("container.awesome_storage.magic_storage", "Magic Storage");
         add("creativetab.magic_storage.cards", "Magic Storage");
+
         add("magic_storage.missing_ingredient", "Missing Ingredient");
         add("magic_storage.can_craft", "Click to craft");
         add("magic_storage_screen.storage", "Storage");
         add("magic_storage_screen.craft", "Craft");
+
         add("magic_craft.no_access", "Push Work Table to Access Crafting");
+
+        add("magic_storage.message.no_component", "This item has no component: ");
+        add("magic_storage.message.too_far", "Container is Too Far!");
+
+        add("magic_storage.tooltip.controller_range", "Communication Distance: ");
+        add("magic_storage.tooltip.distance", "Distance: ");
+        add("magic_storage.tooltip.block_pos", "Your Position: ");
+        add("magic_storage.tooltip.error_level", "No Signal");
+
+
+
+
+
 
 
 

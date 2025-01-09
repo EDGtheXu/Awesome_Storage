@@ -18,7 +18,7 @@ public class MagicStorageMenu extends AbstractContainerMenu {
     private final CraftingContainer craftSlots = new TransientCraftingContainer(this, 3, 4);
     private final ResultContainer resultSlot = new ResultContainer();
     private final DataSlot selectedRecipeIndex = DataSlot.standalone();
-
+    private boolean isDirty = false;
 
     public Container container;
     public MagicStorageMenu(int pContainerId, Inventory inventory) {
@@ -47,6 +47,12 @@ public class MagicStorageMenu extends AbstractContainerMenu {
 
         addDataSlots(access);
         addDataSlot(selectedRecipeIndex);
+    }
+    public boolean isDirty() {
+        return isDirty;
+    }
+    public void setDirty(boolean dirty) {
+        isDirty = dirty;
     }
 
     @Override

@@ -4,7 +4,9 @@ import coffee.awesome_storage.Awesome_storage;
 import coffee.awesome_storage.api.adapter.AdapterManager;
 import coffee.awesome_storage.config.CraftConfig;
 import coffee.awesome_storage.config.StorageConfig;
+import coffee.awesome_storage.item.RemoteController;
 import coffee.awesome_storage.network.s2c.ConfigSyncPacket;
+import coffee.awesome_storage.remote.RemoteBlockEntityCache;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,6 +28,8 @@ public class GameEvent {
                 if(sp.connection.tickCount == 0){
                     PacketDistributor.sendToPlayer(sp, new ConfigSyncPacket(StorageConfig.INSTANCE(),CraftConfig.INSTANCE()));
                 }
+            }else{
+                RemoteBlockEntityCache.clientLevelSource = event.getLevel().dimension();
             }
         }
     }

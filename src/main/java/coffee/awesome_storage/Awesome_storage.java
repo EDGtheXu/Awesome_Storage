@@ -2,9 +2,7 @@ package coffee.awesome_storage;
 
 import coffee.awesome_storage.datagen.lang.ModChineseProvider;
 import coffee.awesome_storage.datagen.lang.ModEnglishProvider;
-import coffee.awesome_storage.registry.ModBlocks;
-import coffee.awesome_storage.registry.ModMenus;
-import coffee.awesome_storage.registry.ModTabs;
+import coffee.awesome_storage.registry.*;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -52,6 +50,9 @@ public class Awesome_storage {
         ModBlocks.BLOCK_ENTITIES.register(modEventBus);
 
         ModTabs.TABS.register(modEventBus);
+
+        ModDataComponent.TYPES.register(modEventBus);
+        ModItems.ITEMS.register(modEventBus);
 
 //        modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
 //        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);

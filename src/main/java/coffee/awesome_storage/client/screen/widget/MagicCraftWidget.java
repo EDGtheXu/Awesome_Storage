@@ -185,6 +185,9 @@ public class MagicCraftWidget extends AbstractFloatWidget {
         List<Pair<ItemStack,RecipeHolder<?>>> res = new ArrayList<>();
         List<Pair<ItemStack,RecipeHolder<?>>> append = new ArrayList<>();
         List<ItemStack> have = getStorageItems(Minecraft.getInstance().player);
+        if(have == null){
+            return;
+        }
 
         // 将have中的ItemStack转换为Map<Item, Integer>
         haveIngredients.clear();

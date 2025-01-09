@@ -31,6 +31,7 @@ public class SmithingRecipeAdapter<R extends SmithingRecipe> extends AbstractMag
         }
         else if(recipe.value() instanceof SmithingTrimRecipe trim){
 
+
             return ItemStack.EMPTY;
         }
         return res;

@@ -31,6 +31,7 @@ public class MagicCraftAccessWidget extends AbstractFloatWidget{
     @Override
     protected List<ItemStack> getItems() {
         MagicStorageBlockEntity storage = getStorageEntity(Minecraft.getInstance().player);
+        if(storage == null) return itemStacks;
         itemStacks.clear();
         for(String str : storage.getBlock_accessors()){
             Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(str));

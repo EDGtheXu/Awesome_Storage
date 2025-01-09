@@ -22,7 +22,7 @@ public class MagicStorageWidget extends AbstractFloatWidget {
     MagicStorageBlockEntity storageEntity;
     public MagicStorageWidget(MagicStorageScreen screen, int x, int y, int width, int height, Component message) {
         super(screen, x, y, width, height, message);
-        this.storageEntity = getStorageEntity(Minecraft.getInstance().player);
+
     }
 
     @Override
@@ -33,7 +33,9 @@ public class MagicStorageWidget extends AbstractFloatWidget {
     @Override
     protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         super.renderWidget(guiGraphics, mouseX, mouseY, partialTicks);
-
+        this.storageEntity = getStorageEntity(Minecraft.getInstance().player);
+        if(this.storageEntity == null)
+            return;
         var size = storageEntity.getContainerSize();
 
         String info = getNonEmptyItemsCount() +"/"+size+"  "+"lvl:"+storageEntity.lvl;
@@ -63,6 +65,7 @@ public class MagicStorageWidget extends AbstractFloatWidget {
         if(screen.getMenu().getCarried().isEmpty()) {
             if (hoverIt != null) {
                 PacketDistributor.sendToServer(new MagicStoragePacket(hoverIndex + 10000, new ItemStack(Items.WOODEN_AXE)));
+                getStorageEntity(Minecraft.getInstance().player).setChanged();
                 return true;
             }
         }
@@ -70,6 +73,8 @@ public class MagicStorageWidget extends AbstractFloatWidget {
         else{
             if(this.isHovered){
                 PacketDistributor.sendToServer(new MagicStoragePacket(0, screen.getMenu().getCarried()));
+                getStorageEntity(Minecraft.getInstance().player).setChanged();
+
                 return true;
             }
         }

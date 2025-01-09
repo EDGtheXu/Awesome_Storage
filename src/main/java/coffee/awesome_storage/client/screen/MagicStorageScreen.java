@@ -1,8 +1,10 @@
 package coffee.awesome_storage.client.screen;
 
+import coffee.awesome_storage.Awesome_storage;
 import coffee.awesome_storage.client.screen.widget.MagicCraftWidget;
 import coffee.awesome_storage.client.screen.widget.MagicStorageWidget;
 import coffee.awesome_storage.menu.MagicStorageMenu;
+import coffee.awesome_storage.utils.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
 import net.minecraft.client.gui.components.Button;
@@ -22,6 +24,8 @@ public class MagicStorageScreen extends AbstractContainerScreen<MagicStorageMenu
 
     private Button switchButton;
     int state;
+    long clickTimes = 0; // 延迟刷新
+
     private MagicCraftWidget craftWidget;
     private AbstractContainerWidget storageWidget;
 
@@ -68,7 +72,14 @@ public class MagicStorageScreen extends AbstractContainerScreen<MagicStorageMenu
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         renderTooltip(pGuiGraphics, pMouseX, pMouseY);
 
-
+        if(clickTimes < System.currentTimeMillis()) {
+            try {
+                craftWidget.refreshItems();
+                clickTimes = System.currentTimeMillis() *2;
+            }catch (Exception e){
+                Awesome_storage.LOGGER.error(e.getLocalizedMessage());
+            }
+        }
     }
 
     @Override
@@ -79,7 +90,8 @@ public class MagicStorageScreen extends AbstractContainerScreen<MagicStorageMenu
 
     @Override
     public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
-
+        clickTimes = System.currentTimeMillis() + 100;
+        Util.getStorageEntity(minecraft.player).setChanged();
         for(var widget : this.children()){
             if(widget instanceof AbstractContainerWidget widget1){
                 if(widget1.isHovered() && widget1.mouseClicked(pMouseX, pMouseY, pButton))
