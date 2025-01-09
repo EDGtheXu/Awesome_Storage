@@ -2,6 +2,7 @@ package coffee.awesome_storage.datagen.recipe;
 
 
 import coffee.awesome_storage.registry.ModBlocks;
+import coffee.awesome_storage.registry.ModItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.*;
@@ -28,7 +29,7 @@ public class ModRecipeProvider extends RecipeProvider {
     @Override
     protected void buildRecipes(RecipeOutput recipeOutput) {
 
-        //光萃台
+
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.MAGIC_STORAGE_BLOCK.get())
                 .pattern("AAA")
                 .pattern("B B")
@@ -36,7 +37,47 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('A',Items.IRON_INGOT)
                 .define('B',Items.GOLD_INGOT)
                 .define('C', Blocks.OBSIDIAN)
-                .unlockedBy("has_emerald",has(Items.EMERALD))
+                .unlockedBy("has_obsidian",has(Items.EMERALD))
+                .save(recipeOutput);
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModItems.REMOTE_CONTROLLER_1000.get())
+                .pattern(" AA")
+                .pattern("AAA")
+                .pattern("AA ")
+                .define('A',Items.COPPER_INGOT)
+                .unlockedBy("has_cpopper",has(Items.COPPER_INGOT))
+                .save(recipeOutput);
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModItems.REMOTE_CONTROLLER_5000.get())
+                .pattern(" AA")
+                .pattern("AAA")
+                .pattern("AA ")
+                .define('A',Items.IRON_INGOT)
+                .unlockedBy("has_iron",has(Items.IRON_INGOT))
+                .save(recipeOutput);
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModItems.REMOTE_CONTROLLER_10000.get())
+                .pattern(" AA")
+                .pattern("AAA")
+                .pattern("AA ")
+                .define('A',Items.GOLD_INGOT)
+                .unlockedBy("has_goal",has(Items.GOLD_INGOT))
+                .save(recipeOutput);
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModItems.REMOTE_CONTROLLER_INF.get())
+                .pattern(" AA")
+                .pattern("AAA")
+                .pattern("AA ")
+                .define('A',Items.DIAMOND)
+                .unlockedBy("has_diamond",has(Items.DIAMOND))
+                .save(recipeOutput);
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModItems.REMOTE_CONTROLLER_THROUGH_CROSS_LEVEL.get())
+                .pattern(" AA")
+                .pattern("AAA")
+                .pattern("AA ")
+                .define('A',Items.NETHERITE_INGOT)
+                .unlockedBy("has_netherite",has(Items.NETHERITE_INGOT))
                 .save(recipeOutput);
 
     }
