@@ -2,7 +2,17 @@ package coffee.awesome_storage.menu;
 
 import coffee.awesome_storage.network.c2s.MagicStoragePacket;
 import coffee.awesome_storage.registry.ModMenus;
-import net.minecraft.server.level.ServerPlayer;
+import com.github.edg_thexu.qtcraft_api.core.layouts.QHBoxLayout;
+import com.github.edg_thexu.qtcraft_api.core.layouts.QLayout;
+import com.github.edg_thexu.qtcraft_api.core.layouts.QVBoxLayout;
+import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
+import com.github.edg_thexu.qtcraft_api.core.slot.IWidgetSource;
+import com.github.edg_thexu.qtcraft_api.core.slot.SlotContainer;
+import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
+import com.github.edg_thexu.qtcraft_api.core.widget.container.QContainer;
+import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
+import com.github.edg_thexu.qtcraft_api.menu.QBaseMenu;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -10,87 +20,77 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
 
-public class MagicStorageMenu extends AbstractContainerMenu {
+import javax.annotation.Nullable;
+import java.util.List;
+
+public class MagicStorageMenu extends QBaseMenu {
     public final ContainerData access;
-    private final Player player;
-    private final CraftingContainer craftSlots = new TransientCraftingContainer(this, 3, 4);
-    private final ResultContainer resultSlot = new ResultContainer();
-    private final DataSlot selectedRecipeIndex = DataSlot.standalone();
-    private boolean isDirty = false;
+    private final Container container;
+    private boolean dirty;
 
-    public Container container;
+    public boolean isDirty() { return dirty; }
+    public void setDirty(boolean v) { dirty = v; }
+
     public MagicStorageMenu(int pContainerId, Inventory inventory) {
-        this(pContainerId, inventory, new SimpleContainer(3),new SimpleContainerData(2));
+        this(pContainerId, inventory, new SimpleContainer(3), new SimpleContainerData(2));
     }
 
     public MagicStorageMenu(int pContainerId, Inventory pPlayerInventory, Container container, ContainerData pAccess) {
-        super(ModMenus.MAGIC_STORAGE_MENU.get(), pContainerId);
-        this.player = pPlayerInventory.player;
-        checkContainerDataCount(pAccess, 1);
+        super(ModMenus.MAGIC_STORAGE_MENU.get(), pContainerId, pPlayerInventory, new StorageWidgetSource());
         this.access = pAccess;
         this.container = container;
-
-
-//        addSlot(new Slot(container,1,16,38));
-//        addSlot(new Slot(container,2,54,38));
-
-        for (int k = 0; k < 3; k++) {
-            for (int l = 0; l < 9; l++) {
-                addSlot(new Slot(pPlayerInventory, l + k * 9 + 9, 8 + l * 18, 84 + k * 18));
-            }
-        }
-        for (int m = 0; m < 9; m++) {
-            addSlot(new Slot(pPlayerInventory, m, 8 + m * 18, 142));
-        }
-
-        addDataSlots(access);
-        addDataSlot(selectedRecipeIndex);
-    }
-    public boolean isDirty() {
-        return isDirty;
-    }
-    public void setDirty(boolean dirty) {
-        isDirty = dirty;
+        addDataSlots(pAccess);
     }
 
     @Override
-    public boolean clickMenuButton(@NotNull Player pPlayer, int pId) {
-
-        return true;
-    }
-
-
-    @Override
-    public boolean stillValid(@NotNull Player pPlayer) {
-        return container.stillValid(pPlayer);
-    }
-
-    @Override
-    public void removed(@NotNull Player pPlayer) {
+    public void removed(Player pPlayer) {
         super.removed(pPlayer);
-        clearContainer(pPlayer, craftSlots);
     }
 
     @Override
-    public boolean canTakeItemForPickAll(@NotNull ItemStack pStack, Slot pSlot) {
-        return pSlot.container != resultSlot && super.canTakeItemForPickAll(pStack, pSlot);
-    }
-
-    @Override
-    public @NotNull ItemStack quickMoveStack(@NotNull Player pPlayer, int index) {
-        ItemStack itemStack = slots.get(index).getItem();
-
-        if(!itemStack.isEmpty() && player instanceof ServerPlayer) {
+    public ItemStack quickMoveStack(Player player, int slotIndex) {
+        ItemStack itemStack = slots.get(slotIndex).getItem();
+        if (!itemStack.isEmpty() && player instanceof net.minecraft.server.level.ServerPlayer) {
             this.setCarried(itemStack);
-            slots.get(index).set(ItemStack.EMPTY);
+            slots.get(slotIndex).set(ItemStack.EMPTY);
             this.broadcastChanges();
             PacketDistributor.sendToServer(new MagicStoragePacket(0, itemStack));
         }
-
-//        itemStack.setCount(0);
         return ItemStack.EMPTY;
     }
 
+    // ========================================================================
+    // IWidgetSource for player inventory at top-left
+    // ========================================================================
+    public static class StorageWidgetSource extends QWidget implements IWidgetSource {
+
+        @Override
+        public List<SlotContainer> initCraftingSlotModel() {
+            return List.of();
+        }
+
+        @Override
+        public void initWidget(net.minecraft.world.level.Level level, @Nullable QBaseMenu menu) {
+            if (menu == null) return;
+
+            QVBoxLayout root = new QVBoxLayout(this);
+            root.setSpacing(2);
+
+            QLabel invLabel = new QLabel(Component.literal("Inventory"));
+            invLabel.setTextColor(new QColor(0xFFFFAA00));
+            root.addWidget(invLabel, 0, QLayout.ALIGN_LEFT);
+
+            QContainer mainInv = new QContainer(menu, 9, 27, 9);
+            mainInv.setSlotGroup("main");
+            root.addWidget(mainInv, 0, QLayout.ALIGN_LEFT);
+
+            QContainer hotbar = new QContainer(menu, 0, 9, 9);
+            hotbar.setSlotGroup("hotbar");
+            root.addWidget(hotbar, 0, QLayout.ALIGN_LEFT);
+
+            hotbar.transferTo(mainInv);
+            mainInv.transferTo(hotbar);
+        }
+    }
 }
