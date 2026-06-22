@@ -11,6 +11,7 @@ import coffee.awesome_storage.network.c2s.MagicCraftPacket;
 import coffee.awesome_storage.network.c2s.MagicStoragePacket;
 import coffee.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.client.screen.QContainerWidgetScreen;
+import com.github.edg_thexu.qtcraft_api.core.QSizePolicy;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QWheelEvent;
@@ -27,6 +28,7 @@ import com.github.edg_thexu.qtcraft_api.core.widget.button.QRadioButton;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QMainWindow;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QSmoothScrollArea;
 import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
+import com.github.edg_thexu.qtcraft_api.core.widget.input.QComboBox;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QLineEdit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
@@ -57,9 +59,10 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     private CraftPanel craftPanel;
     private long nextRefresh;
     private long lastPeriodicRefresh;
+    private List<String> lastAccessors = new ArrayList<>();
 
-    private static int storageX = 200, storageY = 30, storageW = 420, storageH = 520;
-    private static int craftX = 200, craftY = 30, craftW = 420, craftH = 520;
+    private static int storageX = 200, storageY = 30, storageW = 220, storageH = 220;
+    private static int craftX = 200, craftY = 30, craftW = 220, craftH = 220;
 
     public MagicStorageScreen(MagicStorageMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -119,8 +122,6 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         if (!stack.isEmpty()) {
             p.renderItemStack(stack, x + (size - 16) / 2, y + (size - 16) / 2);
             if (stack.getCount() > 1) {
-                p.setColor(QColor.WHITE);
-                String countStr = stack.getCount() >= 1000 ? (stack.getCount() / 1000) + "k" : String.valueOf(stack.getCount());
                 p.renderItemDecorations(stack, x + (size - 16) / 2, y + (size - 16) / 2);
             }
         }
@@ -131,14 +132,11 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     // ========================================================================
     private class StoragePanel extends QWidget {
         private final QLineEdit searchField;
-        private final List<QRadioButton> sortButtons;
-        private final List<QRadioButton> categoryButtons;
-        private final List<QRadioButton> stackButtons;
-        private ItemGridWidget itemGrid;
+        private final QComboBox sortCombo;
+        private final QComboBox categoryCombo;
+        private final QComboBox stackCombo;
+        ItemGridWidget itemGrid;
         private QLabel capacityLabel;
-        private int sortMode;
-        private String categoryFilter = "All";
-        private int stackFilter;
 
         StoragePanel() {
             QVBoxLayout vl = new QVBoxLayout(this);
@@ -149,57 +147,37 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             searchField = new QLineEdit();
             searchField.setPlaceholderText("Search...");
             searchField.setFixedHeight(16);
-            searchField.connect(QLineEdit.TEXT_CHANGED, this, new SlotKeyConsumer<>("ss", (self, v) -> refresh()));
+            searchField.connect(searchField.TEXT_CHANGED, this, new SlotKeyConsumer<>("ss", (self, v) -> refresh()));
             searchRow.addWidget(searchField, 1);
             vl.addLayout(searchRow);
 
-            QHBoxLayout sortRow = new QHBoxLayout();
-            sortRow.setSpacing(1);
-            sortButtons = new ArrayList<>();
-            for (String label : new String[]{"Default", "By ID", "By Name", "By Count"}) {
-                QRadioButton rb = new QRadioButton(Component.literal(label), "ss");
-                rb.setFixedHeight(14);
-                int idx = sortButtons.size();
-                int fi = idx;
-                rb.connect(QRadioButton.TOGGLED, this, new SlotKeyConsumer<>("so" + idx, (self, checked) -> {
-                    if (checked && itemGrid != null) { sortMode = fi; refresh(); }
-                }));
-                sortButtons.add(rb);
-                sortRow.addWidget(rb);
-            }
-            sortRow.addStretch(1);
-            vl.addLayout(sortRow);
+            // Filter row: sort / category / stack as dropdowns
+            QHBoxLayout filterRow = new QHBoxLayout();
+            filterRow.setSpacing(2);
 
-            QHBoxLayout catRow = new QHBoxLayout();
-            catRow.setSpacing(1);
-            categoryButtons = new ArrayList<>();
-            for (String label : new String[]{"All", "Weapon", "Tool", "Material", "Block", "Misc"}) {
-                QRadioButton rb = new QRadioButton(Component.literal(label), "sc");
-                rb.setFixedHeight(14);
-                String fl = label;
-                rb.connect(QRadioButton.TOGGLED, this, new SlotKeyConsumer<>("ca" + label, (self, checked) -> {
-                    if (checked && itemGrid != null) { categoryFilter = fl; refresh(); }
-                }));
-                categoryButtons.add(rb);
-                catRow.addWidget(rb);
-            }
-            vl.addLayout(catRow);
+            sortCombo = new QComboBox();
+            sortCombo.addItem("Default"); sortCombo.addItem("By ID");
+            sortCombo.addItem("By Name"); sortCombo.addItem("By Count");
+            sortCombo.setFixedHeight(16);
+            sortCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
+            sortCombo.connect(sortCombo.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("sc", (self, idx) -> { if (itemGrid != null) refresh(); }));
+            filterRow.addWidget(sortCombo, 1);
 
-            QHBoxLayout stackRow = new QHBoxLayout();
-            stackRow.setSpacing(1);
-            stackButtons = new ArrayList<>();
-            for (String label : new String[]{"All", "Stackable", "Non-stackable"}) {
-                QRadioButton rb = new QRadioButton(Component.literal(label), "sk");
-                rb.setFixedHeight(14);
-                int idx = stackButtons.size();
-                int fi = idx;
-                rb.connect(QRadioButton.TOGGLED, this, new SlotKeyConsumer<>("st" + idx, (self, checked) -> {
-                    if (checked && itemGrid != null) { stackFilter = fi; refresh(); }
-                }));
-                stackButtons.add(rb);
-                stackRow.addWidget(rb);
-            }
-            vl.addLayout(stackRow);
+            categoryCombo = new QComboBox();
+            for (String l : new String[]{"All", "Weapon", "Tool", "Material", "Block", "Misc"}) categoryCombo.addItem(l);
+            categoryCombo.setFixedHeight(16);
+            categoryCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
+            categoryCombo.connect(categoryCombo.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("cc", (self, idx) -> { if (itemGrid != null) refresh(); }));
+            filterRow.addWidget(categoryCombo, 1);
+
+            stackCombo = new QComboBox();
+            stackCombo.addItem("All"); stackCombo.addItem("Stackable"); stackCombo.addItem("Non-stackable");
+            stackCombo.setFixedHeight(16);
+            stackCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
+            stackCombo.connect(stackCombo.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("cs", (self, idx) -> { if (itemGrid != null) refresh(); }));
+            filterRow.addWidget(stackCombo, 1);
+
+            vl.addLayout(filterRow);
 
             QSmoothScrollArea area = new QSmoothScrollArea();
             itemGrid = new ItemGridWidget();
@@ -211,10 +189,6 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             capacityLabel = new QLabel(Component.literal("Capacity: 0/0"));
             vl.addWidget(capacityLabel);
 
-            sortButtons.get(0).setChecked(true);
-            categoryButtons.get(0).setChecked(true);
-            stackButtons.get(0).setChecked(true);
-
             refresh();
         }
 
@@ -222,39 +196,46 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             List<ItemStack> items = getStorageItems(minecraft.player);
             if (items == null) return;
             String search = searchField.text().toLowerCase();
+            String catFilter = categoryCombo.currentText();
+            String sortText = sortCombo.currentText();
+            String stackText = stackCombo.currentText();
 
             List<ItemStack> filtered = new ArrayList<>();
             for (ItemStack s : items) {
                 if (s.isEmpty()) continue;
                 if (!search.isEmpty() && !s.getDisplayName().getString().toLowerCase().contains(search)) continue;
-                if (!categoryFilter.equals("All")) {
+                if (!catFilter.equals("All")) {
                     String id = BuiltInRegistries.ITEM.getKey(s.getItem()).getPath();
-                    if (categoryFilter.equals("Weapon") && !id.contains("sword") && !id.contains("bow") && !id.contains("crossbow") && !id.contains("trident")) continue;
-                    if (categoryFilter.equals("Tool") && !id.contains("pickaxe") && !id.contains("axe") && !id.contains("shovel") && !id.contains("hoe")) continue;
-                    if (categoryFilter.equals("Block") && !(s.getItem() instanceof BlockItem)) continue;
-                    if (categoryFilter.equals("Material") && (s.getItem() instanceof BlockItem)) continue;
+                    if (catFilter.equals("Weapon") && !id.contains("sword") && !id.contains("bow") && !id.contains("crossbow") && !id.contains("trident")) continue;
+                    if (catFilter.equals("Tool") && !id.contains("pickaxe") && !id.contains("axe") && !id.contains("shovel") && !id.contains("hoe")) continue;
+                    if (catFilter.equals("Block") && !(s.getItem() instanceof BlockItem)) continue;
+                    if (catFilter.equals("Material") && (s.getItem() instanceof BlockItem)) continue;
                 }
-                if (stackFilter == 1 && !s.isStackable()) continue;
-                if (stackFilter == 2 && s.isStackable()) continue;
+                if (stackText.equals("Stackable") && !s.isStackable()) continue;
+                if (stackText.equals("Non-stackable") && s.isStackable()) continue;
                 filtered.add(s);
             }
-            switch (sortMode) {
-                case 1 -> filtered.sort(Comparator.comparing(i -> BuiltInRegistries.ITEM.getKey(i.getItem()).toString()));
-                case 2 -> filtered.sort(Comparator.comparing(i -> i.getDisplayName().getString()));
-                case 3 -> filtered.sort(Comparator.comparingInt(ItemStack::getCount).reversed());
+            switch (sortText) {
+                case "By ID" -> filtered.sort(Comparator.comparing(i -> BuiltInRegistries.ITEM.getKey(i.getItem()).toString()));
+                case "By Name" -> filtered.sort(Comparator.comparing(i -> i.getDisplayName().getString()));
+                case "By Count" -> filtered.sort(Comparator.comparingInt(ItemStack::getCount).reversed());
             }
             itemGrid.setItems(filtered);
             MagicStorageBlockEntity be = Util.getStorageEntity(minecraft.player);
             if (be != null) {
-                capacityLabel.setText(Component.literal("Items: " + be.getTotalItemCount()));
+                capacityLabel.setText(Component.literal("容量: " + be.getUsedSlots() + "/" + be.getTotalSlots()));
             }
         }
 
+
         void onItemClick(ItemStack stack, int index) {
             if (menu.getCarried().isEmpty() && !stack.isEmpty()) {
-                PacketDistributor.sendToServer(new MagicStoragePacket(index + 10000, new ItemStack(net.minecraft.world.item.Items.WOODEN_AXE)));
-                getStorageEntity(minecraft.player).setChanged();
-                scheduleRefresh();
+                int storageIdx = itemGrid.getStorageIndex(index);
+                if (storageIdx >= 0) {
+                    PacketDistributor.sendToServer(new MagicStoragePacket(storageIdx + 10000, new ItemStack(net.minecraft.world.item.Items.WOODEN_AXE)));
+                    getStorageEntity(minecraft.player).setChanged();
+                    scheduleRefresh();
+                }
             }
         }
     }
@@ -264,17 +245,14 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     // ========================================================================
     private class CraftPanel extends QWidget {
         private final QLineEdit searchField;
-        private final List<QRadioButton> sortButtons;
-        private final List<QRadioButton> categoryButtons;
-        private final List<QRadioButton> stackButtons;
+        private final QComboBox sortCombo;
+        private final QComboBox categoryCombo;
+        private final QComboBox stackCombo;
         private final StationsRowWidget stationsRow;
-        private ItemGridWidget craftableGrid;
+        ItemGridWidget craftableGrid;
         private QLabel capacityLabel;
         private final CraftInfoPanel infoPanel;
         private boolean showCraftableOnly = true;
-        private int sortMode;
-        private String categoryFilter = "All";
-        private int stackFilter;
 
         List<ItemStack> results = new ArrayList<>();
         List<Pair<ItemStack, RecipeHolder<?>>> cachedResults = new ArrayList<>();
@@ -305,57 +283,37 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             searchField = new QLineEdit();
             searchField.setPlaceholderText("Search...");
             searchField.setFixedHeight(16);
-            searchField.connect(QLineEdit.TEXT_CHANGED, this, new SlotKeyConsumer<>("cs", (self, v) -> refresh()));
+            searchField.connect(searchField.TEXT_CHANGED, this, new SlotKeyConsumer<>("cs", (self, v) -> refresh()));
             funcRow.addWidget(searchField, 1);
             leftLayout.addLayout(funcRow);
 
-            QHBoxLayout sortRow = new QHBoxLayout();
-            sortRow.setSpacing(1);
-            sortButtons = new ArrayList<>();
-            for (String label : new String[]{"Default", "By ID", "By Name", "By Count"}) {
-                QRadioButton rb = new QRadioButton(Component.literal(label), "css");
-                rb.setFixedHeight(14);
-                int idx = sortButtons.size();
-                int fi = idx;
-                rb.connect(QRadioButton.TOGGLED, this, new SlotKeyConsumer<>("cso" + idx, (self, checked) -> {
-                    if (checked && craftableGrid != null) { sortMode = fi; refresh(); }
-                }));
-                sortButtons.add(rb);
-                sortRow.addWidget(rb);
-            }
-            sortButtons.get(0).setChecked(true);
-            leftLayout.addLayout(sortRow);
+            // Filter row: sort / category / stack as dropdowns
+            QHBoxLayout filterRow = new QHBoxLayout();
+            filterRow.setSpacing(2);
 
-            QHBoxLayout catRow = new QHBoxLayout();
-            catRow.setSpacing(1);
-            categoryButtons = new ArrayList<>();
-            for (String label : new String[]{"All", "Weapon", "Tool", "Material", "Block", "Misc"}) {
-                QRadioButton rb = new QRadioButton(Component.literal(label), "ccs");
-                rb.setFixedHeight(14);
-                String fl = label;
-                rb.connect(QRadioButton.TOGGLED, this, new SlotKeyConsumer<>("cca" + label, (self, checked) -> {
-                    if (checked && craftableGrid != null) { categoryFilter = fl; refresh(); }
-                }));
-                categoryButtons.add(rb);
-                catRow.addWidget(rb);
-            }
-            leftLayout.addLayout(catRow);
+            sortCombo = new QComboBox();
+            sortCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
+            sortCombo.addItem("Default"); sortCombo.addItem("By ID");
+            sortCombo.addItem("By Name"); sortCombo.addItem("By Count");
+            sortCombo.setFixedHeight(16);
+            sortCombo.connect(sortCombo.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("csc", (self, idx) -> { if (craftableGrid != null) refresh(); }));
+            filterRow.addWidget(sortCombo, 1);
 
-            QHBoxLayout stackRow = new QHBoxLayout();
-            stackRow.setSpacing(1);
-            stackButtons = new ArrayList<>();
-            for (String label : new String[]{"All", "Stackable", "Non-stackable"}) {
-                QRadioButton rb = new QRadioButton(Component.literal(label), "cck");
-                rb.setFixedHeight(14);
-                int idx = stackButtons.size();
-                int fi = idx;
-                rb.connect(QRadioButton.TOGGLED, this, new SlotKeyConsumer<>("cst" + idx, (self, checked) -> {
-                    if (checked && craftableGrid != null) { stackFilter = fi; refresh(); }
-                }));
-                stackButtons.add(rb);
-                stackRow.addWidget(rb);
-            }
-            leftLayout.addLayout(stackRow);
+            categoryCombo = new QComboBox();
+            categoryCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
+            for (String l : new String[]{"All", "Weapon", "Tool", "Material", "Block", "Misc"}) categoryCombo.addItem(l);
+            categoryCombo.setFixedHeight(16);
+            categoryCombo.connect(categoryCombo.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("ccc", (self, idx) -> { if (craftableGrid != null) refresh(); }));
+            filterRow.addWidget(categoryCombo, 1);
+
+            stackCombo = new QComboBox();
+            stackCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
+            stackCombo.addItem("All"); stackCombo.addItem("Stackable"); stackCombo.addItem("Non-stackable");
+            stackCombo.setFixedHeight(16);
+            stackCombo.connect(stackCombo.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("cst", (self, idx) -> { if (craftableGrid != null) refresh(); }));
+            filterRow.addWidget(stackCombo, 1);
+
+            leftLayout.addLayout(filterRow);
 
             stationsRow = new StationsRowWidget();
             stationsRow.setFixedHeight(16);
@@ -373,13 +331,13 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
 
             mainLayout.addWidget(leftSide, 1);
 
+            QSmoothScrollArea scrollArea = new QSmoothScrollArea();
             infoPanel = new CraftInfoPanel(this);
-            infoPanel.setFixedWidth(180);
-            mainLayout.addWidget(infoPanel);
-
-            sortButtons.get(0).setChecked(true);
-            categoryButtons.get(0).setChecked(true);
-            stackButtons.get(0).setChecked(true);
+            infoPanel.setFixedWidth(75);
+            scrollArea.setFixedWidth(85);
+            scrollArea.setWidget(infoPanel);
+            scrollArea.setWidgetResizable(true);
+            mainLayout.addWidget(scrollArea);
 
             try { reloadRecipes(); } catch (Exception e) { e.printStackTrace(); }
             try { refresh(); } catch (Exception e) { e.printStackTrace(); }
@@ -446,20 +404,28 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             if (!showCraftableOnly) cachedResults.addAll(partial);
 
             String search = searchField.text().toLowerCase();
+            String catFilter = categoryCombo.currentText();
+            String sortText = sortCombo.currentText();
+            String stackText = stackCombo.currentText();
             List<ItemStack> display = new ArrayList<>();
             for (Pair<ItemStack, RecipeHolder<?>> p : cachedResults) {
                 ItemStack s = p.getA();
                 if (!search.isEmpty() && !s.getDisplayName().getString().toLowerCase().contains(search)) continue;
-                if (!categoryFilter.equals("All")) {
+                if (!catFilter.equals("All")) {
                     String id = BuiltInRegistries.ITEM.getKey(s.getItem()).getPath();
-                    if (categoryFilter.equals("Weapon") && !id.contains("sword") && !id.contains("bow") && !id.contains("crossbow") && !id.contains("trident")) continue;
-                    if (categoryFilter.equals("Tool") && !id.contains("pickaxe") && !id.contains("axe") && !id.contains("shovel") && !id.contains("hoe")) continue;
-                    if (categoryFilter.equals("Block") && !(s.getItem() instanceof BlockItem)) continue;
-                    if (categoryFilter.equals("Material") && (s.getItem() instanceof BlockItem)) continue;
+                    if (catFilter.equals("Weapon") && !id.contains("sword") && !id.contains("bow") && !id.contains("crossbow") && !id.contains("trident")) continue;
+                    if (catFilter.equals("Tool") && !id.contains("pickaxe") && !id.contains("axe") && !id.contains("shovel") && !id.contains("hoe")) continue;
+                    if (catFilter.equals("Block") && !(s.getItem() instanceof BlockItem)) continue;
+                    if (catFilter.equals("Material") && (s.getItem() instanceof BlockItem)) continue;
                 }
-                if (stackFilter == 1 && !s.isStackable()) continue;
-                if (stackFilter == 2 && s.isStackable()) continue;
+                if (stackText.equals("Stackable") && !s.isStackable()) continue;
+                if (stackText.equals("Non-stackable") && s.isStackable()) continue;
                 display.add(s);
+            }
+            switch (sortText) {
+                case "By ID" -> display.sort(Comparator.comparing(s -> BuiltInRegistries.ITEM.getKey(s.getItem()).toString()));
+                case "By Name" -> display.sort(Comparator.comparing(s -> s.getDisplayName().getString()));
+                case "By Count" -> display.sort(Comparator.comparingInt(s -> -s.getCount()));
             }
             craftableGrid.setItems(display);
             stationsRow.refresh();
@@ -469,7 +435,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         void updateCapacity() {
             MagicStorageBlockEntity be = Util.getStorageEntity(minecraft.player);
             if (be != null) {
-                capacityLabel.setText(Component.literal("Items: " + be.getTotalItemCount()));
+                capacityLabel.setText(Component.literal("Capacity:" + be.getUsedSlots() + "/" + be.getTotalSlots()));
             }
         }
 
@@ -491,6 +457,9 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     private class StationsRowWidget extends QWidget {
         private final List<ItemStack> stations = new ArrayList<>();
         private int scrollOffset;
+
+        public int getScrollOffset() { return scrollOffset; }
+        public int getStationCount() { return stations.size(); }
 
         void refresh() {
             stations.clear();
@@ -527,28 +496,6 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         }
 
         @Override
-        protected void mousePressEvent(QMouseEvent event) {
-            if (event.button() == QMouseEvent.Button.Left) {
-                int slot = 32, gap = 2;
-                int idx = (event.x() + scrollOffset) / (slot + gap);
-                if (idx >= 0 && idx < stations.size()) {
-                    if (idx < stations.size() - 1) {
-                        PacketDistributor.sendToServer(new MagicStoragePacket(20000 + idx, ItemStack.EMPTY));
-                    } else {
-                        ItemStack held = menu.getCarried();
-                        if (!held.isEmpty() && held.getItem() instanceof BlockItem bi && CraftConfig.isEnabledBlock(bi.getBlock())) {
-                            PacketDistributor.sendToServer(new MagicStoragePacket(1, held));
-                        }
-                    }
-                    var be = Util.getStorageEntity(minecraft.player);
-                    if (be != null) be.setChanged();
-                    scheduleRefresh();
-                }
-                event.accept();
-            }
-        }
-
-        @Override
         protected void wheelEvent(QWheelEvent event) {
             int max = Math.max(0, stations.size() * 34 - width());
             scrollOffset = Math.max(0, Math.min(max, scrollOffset - (int) (event.delta() * 0.8)));
@@ -562,6 +509,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     // ========================================================================
     private class ItemGridWidget extends QWidget {
         private List<ItemStack> items = new ArrayList<>();
+        private List<Integer> storageIndices = new ArrayList<>();
         private int hoverIndex = -1;
         private int cols = 8;
         private int slotSize = 18;
@@ -573,8 +521,35 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
 
         void setItems(List<ItemStack> items) {
             this.items = items;
+            // Map each display item to its index in the full getStoredItems() list
+            storageIndices.clear();
+            MagicStorageBlockEntity be = Util.getStorageEntity(minecraft.player);
+            List<ItemStack> full = be != null ? be.getStoredItems() : new ArrayList<>();
+            if (full != null) {
+                for (ItemStack display : items) {
+                    int idx = -1;
+                    for (int i = 0; i < full.size(); i++) {
+                        if (ItemStack.isSameItemSameComponents(display, full.get(i))) {
+                            idx = i;
+                            break;
+                        }
+                    }
+                    storageIndices.add(idx);
+                }
+            }
             updateCols();
             update();
+        }
+
+        int getItemCount() { return items.size(); }
+        ItemStack getItemAt(int i) { return (i >= 0 && i < items.size()) ? items.get(i) : ItemStack.EMPTY; }
+        int getCols() { return cols; }
+
+        int getStorageIndex(int displayIndex) {
+            if (displayIndex >= 0 && displayIndex < storageIndices.size()) {
+                return storageIndices.get(displayIndex);
+            }
+            return -1;
         }
 
         void setClickHandler(java.util.function.BiConsumer<ItemStack, Integer> h) { this.clickHandler = h; }
@@ -606,6 +581,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
 
         @Override
         protected void mousePressEvent(QMouseEvent event) {
+            event.accept();
             if (event.button() == QMouseEvent.Button.Left) {
                 updateCols();
                 int col = event.x() / slotSize, row = event.y() / slotSize;
@@ -613,7 +589,6 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 if (idx >= 0 && idx < items.size() && !items.get(idx).isEmpty() && clickHandler != null) {
                     clickHandler.accept(items.get(idx), idx);
                 }
-                event.accept();
             }
         }
 
@@ -655,8 +630,17 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             storageMaterials.clear();
             var casted = (AbstractMagicCraftRecipeAdapter<RecipeInput, Recipe<RecipeInput>>) adapter;
             NonNullList<Ingredient> ings = casted.getIngredients((RecipeHolder<Recipe<RecipeInput>>) (Object) recipe);
+            // Merge ingredients by item
+            java.util.Map<Item, Integer> merged = new java.util.LinkedHashMap<>();
             for (Ingredient ing : ings) {
-                if (ing.getItems().length > 0) ingredients.add(ing.getItems()[0].copy());
+                if (ing.getItems().length > 0) {
+                    ItemStack first = ing.getItems()[0];
+                    merged.merge(first.getItem(), first.getCount(), Integer::sum);
+                }
+            }
+            for (java.util.Map.Entry<Item, Integer> e : merged.entrySet()) {
+                ItemStack stack = new ItemStack(e.getKey(), e.getValue());
+                ingredients.add(stack);
             }
             // Only show items in storage that match recipe ingredients
             Set<Item> relevantItems = new HashSet<>();
@@ -691,8 +675,8 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             int y = 6, ss = 18;
             p.setColor(new QColor(0xFFFFAA00));
             p.drawText("Output:", 6, y); y += 11;
-            renderSlot(p, 6, y, 32, outputItem, false); y += 38;
-
+            renderSlot(p, 6, y, 20, outputItem, false); y += 38;
+            p.setColor(QColor.WHITE);
             p.drawText("Ingredients:", 6, y); y += 11;
             int ix = 6;
             for (ItemStack ing : ingredients) {
@@ -702,13 +686,30 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 ix += ss + 2;
                 if (ix > width() - ss) { ix = 6; y += ss + 2; }
             }
-            if (!ingredients.isEmpty()) y += ss + 6;
+            if (!ingredients.isEmpty()) {
+                if(ix > 6) {
+                    y += ss + 6;
+                }else{
+                    y += 4;
+                }
+            }
 
             p.drawText("Stations:", 6, y); y += 11; ix = 6;
             for (ItemStack st : requiredStations) { renderSlot(p, ix, y, ss, st, false); ix += ss + 2; if (ix > width() - ss) { ix = 6; y += ss + 2; } }
             if (!requiredStations.isEmpty()) y += ss + 6;
 
             p.drawText("In Storage:", 6, y); y += 11; ix = 6;
+            // Recalculate storage materials on every paint to reflect changes
+            storageMaterials.clear();
+            for (Map.Entry<Item, Integer> e : parent.haveIngredients.entrySet()) {
+                boolean isIngredient = false;
+                for (ItemStack ing : this.ingredients) {
+                    if (e.getKey() == ing.getItem()) { isIngredient = true; break; }
+                }
+                if (isIngredient) {
+                    storageMaterials.add(new ItemStack(e.getKey(), Math.min(e.getValue(), 99)));
+                }
+            }
             for (ItemStack ms : storageMaterials) {
                 renderSlot(p, ix, y, ss, ms, false);
                 ix += ss + 2; if (ix > width() - ss) { ix = 6; y += ss + 2; }
@@ -741,9 +742,29 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         nextRefresh = System.currentTimeMillis() + 150;
     }
 
+    private void scheduleReloadRecipes() {
+        lastAccessors = new ArrayList<>();
+        scheduleRefresh();
+    }
+
+
     private void refreshPanels() {
         if (storagePanel != null) storagePanel.refresh();
-        if (craftPanel != null) { craftPanel.refresh(); craftPanel.stationsRow.refresh(); }
+        if (craftPanel != null) {
+            // Detect block_accessors changes (server sync via onDataPacket)
+            MagicStorageBlockEntity be = Util.getStorageEntity(minecraft.player);
+            if (be != null) {
+                List<String> current = be.getBlock_accessors();
+                if (!current.equals(lastAccessors)) {
+                    lastAccessors = new ArrayList<>(current);
+                    try { craftPanel.reloadRecipes(); } catch (Exception e) { e.printStackTrace(); }
+                }
+            }
+            craftPanel.refresh();
+            craftPanel.stationsRow.refresh();
+            craftPanel.infoPanel.markDirty();
+            craftPanel.infoPanel.update();
+        }
     }
 
     @Override
@@ -780,19 +801,82 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Shift-click on inventory slots triggers quick-move to storage
         if (hasShiftDown()) scheduleRefresh();
-        // Store action: check BEFORE widget delegate so it can't be blocked
-        if (!menu.getCarried().isEmpty() && storageWin != null && storageWin.isVisible()) {
-            int sx = storageWin.x(), sy = storageWin.y(), sw = storageWin.width(), sh = storageWin.height();
-            if (mouseX >= sx && mouseX <= sx + sw && mouseY >= sy && mouseY <= sy + sh) {
-                PacketDistributor.sendToServer(new MagicStoragePacket(0, menu.getCarried()));
-                getStorageEntity(minecraft.player).setChanged();
-                scheduleRefresh();
-                return true;
+
+        if (button == 0 && craftPanel != null && craftWin != null && craftWin.isVisible()) {
+            StationsRowWidget srw = craftPanel.stationsRow;
+            QPoint lt = srw.mapToGlobal(QPoint.ZERO);
+            QPoint rb = srw.mapToGlobal(new QPoint(srw.width(), srw.height()));
+            if (mouseX > lt.x() && mouseX < rb.x() && mouseY > lt.y() && mouseY < rb.y()) {
+                int slot = 14, gap = 1, scroll = srw.getScrollOffset();
+                int idx = ((int) mouseX - lt.x() + scroll) / (slot + gap);
+                if (idx >= 0 && idx < srw.getStationCount()) {
+                    if (idx < srw.getStationCount() - 1) {
+                        PacketDistributor.sendToServer(new MagicStoragePacket(20000 + idx, ItemStack.EMPTY));
+                    } else {
+                        ItemStack held = menu.getCarried();
+                        if (!held.isEmpty() && held.getItem() instanceof BlockItem bi && CraftConfig.isEnabledBlock(bi.getBlock())) {
+                            PacketDistributor.sendToServer(new MagicStoragePacket(1, held));
+                        }
+                    }
+                    var be = Util.getStorageEntity(minecraft.player);
+                    if (be != null) be.setChanged();
+                    scheduleReloadRecipes();
+                    return true;
+                }
+            }
+            // Craftable grid click detection
+            ItemGridWidget cg = craftPanel.craftableGrid;
+            QPoint glt = cg.mapToGlobal(QPoint.ZERO);
+            int gridCols = cg.getCols(), gSlot = 18;
+            QPoint grb = cg.mapToGlobal(new QPoint(cg.width(), cg.height()));
+            if (mouseX >= glt.x() && mouseX < grb.x() && mouseY >= glt.y() && mouseY < grb.y()) {
+                int col = (int) (mouseX - glt.x()) / gSlot;
+                int row = (int) (mouseY - glt.y()) / gSlot;
+                int idx = row * gridCols + col;
+                if (idx >= 0 && idx < cg.getItemCount()) {
+                    if (!cg.getItemAt(idx).isEmpty()) {
+                        craftPanel.onCraftClick(cg.getItemAt(idx), idx);
+                        return true;
+                    }
+                }
             }
         }
+
+        if (button == 0 && storagePanel != null && storageWin != null && storageWin.isVisible()) {
+            QPoint glt = storagePanel.itemGrid.mapToGlobal(QPoint.ZERO);
+            int gSlot = 18, gCols = storagePanel.itemGrid.getCols();
+            QPoint grb = storagePanel.itemGrid.mapToGlobal(new QPoint(storagePanel.itemGrid.width(), storagePanel.itemGrid.height()));
+            if (mouseX >= glt.x() && mouseX < grb.x() && mouseY >= glt.y() && mouseY < grb.y()) {
+                int col = (int) (mouseX - glt.x()) / gSlot;
+                int row = (int) (mouseY - glt.y()) / gSlot;
+                int idx = row * gCols + col;
+                if (idx >= 0 && idx < storagePanel.itemGrid.getItemCount()) {
+                    ItemStack stack = storagePanel.itemGrid.getItemAt(idx);
+                    if (!stack.isEmpty() && menu.getCarried().isEmpty()) {
+                        int storageIdx = storagePanel.itemGrid.getStorageIndex(idx);
+                        if (storageIdx >= 0) {
+                            PacketDistributor.sendToServer(new MagicStoragePacket(storageIdx + 10000, new ItemStack(net.minecraft.world.item.Items.WOODEN_AXE)));
+                            getStorageEntity(minecraft.player).setChanged();
+                            scheduleRefresh();
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Normal QTCraft widget dispatch
         if (widgetDelegate.mouseClicked(mouseX, mouseY, button)) return true;
+        // Store action into storage window (carrying item, click anywhere)
+        if (!menu.getCarried().isEmpty() && storageWin != null && storageWin.isVisible()
+                && mouseX >= storageWin.x() && mouseX <= storageWin.x() + storageWin.width()
+                && mouseY >= storageWin.y() && mouseY <= storageWin.y() + storageWin.height()) {
+            PacketDistributor.sendToServer(new MagicStoragePacket(0, menu.getCarried()));
+            getStorageEntity(minecraft.player).setChanged();
+            scheduleRefresh();
+            return true;
+        }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 

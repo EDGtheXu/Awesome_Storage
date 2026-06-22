@@ -12,11 +12,6 @@ public class SmithingRecipeAdapter<R extends SmithingRecipe> extends AbstractMag
     }
 
     @Override
-    public RecipeType<SmithingRecipe> getRecipe() {
-        return RecipeType.SMITHING;
-    }
-
-    @Override
     public ItemStack getResult(RecipeHolder<R> recipe){
         ItemStack res = recipe.value().getResultItem(Minecraft.getInstance().level.registryAccess());
 //

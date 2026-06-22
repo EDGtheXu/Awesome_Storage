@@ -24,6 +24,20 @@ public class CraftConfig extends AbstractJsonConfig{
     public static boolean isEnabledBlock(Block block){
         return ENABLED_BLOCKS.contains(block);
     }
+
+    public static void registerWorkstationBlock(String blockId, String... recipeTypeIds) {
+        Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(blockId));
+        if (block == null || block == Blocks.AIR) return;
+        for (String typeId : recipeTypeIds) {
+            RecipeType<?> type = BuiltInRegistries.RECIPE_TYPE.get(ResourceLocation.parse(typeId));
+            if (type != null) {
+                @SuppressWarnings("unchecked")
+                RecipeType<Recipe<RecipeInput>> key = (RecipeType<Recipe<RecipeInput>>) (Object) type;
+                ENABLED_RECIPES.computeIfAbsent(key, k -> new ArrayList<>()).add(block);
+                if (!ENABLED_BLOCKS.contains(block)) ENABLED_BLOCKS.add(block);
+            }
+        }
+    }
     private static final CraftConfig instance = new CraftConfig("magic_craft_config");
     public static CraftConfig INSTANCE() {return instance;}
 

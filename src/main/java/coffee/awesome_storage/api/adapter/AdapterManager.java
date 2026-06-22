@@ -11,14 +11,14 @@ import static coffee.awesome_storage.config.CraftConfig.ENABLED_RECIPES;
 
 public class AdapterManager {
     public static Map<RecipeType<?>, AbstractMagicCraftRecipeAdapter<RecipeInput, Recipe<RecipeInput>>> Adapters = new HashMap<>();
-    public static AbstractMagicCraftRecipeAdapter<CraftingInput, CraftingRecipe> defaultAdapter;
+    public static AbstractMagicCraftRecipeAdapter<CraftingInput, CraftingRecipe> defaultAdapter = new CommonRecipeAdapter<>((RecipeType.CRAFTING));
 
     public static void registerAdapters(RecipeType<?> recipeType, AbstractMagicCraftRecipeAdapter adapter) {
         Adapters.put(recipeType, adapter);
     }
 
     public static void init(){
-        defaultAdapter = new CommonRecipeAdapter<>((RecipeType.CRAFTING));
+
 
         ModLoader.postEvent(new RegisterAdapterEvent());
 

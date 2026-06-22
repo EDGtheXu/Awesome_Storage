@@ -95,8 +95,17 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     // ========================================================================
     // Item Operations (aggregated from adjacent containers)
     // ========================================================================
+    private int cachedUsedSlots;
+    private int cachedTotalSlots;
+
     public void setCachedItems(List<ItemStack> items) {
         this.cachedItems = items;
+    }
+
+    public void setCachedItems(List<ItemStack> items, int usedSlots, int totalSlots) {
+        this.cachedItems = items;
+        this.cachedUsedSlots = usedSlots;
+        this.cachedTotalSlots = totalSlots;
     }
 
     public List<ItemStack> getStoredItems() {
@@ -134,8 +143,10 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     public void syncToClient(Player player) {
         if (level != null && !level.isClientSide && player != null) {
             List<ItemStack> items = getStoredItems();
+            int used = getUsedSlots();
+            int total = getTotalSlots();
             PacketDistributor.sendToPlayer((net.minecraft.server.level.ServerPlayer) player,
-                    new StorageItemsSyncPacket(worldPosition, items));
+                    new StorageItemsSyncPacket(worldPosition, items, used, total));
         }
     }
 
@@ -143,6 +154,30 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         int count = 0;
         for (ItemStack s : getStoredItems()) if (!s.isEmpty()) count++;
         return count;
+    }
+
+    public int getTotalSlots() {
+        if (level != null && level.isClientSide) {
+            return cachedTotalSlots;
+        }
+        int slots = 0;
+        for (Container c : getAdjacentContainers()) {
+            slots += c.getContainerSize();
+        }
+        return slots;
+    }
+
+    public int getUsedSlots() {
+        if (level != null && level.isClientSide) {
+            return cachedUsedSlots;
+        }
+        int used = 0;
+        for (Container c : getAdjacentContainers()) {
+            for (int i = 0; i < c.getContainerSize(); i++) {
+                if (!c.getItem(i).isEmpty()) used++;
+            }
+        }
+        return used;
     }
 
     public int storeItem(ItemStack stack) {
@@ -272,6 +307,9 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         if (!block_accessors.contains(name)) {
             block_accessors.add(name);
             setChanged();
+            if (level != null && !level.isClientSide) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            }
         }
     }
 
@@ -279,6 +317,9 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         if (index >= 0 && index < block_accessors.size()) {
             block_accessors.remove(index);
             setChanged();
+            if (level != null && !level.isClientSide) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            }
         }
     }
 

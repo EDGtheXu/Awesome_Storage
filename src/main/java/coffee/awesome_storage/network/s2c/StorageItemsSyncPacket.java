@@ -14,11 +14,13 @@ import java.util.List;
 
 import static coffee.awesome_storage.Awesome_storage.space;
 
-public record StorageItemsSyncPacket(BlockPos pos, List<ItemStack> items) implements CustomPacketPayload {
+public record StorageItemsSyncPacket(BlockPos pos, List<ItemStack> items, int usedSlots, int totalSlots) implements CustomPacketPayload {
     public static final Type<StorageItemsSyncPacket> TYPE = new Type<>(space("storage_items_sync"));
     public static final StreamCodec<RegistryFriendlyByteBuf, StorageItemsSyncPacket> STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC, StorageItemsSyncPacket::pos,
             ItemStack.OPTIONAL_LIST_STREAM_CODEC, StorageItemsSyncPacket::items,
+            ByteBufCodecs.INT, StorageItemsSyncPacket::usedSlots,
+            ByteBufCodecs.INT, StorageItemsSyncPacket::totalSlots,
             StorageItemsSyncPacket::new
     );
 
@@ -31,7 +33,7 @@ public record StorageItemsSyncPacket(BlockPos pos, List<ItemStack> items) implem
         context.enqueueWork(() -> {
             var level = context.player().level();
             if (level.getBlockEntity(pos) instanceof MagicStorageBlockEntity be) {
-                be.setCachedItems(items);
+                be.setCachedItems(items, usedSlots, totalSlots);
             }
         });
     }

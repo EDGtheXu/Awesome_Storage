@@ -46,6 +46,12 @@ neoForge {
 
         configureEach {
             logLevel = org.slf4j.event.Level.INFO
+            jvmArguments.addAll([
+                    "-XX:+IgnoreUnrecognizedVMOptions",
+                    "-XX:+AllowEnhancedClassRedefinition",
+                    "-Dterminal.jline=false",
+                    "-Dlog4j2.formatMsgNoLookups=true",
+            ])
         }
     }
 
@@ -94,7 +100,7 @@ dependencies {
     compileOnly "curse.maven:jade-324717:5639932"
     runtimeOnly "curse.maven:jade-324717:5639932"
 
-    implementation files("libs/qtcraft-api-1.0.jar")
+    implementation files("libs/qtcraft-api-1.1.jar")
 }
 
 tasks.withType(ProcessResources).configureEach {

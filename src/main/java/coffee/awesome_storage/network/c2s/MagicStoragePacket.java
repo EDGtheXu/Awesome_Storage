@@ -21,7 +21,7 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
     public static final Type<MagicStoragePacket> TYPE = new Type<>(space("magic_storage_packet_s2c"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MagicStoragePacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, MagicStoragePacket::id,
-            ItemStack.STREAM_CODEC, MagicStoragePacket::item,
+            ItemStack.OPTIONAL_STREAM_CODEC, MagicStoragePacket::item,
             MagicStoragePacket::new
     );
 
@@ -39,7 +39,14 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
                 if (item.getItem() instanceof BlockItem block && CraftConfig.isEnabledBlock(block.getBlock())) {
                     String blockName = BuiltInRegistries.BLOCK.getKey(block.getBlock()).toString();
                     entity.addBlockAccessor(blockName);
-                    context.player().containerMenu.getCarried().shrink(1);
+                    ItemStack carried = context.player().containerMenu.getCarried();
+                    if (!carried.isEmpty()) {
+                        carried.shrink(1);
+                        if (carried.isEmpty()) {
+                            context.player().containerMenu.setCarried(ItemStack.EMPTY);
+                        }
+                    }
+                    context.player().containerMenu.broadcastChanges();
                 }
                 entity.syncToClient(context.player());
                 return;
@@ -76,7 +83,8 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
                     String blockName = accessors.remove(index);
                     Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(blockName));
                     context.player().getInventory().add(new ItemStack(block.asItem()));
-                    entity.setChanged();
+                    entity.getLevel().sendBlockUpdated(entity.getBlockPos(), entity.getBlockState(),
+                            entity.getBlockState(), 3);
                 }
                 entity.syncToClient(context.player());
             }
