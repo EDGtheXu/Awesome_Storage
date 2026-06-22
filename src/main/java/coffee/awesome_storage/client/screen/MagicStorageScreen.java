@@ -15,22 +15,20 @@ import com.github.edg_thexu.qtcraft_api.core.QSizePolicy;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QWheelEvent;
-import com.github.edg_thexu.qtcraft_api.core.geometry.QPoint;
 import com.github.edg_thexu.qtcraft_api.core.geometry.QSize;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QHBoxLayout;
+import com.github.edg_thexu.qtcraft_api.core.layouts.QLayout;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QVBoxLayout;
 import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
 import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.signal_slot.slots.SlotKeyConsumer;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.button.QPushButton;
-import com.github.edg_thexu.qtcraft_api.core.widget.button.QRadioButton;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QMainWindow;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QSmoothScrollArea;
 import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QComboBox;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QLineEdit;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -45,7 +43,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import oshi.util.tuples.Pair;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static coffee.awesome_storage.utils.Util.getStorageEntity;
 import static coffee.awesome_storage.utils.Util.getStorageItems;
@@ -253,6 +250,11 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         private QLabel capacityLabel;
         private final CraftInfoPanel infoPanel;
         private boolean showCraftableOnly = true;
+        private QLabel qtyLabelCtrl;
+        private QPushButton craftBtnCtrl;
+        private com.github.edg_thexu.qtcraft_api.core.widget.info.QItemWidget takeItemCtrl;
+        private QLabel takeLabelRef;
+
 
         List<ItemStack> results = new ArrayList<>();
         List<Pair<ItemStack, RecipeHolder<?>>> cachedResults = new ArrayList<>();
@@ -333,11 +335,88 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
 
             QSmoothScrollArea scrollArea = new QSmoothScrollArea();
             infoPanel = new CraftInfoPanel(this);
-            infoPanel.setFixedWidth(75);
-            scrollArea.setFixedWidth(85);
+            infoPanel.setFixedWidth(120);
+            scrollArea.setFixedWidth(130);
             scrollArea.setWidget(infoPanel);
             scrollArea.setWidgetResizable(true);
-            mainLayout.addWidget(scrollArea);
+
+            // Control buttons below info panel
+            qtyLabelCtrl = new QLabel(Component.literal("x1   "));
+            qtyLabelCtrl.setTextColor(new QColor(0xFFFFAA00));
+            craftBtnCtrl = new QPushButton(Component.literal("Craft"));
+            craftBtnCtrl.setFixedHeight(14);
+            craftBtnCtrl.setOnClick(() -> {
+                if (infoPanel.hasRecipe && infoPanel.parent.selectedRecipe != null && infoPanel.parent.selectedAdapter != null) {
+                    int count = Math.max(1, infoPanel.craftQuantity);
+                    for (int i = 0; i < count; i++)
+                        PacketDistributor.sendToServer(new MagicCraftPacket(infoPanel.parent.selectedRecipe.id(), BuiltInRegistries.RECIPE_TYPE.getKey(infoPanel.parent.selectedAdapter.getRecipe())));
+                    var be = Util.getStorageEntity(minecraft.player);
+                    if (be != null) be.setChanged();
+                    updateTakeLabel();
+                    scheduleRefresh();
+                }
+            });
+            // Take: rendered item + count
+            QWidget takeArea = new QWidget();
+            QVBoxLayout takeL = new QVBoxLayout(takeArea);
+            takeL.setSpacing(0);
+            takeL.setContentsMargins(0, 0, 0, 0);
+            QLabel takeLabel = new QLabel(Component.literal("x0"));
+            takeLabel.setTextColor(new QColor(0xFFFFAA00));
+            takeLabel.setFixedHeight(10);
+            takeItemCtrl = new com.github.edg_thexu.qtcraft_api.core.widget.info.QItemWidget() {
+                @Override protected void mousePressEvent(QMouseEvent e) { e.accept(); infoPanel.doTake(); }
+            };
+            takeItemCtrl.setFixedSize(18, 18);
+            takeL.addWidget(takeItemCtrl);
+            takeL.addWidget(takeLabel);
+
+            QPushButton p1 = new QPushButton(Component.literal("+1")), p10 = new QPushButton(Component.literal("+10")), p100 = new QPushButton(Component.literal("+100"));
+            QPushButton m1 = new QPushButton(Component.literal("-1")), m10 = new QPushButton(Component.literal("-10")), m100 = new QPushButton(Component.literal("-100"));
+            QPushButton maxB = new QPushButton(Component.literal("Max")), rstB = new QPushButton(Component.literal("Reset"));
+            for (QPushButton b : new QPushButton[]{p1, p10, p100, m1, m10, m100, maxB, rstB}) b.setFixedHeight(12);
+            p1.setOnClick(() -> {infoPanel.clampedAdd(1); qtyLabelCtrl.setText(Component.literal("x" + infoPanel.craftQuantity));});
+            p10.setOnClick(() -> {infoPanel.clampedAdd(10); qtyLabelCtrl.setText(Component.literal("x" + infoPanel.craftQuantity));});
+            p100.setOnClick(() -> {infoPanel.clampedAdd(100); qtyLabelCtrl.setText(Component.literal("x" + infoPanel.craftQuantity));});
+            m1.setOnClick(() -> { infoPanel.craftQuantity = Math.max(1, infoPanel.craftQuantity - 1); qtyLabelCtrl.setText(Component.literal("x" + infoPanel.craftQuantity));});
+            m10.setOnClick(() -> { infoPanel.craftQuantity = Math.max(1, infoPanel.craftQuantity - 10); qtyLabelCtrl.setText(Component.literal("x" + infoPanel.craftQuantity));});
+            m100.setOnClick(() -> { infoPanel.craftQuantity = Math.max(1, infoPanel.craftQuantity - 100); qtyLabelCtrl.setText(Component.literal("x" + infoPanel.craftQuantity));});
+            maxB.setOnClick(() -> { infoPanel.craftQuantity = infoPanel.getMaxCraftable(); qtyLabelCtrl.setText(Component.literal("x" + infoPanel.craftQuantity));});
+            rstB.setOnClick(() -> { infoPanel.craftQuantity = 1; qtyLabelCtrl.setText(Component.literal("x" + infoPanel.craftQuantity));});
+
+            // Right side: scroll area + controls
+            QWidget rightSide = new QWidget();
+            QVBoxLayout rvl = new QVBoxLayout(rightSide);
+            rvl.setSpacing(1);
+
+            // Take item widget at bottom (above the scroll)
+            rvl.addWidget(scrollArea, 1);
+
+            // Top row: left = qty+craft, right = take
+            QHBoxLayout topRow = new QHBoxLayout();
+            topRow.addWidget(qtyLabelCtrl);
+            topRow.addWidget(craftBtnCtrl, 0, QLayout.ALIGN_CENTER);
+            topRow.addWidget(takeArea, 1);
+            rvl.addLayout(topRow);
+
+            // Row: +1 +10 +100
+            QHBoxLayout incRow = new QHBoxLayout(); incRow.setSpacing(2);
+            incRow.addWidget(p1); incRow.addWidget(p10); incRow.addWidget(p100);
+            rvl.addLayout(incRow);
+
+            // Row: -1 -10 -100
+            QHBoxLayout decRow = new QHBoxLayout(); decRow.setSpacing(2);
+            decRow.addWidget(m1); decRow.addWidget(m10); decRow.addWidget(m100);
+            rvl.addLayout(decRow);
+
+            // Row: Max Reset
+            QHBoxLayout optRow = new QHBoxLayout(); optRow.setSpacing(2);
+            optRow.addWidget(maxB); optRow.addWidget(rstB);
+            rvl.addLayout(optRow);
+
+
+            takeLabelRef = takeLabel;
+            mainLayout.addWidget(rightSide);
 
             try { reloadRecipes(); } catch (Exception e) { e.printStackTrace(); }
             try { refresh(); } catch (Exception e) { e.printStackTrace(); }
@@ -430,12 +509,25 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             craftableGrid.setItems(display);
             stationsRow.refresh();
             updateCapacity();
+            updateTakeLabel();
         }
 
         void updateCapacity() {
             MagicStorageBlockEntity be = Util.getStorageEntity(minecraft.player);
             if (be != null) {
                 capacityLabel.setText(Component.literal("Capacity:" + be.getUsedSlots() + "/" + be.getTotalSlots()));
+            }
+        }
+
+        void updateTakeLabel() {
+            if (takeLabelRef != null && infoPanel != null && infoPanel.outputItem != null) {
+                int total = haveIngredients.getOrDefault(infoPanel.outputItem.getItem(), 0);
+                takeLabelRef.setText(Component.literal("x" + total));
+                if (takeItemCtrl != null) {
+                    var newStack = infoPanel.outputItem.copy();
+                    newStack.setCount(1);
+                    takeItemCtrl.setItemStack(newStack);
+                }
             }
         }
 
@@ -446,6 +538,11 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 selectedAdapter = recipeMap.get(selectedRecipe);
                 if (selectedRecipe != null && selectedAdapter != null) {
                     infoPanel.showRecipe(selectedRecipe, selectedAdapter, pair.getA(), haveIngredients);
+
+                    if (qtyLabelCtrl != null) qtyLabelCtrl.setText(Component.literal("x" + infoPanel.craftQuantity));
+                    int totalH = haveIngredients.getOrDefault(stack.getItem(), 0);
+                    if (takeItemCtrl != null) { var newStack = stack.copy(); newStack.setCount(1); takeItemCtrl.setItemStack(newStack); takeItemCtrl.setVisible(true); }
+                    if (takeLabelRef != null) takeLabelRef.setText(Component.literal("x" + totalH));
                 }
             }
         }
@@ -493,6 +590,30 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             }
             p.pop();
             p.disableClip();
+        }
+
+        @Override
+        protected void mousePressEvent(QMouseEvent event) {
+            if (event.button() == QMouseEvent.Button.Left) {
+                int slot = 14, gap = 1;
+                int idx = (event.x() + scrollOffset) / (slot + gap);
+                if (idx >= 0 && idx < stations.size()) {
+                    if (idx < stations.size() - 1) {
+                        PacketDistributor.sendToServer(new MagicStoragePacket(20000 + idx, ItemStack.EMPTY));
+                    } else {
+                        ItemStack held = menu.getCarried();
+                        if (!held.isEmpty() && held.getItem() instanceof BlockItem bi && CraftConfig.isEnabledBlock(bi.getBlock())) {
+                            PacketDistributor.sendToServer(new MagicStoragePacket(1, held));
+                        }
+                    }
+                    var be = Util.getStorageEntity(minecraft.player);
+                    if (be != null) be.setChanged();
+                    // Schedule recipe reload — it will trigger after server syncs accessors
+                    lastAccessors = new ArrayList<>();
+                    scheduleRefresh();
+                }
+                event.accept();
+            }
         }
 
         @Override
@@ -617,42 +738,68 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         private ItemStack outputItem = ItemStack.EMPTY;
         private List<ItemStack> ingredients = new ArrayList<>();
         private List<ItemStack> requiredStations = new ArrayList<>();
-        private List<ItemStack> storageMaterials = new ArrayList<>();
         private boolean hasRecipe;
+        private int craftQuantity = 1;
 
-        CraftInfoPanel(CraftPanel parent) { this.parent = parent; setMinimumSize(180, 200); }
+
+        CraftInfoPanel(CraftPanel parent) {
+            this.parent = parent;
+            setMinimumSize(180, 200);
+            setFixedSize(180, 300);
+
+        }
+
+        private int getMaxCraftable() {
+            int maxP = Integer.MAX_VALUE;
+            for (ItemStack ing : ingredients) {
+                int have = parent.haveIngredients.getOrDefault(ing.getItem(), 0);
+                int need = ing.getCount();
+                if (need > 0) maxP = Math.min(maxP, have / need);
+            }
+            return Math.max(1, maxP);
+        }
+
+        private void clampedAdd(int delta) {
+            craftQuantity = Math.max(1, Math.min(getMaxCraftable(), craftQuantity + delta));
+        }
+
+
+        private void doTake() {
+            int totalHave = parent.haveIngredients.getOrDefault(outputItem.getItem(), 0);
+            if (totalHave <= 0) return;
+            List<ItemStack> stored = getStorageItems(minecraft.player);
+            if (stored == null) return;
+            ItemStack target = outputItem.copy();
+            target.setCount(Math.min(totalHave, target.getMaxStackSize()));
+            for (int i = 0; i < stored.size(); i++) {
+                if (ItemStack.isSameItemSameComponents(stored.get(i), target)) {
+                    PacketDistributor.sendToServer(new MagicStoragePacket(i + 10000, target));
+                    var be = Util.getStorageEntity(minecraft.player);
+                    if (be != null) be.setChanged();
+                    scheduleRefresh();
+                    break;
+                }
+            }
+        }
+
 
         @SuppressWarnings("unchecked")
         void showRecipe(RecipeHolder<?> recipe, AbstractMagicCraftRecipeAdapter adapter, ItemStack output, Map<Item, Integer> have) {
             outputItem = output;
             ingredients.clear();
             requiredStations.clear();
-            storageMaterials.clear();
+            craftQuantity = 1;
+
             var casted = (AbstractMagicCraftRecipeAdapter<RecipeInput, Recipe<RecipeInput>>) adapter;
             NonNullList<Ingredient> ings = casted.getIngredients((RecipeHolder<Recipe<RecipeInput>>) (Object) recipe);
-            // Merge ingredients by item
-            java.util.Map<Item, Integer> merged = new java.util.LinkedHashMap<>();
+            java.util.LinkedHashMap<Item, Integer> merged = new java.util.LinkedHashMap<>();
             for (Ingredient ing : ings) {
                 if (ing.getItems().length > 0) {
-                    ItemStack first = ing.getItems()[0];
-                    merged.merge(first.getItem(), first.getCount(), Integer::sum);
+                    merged.merge(ing.getItems()[0].getItem(), ing.getItems()[0].getCount(), Integer::sum);
                 }
             }
             for (java.util.Map.Entry<Item, Integer> e : merged.entrySet()) {
-                ItemStack stack = new ItemStack(e.getKey(), e.getValue());
-                ingredients.add(stack);
-            }
-            // Only show items in storage that match recipe ingredients
-            Set<Item> relevantItems = new HashSet<>();
-            for (Ingredient ing : ings) {
-                for (ItemStack is : ing.getItems()) {
-                    relevantItems.add(is.getItem());
-                }
-            }
-            for (Map.Entry<Item, Integer> e : have.entrySet()) {
-                if (relevantItems.contains(e.getKey())) {
-                    storageMaterials.add(new ItemStack(e.getKey(), Math.min(e.getValue(), 99)));
-                }
+                ingredients.add(new ItemStack(e.getKey(), e.getValue()));
             }
             if (CraftConfig.ENABLED_RECIPES.containsKey(adapter.getRecipe())) {
                 for (Block b : CraftConfig.ENABLED_RECIPES.get(adapter.getRecipe())) {
@@ -660,6 +807,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 }
             }
             hasRecipe = true;
+
             markDirty();
             update();
         }
@@ -670,65 +818,60 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             if (p == null) return;
             p.fillRect(0, 0, width(), height(), new QColor(0xCC2A2A2A));
             p.drawRect(0, 0, width(), height(), new QColor(0xFF555555));
-            if (!hasRecipe) { p.setColor(new QColor(0xFF888888)); p.drawText("Select an item", 8, 20); return; }
 
-            int y = 6, ss = 18;
+            if (!hasRecipe) {
+                p.setColor(new QColor(0xFF888888)); p.drawText("Select an item", 8, 20);
+                return;
+            }
+
+            int y = 6, ss = 18, cw = width();
+
             p.setColor(new QColor(0xFFFFAA00));
             p.drawText("Output:", 6, y); y += 11;
             renderSlot(p, 6, y, 20, outputItem, false); y += 38;
+
             p.setColor(QColor.WHITE);
             p.drawText("Ingredients:", 6, y); y += 11;
             int ix = 6;
             for (ItemStack ing : ingredients) {
-                boolean miss = !parent.haveIngredients.containsKey(ing.getItem()) || parent.haveIngredients.get(ing.getItem()) < ing.getCount();
+                int need = ing.getCount() * Math.max(1, craftQuantity);
+                boolean miss = !parent.haveIngredients.containsKey(ing.getItem()) || parent.haveIngredients.get(ing.getItem()) < need;
                 renderSlot(p, ix, y, ss, ing, false);
                 if (miss) p.fillRect(ix, y, ss, ss, new QColor(0x44FF0000));
                 ix += ss + 2;
-                if (ix > width() - ss) { ix = 6; y += ss + 2; }
+                if (ix > cw - ss) { ix = 6; y += ss + 2; }
             }
-            if (!ingredients.isEmpty()) {
-                if(ix > 6) {
-                    y += ss + 6;
-                }else{
-                    y += 4;
-                }
-            }
+            if (!ingredients.isEmpty()) y += (ix > 6 ? ss + 6 : 4);
 
             p.drawText("Stations:", 6, y); y += 11; ix = 6;
-            for (ItemStack st : requiredStations) { renderSlot(p, ix, y, ss, st, false); ix += ss + 2; if (ix > width() - ss) { ix = 6; y += ss + 2; } }
+            for (ItemStack st : requiredStations) { renderSlot(p, ix, y, ss, st, false); ix += ss + 2; if (ix > cw - ss) { ix = 6; y += ss + 2; } }
             if (!requiredStations.isEmpty()) y += ss + 6;
 
+            // In Storage: filter ingredients to only relevant items
             p.drawText("In Storage:", 6, y); y += 11; ix = 6;
-            // Recalculate storage materials on every paint to reflect changes
-            storageMaterials.clear();
-            for (Map.Entry<Item, Integer> e : parent.haveIngredients.entrySet()) {
-                boolean isIngredient = false;
-                for (ItemStack ing : this.ingredients) {
-                    if (e.getKey() == ing.getItem()) { isIngredient = true; break; }
-                }
-                if (isIngredient) {
-                    storageMaterials.add(new ItemStack(e.getKey(), Math.min(e.getValue(), 99)));
-                }
+            java.util.Set<Item> matchedIngredient = new java.util.HashSet<>();
+            for (ItemStack ing : ingredients) matchedIngredient.add(ing.getItem());
+            int drawn = 0;
+            for (java.util.Map.Entry<Item, Integer> e : parent.haveIngredients.entrySet()) {
+                if (!matchedIngredient.contains(e.getKey())) continue;
+                if (drawn >= 8) break;
+                renderSlot(p, ix, y, ss, new ItemStack(e.getKey(), Math.min(e.getValue(), 99)), false);
+                ix += ss + 2; if (ix > cw - ss) { ix = 6; y += ss + 2; }
+                drawn++;
             }
-            for (ItemStack ms : storageMaterials) {
-                renderSlot(p, ix, y, ss, ms, false);
-                ix += ss + 2; if (ix > width() - ss) { ix = 6; y += ss + 2; }
-            }
+            if (drawn > 0) y += ss + 6; else y += 4;
+            y += 4;
+
         }
 
         @Override
         protected void mousePressEvent(QMouseEvent event) {
-            if (event.button() == QMouseEvent.Button.Left && hasRecipe && parent.selectedRecipe != null && parent.selectedAdapter != null) {
-                int outY = 6 + 11;
-                if (event.x() >= 6 && event.x() <= 38 && event.y() >= outY && event.y() <= outY + 32) {
-                    PacketDistributor.sendToServer(new MagicCraftPacket(parent.selectedRecipe.id(),
-                            BuiltInRegistries.RECIPE_TYPE.getKey(parent.selectedAdapter.getRecipe())));
-                    var be = Util.getStorageEntity(minecraft.player);
-                    if (be != null) be.setChanged();
-                    scheduleRefresh();
-                    event.accept();
-                }
-            }
+            if (!hasRecipe || event.button() != QMouseEvent.Button.Left) return;
+        }
+
+        @Override
+        public QWidget childAt(int px, int py) {
+            return super.childAt(px, py);
         }
 
         @Override
@@ -802,73 +945,9 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (hasShiftDown()) scheduleRefresh();
-
-        if (button == 0 && craftPanel != null && craftWin != null && craftWin.isVisible()) {
-            StationsRowWidget srw = craftPanel.stationsRow;
-            QPoint lt = srw.mapToGlobal(QPoint.ZERO);
-            QPoint rb = srw.mapToGlobal(new QPoint(srw.width(), srw.height()));
-            if (mouseX > lt.x() && mouseX < rb.x() && mouseY > lt.y() && mouseY < rb.y()) {
-                int slot = 14, gap = 1, scroll = srw.getScrollOffset();
-                int idx = ((int) mouseX - lt.x() + scroll) / (slot + gap);
-                if (idx >= 0 && idx < srw.getStationCount()) {
-                    if (idx < srw.getStationCount() - 1) {
-                        PacketDistributor.sendToServer(new MagicStoragePacket(20000 + idx, ItemStack.EMPTY));
-                    } else {
-                        ItemStack held = menu.getCarried();
-                        if (!held.isEmpty() && held.getItem() instanceof BlockItem bi && CraftConfig.isEnabledBlock(bi.getBlock())) {
-                            PacketDistributor.sendToServer(new MagicStoragePacket(1, held));
-                        }
-                    }
-                    var be = Util.getStorageEntity(minecraft.player);
-                    if (be != null) be.setChanged();
-                    scheduleReloadRecipes();
-                    return true;
-                }
-            }
-            // Craftable grid click detection
-            ItemGridWidget cg = craftPanel.craftableGrid;
-            QPoint glt = cg.mapToGlobal(QPoint.ZERO);
-            int gridCols = cg.getCols(), gSlot = 18;
-            QPoint grb = cg.mapToGlobal(new QPoint(cg.width(), cg.height()));
-            if (mouseX >= glt.x() && mouseX < grb.x() && mouseY >= glt.y() && mouseY < grb.y()) {
-                int col = (int) (mouseX - glt.x()) / gSlot;
-                int row = (int) (mouseY - glt.y()) / gSlot;
-                int idx = row * gridCols + col;
-                if (idx >= 0 && idx < cg.getItemCount()) {
-                    if (!cg.getItemAt(idx).isEmpty()) {
-                        craftPanel.onCraftClick(cg.getItemAt(idx), idx);
-                        return true;
-                    }
-                }
-            }
-        }
-
-        if (button == 0 && storagePanel != null && storageWin != null && storageWin.isVisible()) {
-            QPoint glt = storagePanel.itemGrid.mapToGlobal(QPoint.ZERO);
-            int gSlot = 18, gCols = storagePanel.itemGrid.getCols();
-            QPoint grb = storagePanel.itemGrid.mapToGlobal(new QPoint(storagePanel.itemGrid.width(), storagePanel.itemGrid.height()));
-            if (mouseX >= glt.x() && mouseX < grb.x() && mouseY >= glt.y() && mouseY < grb.y()) {
-                int col = (int) (mouseX - glt.x()) / gSlot;
-                int row = (int) (mouseY - glt.y()) / gSlot;
-                int idx = row * gCols + col;
-                if (idx >= 0 && idx < storagePanel.itemGrid.getItemCount()) {
-                    ItemStack stack = storagePanel.itemGrid.getItemAt(idx);
-                    if (!stack.isEmpty() && menu.getCarried().isEmpty()) {
-                        int storageIdx = storagePanel.itemGrid.getStorageIndex(idx);
-                        if (storageIdx >= 0) {
-                            PacketDistributor.sendToServer(new MagicStoragePacket(storageIdx + 10000, new ItemStack(net.minecraft.world.item.Items.WOODEN_AXE)));
-                            getStorageEntity(minecraft.player).setChanged();
-                            scheduleRefresh();
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Normal QTCraft widget dispatch
+        // Let QTCraft widgets handle clicks first (grid, stations row, etc.)
         if (widgetDelegate.mouseClicked(mouseX, mouseY, button)) return true;
-        // Store action into storage window (carrying item, click anywhere)
+        // Store action into storage window (carrying item, click anywhere on storage window)
         if (!menu.getCarried().isEmpty() && storageWin != null && storageWin.isVisible()
                 && mouseX >= storageWin.x() && mouseX <= storageWin.x() + storageWin.width()
                 && mouseY >= storageWin.y() && mouseY <= storageWin.y() + storageWin.height()) {

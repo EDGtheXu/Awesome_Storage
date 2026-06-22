@@ -64,6 +64,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
 
     // ========================================================================
     // BFS Container Scanning — traverse through storage blocks to find all connected containers
+    // Supports both vanilla Container and IItemHandler (Sophisticated Storage, etc.)
     // ========================================================================
     public List<Container> getAdjacentContainers() {
         List<Container> containers = new ArrayList<>();
@@ -81,15 +82,40 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
                 BlockPos n = cur.relative(dir);
                 if (!visited.add(n)) continue;
                 BlockEntity be = level.getBlockEntity(n);
-                switch (be) {
-                    case MagicStorageBlockEntity ignored -> queue.add(n);
-                    case Container c -> containers.add(c);
-                    case null, default -> {
+                if (be == null) continue;
+                if (be instanceof MagicStorageBlockEntity) {
+                    queue.add(n);
+                } else if (be instanceof Container c) {
+                    containers.add(c);
+                } else {
+                    // Check IItemHandler capability (Sophisticated Storage, etc.)
+                    IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, n, dir.getOpposite());
+                    if (handler != null) {
+                        containers.add(new ItemHandlerContainer(handler));
                     }
                 }
             }
         }
         return containers;
+    }
+
+    /** Wraps an IItemHandler as a vanilla Container for compatibility. */
+    private static class ItemHandlerContainer implements Container {
+        private final IItemHandler handler;
+        ItemHandlerContainer(IItemHandler handler) { this.handler = handler; }
+        @Override public int getContainerSize() { return handler.getSlots(); }
+        @Override public boolean isEmpty() { for (int i = 0; i < handler.getSlots(); i++) if (!handler.getStackInSlot(i).isEmpty()) return false; return true; }
+        @Override public ItemStack getItem(int slot) { return handler.getStackInSlot(slot); }
+        @Override public ItemStack removeItem(int slot, int amount) { return handler.extractItem(slot, amount, false); }
+        @Override public ItemStack removeItemNoUpdate(int slot) { return handler.extractItem(slot, handler.getStackInSlot(slot).getCount(), false); }
+        @Override public void setItem(int slot, ItemStack stack) {
+            handler.extractItem(slot, handler.getStackInSlot(slot).getCount(), false);
+            handler.insertItem(slot, stack, false);
+        }
+        @Override public void setChanged() {}
+        @Override public boolean stillValid(Player player) { return true; }
+        @Override public void clearContent() { for (int i = 0; i < handler.getSlots(); i++) handler.extractItem(i, handler.getStackInSlot(i).getCount(), false); }
+        @Override public int getMaxStackSize() { return 64; }
     }
 
     // ========================================================================

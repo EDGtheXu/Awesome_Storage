@@ -73,6 +73,9 @@ repositories {
         dirs "libs"
     }
     maven {
+        url = "https://www.cursemaven.com"
+    }
+    maven {
         // location of a maven mirror for JEI files, as a fallback
         name = "ModMaven"
         url = "https://modmaven.dev"
@@ -93,14 +96,21 @@ repositories {
 dependencies {
     // Example mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
-    compileOnly("mezz.jei:jei-1.21-common-api:${jei_version}")
-    compileOnly "mezz.jei:jei-1.21-neoforge-api:${jei_version}"
-    runtimeOnly "mezz.jei:jei-1.21-neoforge:${jei_version}"
+    compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+    runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 
     compileOnly "curse.maven:jade-324717:5639932"
     runtimeOnly "curse.maven:jade-324717:5639932"
 
     implementation files("libs/qtcraft-api-1.1.jar")
+
+
+    compileOnly "curse.maven:sophisticated-core-618298:7552275"
+    compileOnly "curse.maven:sophisticated-storage-619320:7531079"
+
+    runtimeOnly "curse.maven:sophisticated-core-618298:7552275"
+    runtimeOnly "curse.maven:sophisticated-storage-619320:7531079"
 }
 
 tasks.withType(ProcessResources).configureEach {
