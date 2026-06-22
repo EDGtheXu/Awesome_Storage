@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static coffee.awesome_storage.Awesome_storage.MODID;
 
-@EventBusSubscriber(modid = MODID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = MODID)
 public class DataGenerator {
     @SubscribeEvent
     public static void gatherData(GatherDataEvent event) {

@@ -11,7 +11,7 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import static coffee.awesome_storage.Awesome_storage.MODID;
 
 
-@EventBusSubscriber(modid = MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
 public class ModClientEvent {
 
     @SubscribeEvent

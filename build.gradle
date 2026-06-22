@@ -63,6 +63,9 @@ configurations {
 
 repositories {
     mavenLocal()
+    flatDir {
+        dirs "libs"
+    }
     maven {
         // location of a maven mirror for JEI files, as a fallback
         name = "ModMaven"
@@ -91,20 +94,7 @@ dependencies {
     compileOnly "curse.maven:jade-324717:5639932"
     runtimeOnly "curse.maven:jade-324717:5639932"
 
-    // Example mod dependency using a mod jar from ./libs with a flat dir repository
-    // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
-    // The group id is ignored when searching -- in this case, it is "blank"
-    // implementation "blank:coolmod-${mc_version}:${coolmod_version}"
-
-    // Example mod dependency using a file as dependency
-    // implementation files("libs/coolmod-${mc_version}-${coolmod_version}.jar")
-
-    // Example project dependency using a sister or child project:
-    // implementation project(":myproject")
-
-    // For more info:
-    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
-    // http://www.gradle.org/docs/current/userguide/dependency_management.html
+    implementation files("libs/qtcraft-api-1.0.jar")
 }
 
 tasks.withType(ProcessResources).configureEach {

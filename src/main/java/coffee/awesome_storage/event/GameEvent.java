@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import static coffee.awesome_storage.Awesome_storage.MODID;
 
 
-@EventBusSubscriber(modid = MODID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = MODID)
 public class GameEvent {
     @SubscribeEvent
     public static void joinLevel(EntityJoinLevelEvent event){
