@@ -1,5 +1,6 @@
 package coffee.awesome_storage.client.screen;
 
+import com.github.edg_thexu.qtcraft_api.client.painter.GuiDrawDevice;
 import com.github.edg_thexu.qtcraft_api.core.QTheme;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
@@ -9,6 +10,7 @@ import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.widget.QCursor;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QDockWidget;
+import net.minecraft.client.gui.GuiGraphics;
 
 public class FloatingWindow extends QDockWidget {
     private static final int RESIZE_BORDER = 5;
@@ -133,6 +135,13 @@ public class FloatingWindow extends QDockWidget {
     protected void paintEvent(QPaintEvent event) {
         QPainter p = event.painter();
         if (p == null) return;
+        try {
+            // todo modify in api
+            var f = GuiDrawDevice.class.getDeclaredField("gui");
+            f.setAccessible(true);
+            ((GuiGraphics) f.get(p.drawDevice())).pose().translate(0,0, 250);
+        } catch (Exception e) {
+        }
 
         p.fillRect(0, 0, width(), height(), new QColor(0xCC1E1E1E));
         p.setColor(new QColor(0xFF555555));

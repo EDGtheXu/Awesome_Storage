@@ -7,6 +7,7 @@ import coffee.awesome_storage.network.c2s.MagicStoragePacket;
 import coffee.awesome_storage.network.s2c.BlockPosSyncPacket;
 import coffee.awesome_storage.network.s2c.ChunkPacket;
 import coffee.awesome_storage.network.s2c.ConfigSyncPacket;
+import coffee.awesome_storage.network.s2c.StorageItemsSyncPacket;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -28,7 +29,8 @@ public class ModEvent {
         registrar.playToServer(BlockPosSyncPacket.TYPE, BlockPosSyncPacket.STREAM_CODEC, BlockPosSyncPacket::handle);
 
         registrar.playToClient(ChunkPacket.TYPE, ChunkPacket.STREAM_CODEC, ChunkPacket::handle);
-
+        registrar.playToClient(StorageItemsSyncPacket.TYPE, StorageItemsSyncPacket.STREAM_CODEC, StorageItemsSyncPacket::handle);
+ 
     }
 
     @SubscribeEvent

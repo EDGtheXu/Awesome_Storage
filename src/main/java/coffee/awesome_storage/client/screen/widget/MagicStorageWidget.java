@@ -36,9 +36,8 @@ public class MagicStorageWidget extends AbstractFloatWidget {
         this.storageEntity = getStorageEntity(Minecraft.getInstance().player);
         if(this.storageEntity == null)
             return;
-        var size = storageEntity.getContainerSize();
 
-        String info = getNonEmptyItemsCount() +"/"+size+"  "+"lvl:"+storageEntity.lvl;
+        String info = getNonEmptyItemsCount() + " items  lvl:"+storageEntity.lvl;
         guiGraphics.drawString(Minecraft.getInstance().font,info ,this.getX()+this.width + 5,this.getY()-10,0xffffff);
 
         String upgradeInfo;

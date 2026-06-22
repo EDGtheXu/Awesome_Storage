@@ -87,7 +87,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             craftPanel = new CraftPanel();
             craftWin = new FloatingWindow("Crafting");
             craftWin.setWidget(craftPanel);
-            craftWin.setGeometry(storageX, storageY, storageW, storageH);
+            craftWin.setGeometry(craftX, craftY, craftW, craftH);
             craftWin.setParent(win);
             craftPanel.updateLayout();
             craftPanel.refresh();
@@ -97,7 +97,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             storagePanel = new StoragePanel();
             storageWin = new FloatingWindow("Storage");
             storageWin.setWidget(storagePanel);
-            storageWin.setGeometry(craftX, craftY, craftW, craftH);
+            storageWin.setGeometry(storageX, storageY, storageW, storageH);
             storageWin.setParent(win);
             storagePanel.updateLayout();
         }
@@ -246,9 +246,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             itemGrid.setItems(filtered);
             MagicStorageBlockEntity be = Util.getStorageEntity(minecraft.player);
             if (be != null) {
-                int c = 0;
-                for (ItemStack s : getStorageItems(minecraft.player)) if (!s.isEmpty()) c++;
-                capacityLabel.setText(Component.literal("Capacity: " + c + "/" + be.getContainerSize()));
+                capacityLabel.setText(Component.literal("Items: " + be.getTotalItemCount()));
             }
         }
 
@@ -360,7 +358,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             leftLayout.addLayout(stackRow);
 
             stationsRow = new StationsRowWidget();
-            stationsRow.setFixedHeight(36);
+            stationsRow.setFixedHeight(16);
             leftLayout.addWidget(stationsRow);
 
             QSmoothScrollArea area = new QSmoothScrollArea();
@@ -471,9 +469,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         void updateCapacity() {
             MagicStorageBlockEntity be = Util.getStorageEntity(minecraft.player);
             if (be != null) {
-                int c = 0;
-                for (ItemStack s : getStorageItems(minecraft.player)) if (!s.isEmpty()) c++;
-                capacityLabel.setText(Component.literal("Capacity: " + c + "/" + be.getContainerSize()));
+                capacityLabel.setText(Component.literal("Items: " + be.getTotalItemCount()));
             }
         }
 
@@ -514,7 +510,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             QPainter p = event.painter();
             if (p == null) return;
             p.fillRect(0, 0, width(), height(), new QColor(0xCC333333));
-            int slot = 32, gap = 2;
+            int slot = 14, gap = 1;
             p.enableClip(0, 0, width(), height());
             p.push();
             p.translate(-scrollOffset, 0);
@@ -646,6 +642,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         private ItemStack outputItem = ItemStack.EMPTY;
         private List<ItemStack> ingredients = new ArrayList<>();
         private List<ItemStack> requiredStations = new ArrayList<>();
+        private List<ItemStack> storageMaterials = new ArrayList<>();
         private boolean hasRecipe;
 
         CraftInfoPanel(CraftPanel parent) { this.parent = parent; setMinimumSize(180, 200); }
@@ -655,10 +652,23 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             outputItem = output;
             ingredients.clear();
             requiredStations.clear();
+            storageMaterials.clear();
             var casted = (AbstractMagicCraftRecipeAdapter<RecipeInput, Recipe<RecipeInput>>) adapter;
             NonNullList<Ingredient> ings = casted.getIngredients((RecipeHolder<Recipe<RecipeInput>>) (Object) recipe);
             for (Ingredient ing : ings) {
                 if (ing.getItems().length > 0) ingredients.add(ing.getItems()[0].copy());
+            }
+            // Only show items in storage that match recipe ingredients
+            Set<Item> relevantItems = new HashSet<>();
+            for (Ingredient ing : ings) {
+                for (ItemStack is : ing.getItems()) {
+                    relevantItems.add(is.getItem());
+                }
+            }
+            for (Map.Entry<Item, Integer> e : have.entrySet()) {
+                if (relevantItems.contains(e.getKey())) {
+                    storageMaterials.add(new ItemStack(e.getKey(), Math.min(e.getValue(), 99)));
+                }
             }
             if (CraftConfig.ENABLED_RECIPES.containsKey(adapter.getRecipe())) {
                 for (Block b : CraftConfig.ENABLED_RECIPES.get(adapter.getRecipe())) {
@@ -698,11 +708,10 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             for (ItemStack st : requiredStations) { renderSlot(p, ix, y, ss, st, false); ix += ss + 2; if (ix > width() - ss) { ix = 6; y += ss + 2; } }
             if (!requiredStations.isEmpty()) y += ss + 6;
 
-            p.drawText("In Storage:", 6, y); y += 11; ix = 6; int cnt = 0;
-            for (Map.Entry<Item, Integer> e : parent.haveIngredients.entrySet()) {
-                if (cnt >= 15) break;
-                renderSlot(p, ix, y, ss, new ItemStack(e.getKey(), Math.min(e.getValue(), 99)), false);
-                ix += ss + 2; if (ix > width() - ss) { ix = 6; y += ss + 2; } cnt++;
+            p.drawText("In Storage:", 6, y); y += 11; ix = 6;
+            for (ItemStack ms : storageMaterials) {
+                renderSlot(p, ix, y, ss, ms, false);
+                ix += ss + 2; if (ix > width() - ss) { ix = 6; y += ss + 2; }
             }
         }
 
@@ -786,6 +795,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         if (widgetDelegate.mouseClicked(mouseX, mouseY, button)) return true;
         return super.mouseClicked(mouseX, mouseY, button);
     }
+
 
     @Override
     protected void renderBg(net.minecraft.client.gui.GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {}

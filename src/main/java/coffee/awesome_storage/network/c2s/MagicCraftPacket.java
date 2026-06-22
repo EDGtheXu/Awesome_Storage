@@ -11,76 +11,49 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 import static coffee.awesome_storage.Awesome_storage.space;
-import static coffee.awesome_storage.utils.Util.getStorageEntity;
 
-public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID)  implements CustomPacketPayload {
-
+public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID) implements CustomPacketPayload {
 
     public static final Type<MagicCraftPacket> TYPE = new Type<>(space("magic_craft_packet_s2c"));
     public static final StreamCodec<ByteBuf, MagicCraftPacket> STREAM_CODEC = StreamCodec.composite(
-            ResourceLocation.STREAM_CODEC,MagicCraftPacket::id,
-            ResourceLocation.STREAM_CODEC,MagicCraftPacket::adapterID,
+            ResourceLocation.STREAM_CODEC, MagicCraftPacket::id,
+            ResourceLocation.STREAM_CODEC, MagicCraftPacket::adapterID,
             MagicCraftPacket::new
     ).cast();
 
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
-            var recipe = context.player().level().getRecipeManager().byKey(id);
-            if(recipe.isPresent()){
-                var adapter = AdapterManager.Adapters.get(BuiltInRegistries.RECIPE_TYPE.get(adapterID));
-                NonNullList<Ingredient> ingredients = adapter.getIngredients((RecipeHolder<Recipe<RecipeInput>>) recipe.get());
-                MagicStorageBlockEntity entity =  getStorageEntity(context.player());
+            var recipeOpt = context.player().level().getRecipeManager().byKey(id);
+            if (recipeOpt.isEmpty()) return;
+            var recipe = recipeOpt.get();
+            var adapter = AdapterManager.Adapters.get(BuiltInRegistries.RECIPE_TYPE.get(adapterID));
+            if (adapter == null) return;
 
-                // step 1: 获取拥有的物品
-                List<ItemStack> have = new ArrayList<>(Util.getStorageItems(context.player()));
+            NonNullList<Ingredient> ingredients = adapter.getIngredients((RecipeHolder<Recipe<RecipeInput>>) (Object) recipe);
+            MagicStorageBlockEntity entity = Util.getStorageEntity(context.player());
+            if (entity == null) return;
 
-                // step 2: 检查是否可以合成
-                boolean canCraft = Util.canCraft(have, ingredients);
+            // Check and consume ingredients from adjacent containers
+            if (!entity.craftAndConsume(ingredients)) return;
 
-                if (canCraft) {
+            // Get result
+            context.player().awardRecipes(Collections.singleton(recipe));
+            ItemStack result = recipe.value().getResultItem(context.player().level().registryAccess()).copy();
+            result.onCraftedBy(context.player().level(), context.player(), result.getCount());
 
-                    // step 3: 获取合成的物品
-                    context.player().awardRecipes(Collections.singleton(recipe.get()));
-                    ItemStack result = recipe.get().value().getResultItem(context.player().level().registryAccess()).copy();
-                    result.onCraftedBy(context.player().level(), context.player(), result.getCount());
-                    net.neoforged.neoforge.event.EventHooks.firePlayerCraftingEvent(context.player(), result, entity);
-
-                     //step 4: 合成的物品放入存储空间
-                    Util.tryAddItemStackToItemStacks(result, entity.getItems());
-                    if(!result.isEmpty()){
-                        //step 5: 现有堆叠不够，放入空物品栏
-                        boolean c = false;
-                        for(ItemStack stack : entity.getItems()){
-                            if(stack.isEmpty()){
-                                c=true;
-                                PacketDistributor.sendToServer(new MagicStoragePacket(0,result.copy()));
-                                break;
-                            }
-                        }
-                        if(!c){
-                            context.player().getInventory().placeItemBackInInventory(result);
-                        }
-                    }
-
-                    // step 5: 更新拥有的物品
-                    Util.doCraft(have, ingredients);
-
-                    // step 6: 更新存储空间
-                    NonNullList<ItemStack> items = NonNullList.withSize(entity.getItems().size(), ItemStack.EMPTY);
-                    for (ItemStack stack : have) {
-                        items.set(entity.getItems().indexOf(stack), stack);
-                    }
-                    entity.setItems(items);
-
-                }
+            // Store result in adjacent containers (or player inventory if full)
+            int remaining = entity.storeItem(result);
+            if (remaining > 0) {
+                result.setCount(remaining);
+                context.player().getInventory().placeItemBackInInventory(result);
             }
+            entity.syncToClient(context.player());
         });
     }
 
@@ -88,5 +61,4 @@ public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID) 
     public @NotNull Type<MagicCraftPacket> type() {
         return TYPE;
     }
-
 }
