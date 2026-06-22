@@ -83,15 +83,15 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
                 if (!visited.add(n)) continue;
                 BlockEntity be = level.getBlockEntity(n);
                 if (be == null) continue;
-                if (be instanceof MagicStorageBlockEntity) {
-                    queue.add(n);
-                } else if (be instanceof Container c) {
+                if (be instanceof Container c) {
                     containers.add(c);
+                    queue.add(n); // traverse through ALL containers (chests, barrels, storage blocks, etc.)
                 } else {
-                    // Check IItemHandler capability (Sophisticated Storage, etc.)
                     IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, n, dir.getOpposite());
                     if (handler != null) {
-                        containers.add(new ItemHandlerContainer(handler));
+                        ItemHandlerContainer ihc = new ItemHandlerContainer(handler);
+                        containers.add(ihc);
+                        queue.add(n); // also traverse through IItemHandler containers
                     }
                 }
             }
@@ -101,7 +101,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
 
     /** Wraps an IItemHandler as a vanilla Container for compatibility. */
     private static class ItemHandlerContainer implements Container {
-        private final IItemHandler handler;
+        final IItemHandler handler;
         ItemHandlerContainer(IItemHandler handler) { this.handler = handler; }
         @Override public int getContainerSize() { return handler.getSlots(); }
         @Override public boolean isEmpty() { for (int i = 0; i < handler.getSlots(); i++) if (!handler.getStackInSlot(i).isEmpty()) return false; return true; }
@@ -217,6 +217,16 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     }
 
     private ItemStack tryAddToContainer(Container container, ItemStack stack) {
+        // For IItemHandler wrappers, use insertItem directly for accurate remainder handling
+        if (container instanceof ItemHandlerContainer ihc) {
+            IItemHandler h = ihc.handler;
+            ItemStack remaining = stack.copy();
+            for (int i = 0; i < h.getSlots(); i++) {
+                if (remaining.isEmpty()) break;
+                remaining = h.insertItem(i, remaining, false);
+            }
+            return remaining;
+        }
         ItemStack toAdd = stack.copy();
         for (int i = 0; i < container.getContainerSize(); i++) {
             if (toAdd.isEmpty()) break;

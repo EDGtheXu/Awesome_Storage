@@ -114,7 +114,12 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     }
 
     private static void renderSlot(QPainter p, int x, int y, int size, ItemStack stack, boolean highlight) {
+        renderSlot(p, x, y, size, stack, highlight, false);
+    }
+
+    private static void renderSlot(QPainter p, int x, int y, int size, ItemStack stack, boolean highlight, boolean overlay) {
         p.fillRect(x, y, size, size, new QColor(0xFF333333));
+        if (overlay) p.fillRect(x, y, size, size, new QColor(0x55FF0000));
         if (highlight) p.fillRect(x, y, size, size, new QColor(0x55FFFFFF));
         if (!stack.isEmpty()) {
             p.renderItemStack(stack, x + (size - 16) / 2, y + (size - 16) / 2);
@@ -249,7 +254,9 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         ItemGridWidget craftableGrid;
         private QLabel capacityLabel;
         private final CraftInfoPanel infoPanel;
+        private final QSmoothScrollArea craftableScrollArea;
         private boolean showCraftableOnly = true;
+        private final List<Integer> craftDisplayIndex = new ArrayList<>();
         private QLabel qtyLabelCtrl;
         private QPushButton craftBtnCtrl;
         private com.github.edg_thexu.qtcraft_api.core.widget.info.QItemWidget takeItemCtrl;
@@ -327,6 +334,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             area.setWidget(craftableGrid);
             area.setWidgetResizable(true);
             leftLayout.addWidget(area, 1);
+            craftableScrollArea = area;
 
             capacityLabel = new QLabel(Component.literal("Capacity: 0/0"));
             leftLayout.addWidget(capacityLabel);
@@ -436,7 +444,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                     if (accept) {
                         AbstractMagicCraftRecipeAdapter<RecipeInput, Recipe<RecipeInput>> adapter =
                                 AdapterManager.Adapters.containsKey(rt)
-                                        ? (AbstractMagicCraftRecipeAdapter<RecipeInput, Recipe<RecipeInput>>) (Object) AdapterManager.Adapters.get(rt)
+                                        ? AdapterManager.Adapters.get(rt)
                                         : new CommonRecipeAdapter(rt);
                         var recipes = minecraft.level.getRecipeManager().getAllRecipesFor(adapter.getRecipe());
                         for (var r : recipes) adapter.loadRecipe(r, results, recipeMap);
@@ -506,7 +514,26 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 case "By Name" -> display.sort(Comparator.comparing(s -> s.getDisplayName().getString()));
                 case "By Count" -> display.sort(Comparator.comparingInt(s -> -s.getCount()));
             }
-            craftableGrid.setItems(display);
+            // Map display indices to cachedResults indices, and compute craftable overlays
+            craftDisplayIndex.clear();
+            List<Boolean> overlays = new ArrayList<>();
+            for (ItemStack ds : display) {
+                int found = -1;
+                for (int ci = 0; ci < cachedResults.size(); ci++) {
+                    if (ItemStack.isSameItemSameComponents(ds, cachedResults.get(ci).getA())) {
+                        found = ci; break;
+                    }
+                }
+                craftDisplayIndex.add(found);
+                // Red overlay for items that are in the "partial" (non-craftable) portion
+                overlays.add(found >= craftable.size());
+            }
+            craftableGrid.setItems(display, overlays);
+            // Force scroll area to recalculate scrollbar bounds
+            if (craftableScrollArea != null) {
+                craftableScrollArea.updateLayout();
+                craftableScrollArea.markDirty();
+            }
             stationsRow.refresh();
             updateCapacity();
             updateTakeLabel();
@@ -532,8 +559,9 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         }
 
         void onCraftClick(ItemStack stack, int index) {
-            if (index >= 0 && index < cachedResults.size()) {
-                var pair = cachedResults.get(index);
+            int realIdx = (index >= 0 && index < craftDisplayIndex.size()) ? craftDisplayIndex.get(index) : -1;
+            if (realIdx >= 0 && realIdx < cachedResults.size()) {
+                var pair = cachedResults.get(realIdx);
                 selectedRecipe = pair.getB();
                 selectedAdapter = recipeMap.get(selectedRecipe);
                 if (selectedRecipe != null && selectedAdapter != null) {
@@ -631,6 +659,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     private class ItemGridWidget extends QWidget {
         private List<ItemStack> items = new ArrayList<>();
         private List<Integer> storageIndices = new ArrayList<>();
+        private List<Boolean> overlayFlags = new ArrayList<>();
         private int hoverIndex = -1;
         private int cols = 8;
         private int slotSize = 18;
@@ -640,8 +669,11 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             setFocusPolicy(com.github.edg_thexu.qtcraft_api.core.widget.QWidget.FocusPolicy.NoFocus);
         }
 
-        void setItems(List<ItemStack> items) {
+        void setItems(List<ItemStack> items) { setItems(items, null); }
+
+        void setItems(List<ItemStack> items, List<Boolean> overlays) {
             this.items = items;
+            this.overlayFlags = overlays != null ? overlays : new ArrayList<>();
             // Map each display item to its index in the full getStoredItems() list
             storageIndices.clear();
             MagicStorageBlockEntity be = Util.getStorageEntity(minecraft.player);
@@ -696,7 +728,8 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             updateCols();
             for (int i = 0; i < items.size(); i++) {
                 int col = i % cols, row = i / cols;
-                renderSlot(p, col * slotSize, row * slotSize, slotSize, items.get(i), i == hoverIndex);
+                boolean over = i < overlayFlags.size() && overlayFlags.get(i);
+                renderSlot(p, col * slotSize, row * slotSize, slotSize, items.get(i), i == hoverIndex, over);
             }
         }
 
@@ -855,7 +888,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             for (java.util.Map.Entry<Item, Integer> e : parent.haveIngredients.entrySet()) {
                 if (!matchedIngredient.contains(e.getKey())) continue;
                 if (drawn >= 8) break;
-                renderSlot(p, ix, y, ss, new ItemStack(e.getKey(), Math.min(e.getValue(), 99)), false);
+                renderSlot(p, ix, y, ss, new ItemStack(e.getKey(), Math.min(e.getValue(), 9999)), false);
                 ix += ss + 2; if (ix > cw - ss) { ix = 6; y += ss + 2; }
                 drawn++;
             }

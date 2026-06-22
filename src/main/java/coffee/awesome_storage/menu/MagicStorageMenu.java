@@ -1,7 +1,8 @@
 package coffee.awesome_storage.menu;
 
-import coffee.awesome_storage.network.c2s.MagicStoragePacket;
+import coffee.awesome_storage.block.MagicStorageBlockEntity;
 import coffee.awesome_storage.registry.ModMenus;
+import coffee.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QHBoxLayout;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QLayout;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QVBoxLayout;
@@ -15,6 +16,7 @@ import com.github.edg_thexu.qtcraft_api.menu.QBaseMenu;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
@@ -51,11 +53,20 @@ public class MagicStorageMenu extends QBaseMenu {
     @Override
     public ItemStack quickMoveStack(Player player, int slotIndex) {
         ItemStack itemStack = slots.get(slotIndex).getItem();
-        if (!itemStack.isEmpty() && player instanceof net.minecraft.server.level.ServerPlayer) {
-            this.setCarried(itemStack);
-            slots.get(slotIndex).set(ItemStack.EMPTY);
-            this.broadcastChanges();
-            PacketDistributor.sendToServer(new MagicStoragePacket(0, itemStack));
+        if (!itemStack.isEmpty()) {
+            // Try to store directly into adjacent containers via the storage entity
+            MagicStorageBlockEntity be = coffee.awesome_storage.utils.Util.getStorageEntity(player);
+            if (be != null) {
+                ItemStack toStore = itemStack.copy();
+                int remaining = be.storeItem(toStore);
+                if (remaining < itemStack.getCount()) {
+                    // At least some items were stored
+                    itemStack.shrink(itemStack.getCount() - remaining);
+                    if (itemStack.isEmpty()) slots.get(slotIndex).set(ItemStack.EMPTY);
+                    be.syncToClient(player);
+                    this.broadcastChanges();
+                }
+            }
         }
         return ItemStack.EMPTY;
     }
