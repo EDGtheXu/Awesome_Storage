@@ -809,6 +809,9 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         private final List<Integer> hoverSlotX = new ArrayList<>();
         private final List<Integer> hoverSlotY = new ArrayList<>();
         private final List<Integer> hoverSlotSize = new ArrayList<>();
+        // Cycled ingredient display
+        private int cycleIndex = 0;
+        private long lastCycleTime = 0;
 
 
         CraftInfoPanel(CraftPanel parent) {
@@ -839,6 +842,37 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 if (ItemStack.isSameItemSameComponents(stack, ex)) return true;
             }
             return false;
+        }
+
+        void rebuildIngredients() {
+            ingredients.clear();
+            java.util.LinkedHashMap<Item, Integer> merged = new java.util.LinkedHashMap<>();
+            java.util.LinkedHashMap<Item, Ingredient> ingByItem = new java.util.LinkedHashMap<>();
+            for (Ingredient ing : ings) {
+                if (ing.getItems().length > 0) {
+                    Item item = ing.getItems()[0].getItem();
+                    merged.merge(item, 1, Integer::sum);
+                    ingByItem.putIfAbsent(item, ing);
+                }
+            }
+            for (java.util.Map.Entry<Item, Integer> e : merged.entrySet()) {
+                Ingredient ing = ingByItem.get(e.getKey());
+                ItemStack[] variants = ing.getItems();
+                ItemStack display = variants[cycleIndex % variants.length].copy();
+                display.setCount(e.getValue());
+                ingredients.add(display);
+            }
+        }
+
+        void tickCycles() {
+            long now = System.currentTimeMillis();
+            if (now - lastCycleTime > 1000) {
+                cycleIndex++;
+                lastCycleTime = now;
+                rebuildIngredients();
+                markDirty();
+                update();
+            }
         }
 
         private void clampedAdd(int delta) {
@@ -873,16 +907,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
 
             var casted = (AbstractMagicCraftRecipeAdapter<RecipeInput, Recipe<RecipeInput>>) adapter;
             ings = casted.getIngredients((RecipeHolder<Recipe<RecipeInput>>) (Object) recipe);
-            // Build ingredient display (first item per ingredient)
-            java.util.LinkedHashMap<Item, Integer> merged = new java.util.LinkedHashMap<>();
-            for (Ingredient ing : ings) {
-                if (ing.getItems().length > 0) {
-                    merged.merge(ing.getItems()[0].getItem(), ing.getItems()[0].getCount(), Integer::sum);
-                }
-            }
-            for (java.util.Map.Entry<Item, Integer> e : merged.entrySet()) {
-                ingredients.add(new ItemStack(e.getKey(), e.getValue()));
-            }
+            rebuildIngredients();
             if (CraftConfig.ENABLED_RECIPES.containsKey(adapter.getRecipe())) {
                 for (Block b : CraftConfig.ENABLED_RECIPES.get(adapter.getRecipe())) {
                     requiredStations.add(new ItemStack(b));
@@ -924,11 +949,20 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             int ix = 6;
             for (ItemStack ing : ingredients) {
                 int need = ing.getCount() * Math.max(1, craftQuantity);
+                // Find the corresponding Ingredient for Ingredient.test() matching
+                Ingredient matchIng = null;
+                for (Ingredient i : ings) {
+                    if (!i.isEmpty() && i.getItems().length > 0 && i.getItems()[0].getItem() == ing.getItem()) {
+                        matchIng = i;
+                        break;
+                    }
+                }
                 int have = 0;
-                for (Map.Entry<ItemStack, Integer> e : parent.haveIngredients.entrySet()) {
-                    if (e.getKey().getItem() != ing.getItem()) continue;
-                    if (isExcluded(e.getKey())) continue;
-                    have += e.getValue();
+                if (matchIng != null) {
+                    for (Map.Entry<ItemStack, Integer> e : parent.haveIngredients.entrySet()) {
+                        if (isExcluded(e.getKey())) continue;
+                        if (matchIng.test(e.getKey())) have += e.getValue();
+                    }
                 }
                 boolean miss = have < need;
                 renderSlot(p, ix, y, ss, ing, false);
@@ -1081,6 +1115,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         if (now - lastPeriodicRefresh > 300) {
             lastPeriodicRefresh = now;
             refreshPanels();
+            if (craftPanel != null) craftPanel.infoPanel.tickCycles();
         }
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
