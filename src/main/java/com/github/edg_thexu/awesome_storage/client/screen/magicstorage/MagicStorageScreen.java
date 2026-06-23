@@ -5,15 +5,23 @@ import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.block.StorageCoreBlock;
 import com.github.edg_thexu.awesome_storage.core.menu.MagicStorageMenu;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
+import com.github.edg_thexu.awesome_storage.utils.FavoriteSystem;
 import com.github.edg_thexu.awesome_storage.utils.Util;
+import com.github.edg_thexu.qtcraft_api.client.painter.ModernDrawDevice;
 import com.github.edg_thexu.qtcraft_api.client.screen.QContainerWidgetScreen;
+import com.github.edg_thexu.qtcraft_api.core.geometry.QPoint;
 import com.github.edg_thexu.qtcraft_api.core.geometry.QSize;
 import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
 import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
+import com.github.edg_thexu.qtcraft_api.core.widget.container.QContainer;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QMainWindow;
+import com.github.edg_thexu.qtcraft_api.core.widget.input.QSlot;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -36,6 +44,62 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     private static int storageX = 200, storageY = 30, storageW = 220, storageH = 220;
     private static int craftX = 200, craftY = 30, craftW = 220, craftH = 220;
 
+    private boolean handleFavoriteClick(double mouseX, double mouseY) {
+        QWidget root = rootWindow();
+        if (root == null) return false;
+        QWidget target = root.childAt((int) mouseX, (int) mouseY);
+        if (target instanceof QSlot qslot) {
+            int slotIndex = qslot.slotIndex();
+            if (slotIndex >= 0 && slotIndex < 36) {
+                ItemStack stack = qslot.itemStack();
+                if (!stack.isEmpty()) {
+                    FavoriteSystem.getInstance().toggleFavorite(slotIndex);
+                    FavoriteSystem.getInstance().saveFavorites();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private QPoint getWidgetScreenPos(QWidget widget) {
+        int x = 0, y = 0;
+        QWidget w = widget;
+        while (w != null) {
+            x += w.x();
+            y += w.y();
+            var p = w.parent();
+            w = (p instanceof QWidget qw) ? qw : null;
+        }
+        return new QPoint(x, y);
+    }
+
+    private void drawFavoriteBorders(net.minecraft.client.gui.GuiGraphics guiGraphics) {
+        if (FavoriteSystem.getInstance().isEmpty()) return;
+        QWidget invWidget = menu.getSlotSource().getRoot();
+        if (invWidget == null) return;
+        QPainter painter = new QPainter(new ModernDrawDevice(guiGraphics));
+        for (var child : invWidget.children()) {
+            if (child instanceof QContainer container) {
+                for (QSlot slot : container.slots()) {
+                    int slotIndex = slot.slotIndex();
+                    if (slotIndex >= 0 && slotIndex < 36 && FavoriteSystem.getInstance().isFavorited(slotIndex)) {
+                        ItemStack stack = slot.itemStack();
+//                        if (!stack.isEmpty()) {
+                            QPoint pos = getWidgetScreenPos(slot);
+                            int s = 20;
+                            this.drawFavoriteBorders(painter, pos.x() - 1, pos.y() - 1, s);
+                    }
+                }
+            }
+        }
+    }
+
+    private void drawFavoriteBorders(QPainter painter, int x, int y, int s) {
+        painter.drawRoundRect(x, y, s, s, 3, 1.5f, new QColor(0xFF4444FF));
+
+    }
+
     public MagicStorageScreen(MagicStorageMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
     }
@@ -45,6 +109,8 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         QMainWindow win = new QMainWindow();
         win.setGeometry(0, 0, width, height);
 
+        FavoriteSystem.getInstance().loadFavorites();
+
         // Player inventory widget from slot source, positioned at top-left
         QWidget invWidget = menu.getSlotSource().getRoot();
         if (invWidget != null) {
@@ -52,6 +118,8 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             QSize hint = invWidget.sizeHint();
             invWidget.setGeometry(5, 5, Math.max(hint.width(), 170), hint.height());
         }
+
+        FavoriteSystem.getInstance().validate(menu.getItems());
 
         // Determine mode
         MagicStorageBlockEntity be = Util.getStorageEntity(minecraft.player);
@@ -147,6 +215,13 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             if (craftPanel != null) craftPanel.infoPanel.tickCycles();
         }
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+//        updateFavoriteTracking();
+        drawFavoriteBorders(guiGraphics);
+        if(FavoriteSystem.getInstance().clickedSlotWasFav && !menu.getCarried().isEmpty()) {
+            QPainter painter = new QPainter(new ModernDrawDevice(guiGraphics));
+            painter.translate(0, 0, 350);
+            painter.fillRoundRect(mouseX - 10, mouseY - 10, 20, 20, 6, new QColor(0xFF4444FF));
+        }
     }
 
     @Override
@@ -170,6 +245,37 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (hasShiftDown()) scheduleRefresh();
+        // Alt+Left Click on player inventory slots: toggle favorite
+        if (hasAltDown() && button == 0) {
+            if (handleFavoriteClick(mouseX, mouseY)) return true;
+        }
+        // Record clicked slot for favorite tracking
+        if (button == 0) {
+            QWidget root = rootWindow();
+            if (root != null) {
+                QWidget target = root.childAt((int) mouseX, (int) mouseY);
+                if (target instanceof QSlot qslot) {
+                    int idx = qslot.slotIndex();
+                    if (idx >= 0 && idx < 36) {
+                        if(FavoriteSystem.getInstance().isFavorited(idx) && hasShiftDown()) {
+                            return true;
+                        }
+                        if(ItemStack.isSameItemSameComponents(qslot.itemStack(), menu.getCarried())
+                                && menu.getCarried().getMaxStackSize() > 1) {
+                            if(FavoriteSystem.getInstance().clickedSlotWasFav) {
+                                FavoriteSystem.getInstance().toggleFavorite( idx);
+                                FavoriteSystem.getInstance().clickedSlotWasFav = false;
+                            }
+                        }else{
+                            FavoriteSystem.getInstance().exchange(idx, !qslot.itemStack().isEmpty());
+                        }
+                    }
+                }
+            }
+        }else if(button == 1) {
+            System.out.println("Right click");
+        }
+
         // Let QTCraft widgets handle clicks first (grid, stations row, etc.)
         if (widgetDelegate.mouseClicked(mouseX, mouseY, button)) return true;
         // Store action into storage window (carrying item, click anywhere on storage window)
@@ -184,6 +290,27 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
+    protected void slotClicked(Slot slot, int slotId, int mouseButton, ClickType type) {
+        if(slotId == -999) {
+            // forbidden drop favorited item
+            if(FavoriteSystem.getInstance().clickedSlotWasFav) {
+                return;
+            }
+        }
+        super.slotClicked(slot, slotId, mouseButton, type);
+    }
+
+    @Override
+    public void onClose() {
+        super.onClose();
+        FavoriteSystem.getInstance().saveFavorites();
+    }
+
+    @Override
+    public void resize(Minecraft minecraft, int width, int height) {
+        FavoriteSystem.getInstance().saveFavorites();
+        super.resize(minecraft, width, height);
+    }
 
     @Override
     protected void renderBg(net.minecraft.client.gui.GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {}

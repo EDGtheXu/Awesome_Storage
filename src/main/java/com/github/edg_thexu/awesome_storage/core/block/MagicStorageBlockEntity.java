@@ -284,6 +284,82 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         return result.isEmpty() ? ItemStack.EMPTY : result;
     }
 
+    public void depositAll(Player player, long favoriteMask) {
+        var inv = player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            if ((favoriteMask & (1L << i)) != 0) continue;
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty()) {
+                ItemStack toStore = stack.copy();
+                int remaining = storeItem(toStore);
+                if (remaining < toStore.getCount()) {
+                    stack.setCount(remaining);
+                    if (stack.isEmpty()) inv.setItem(i, ItemStack.EMPTY);
+                }
+            }
+        }
+        if (!level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    public void quickStack(Player player, long favoriteMask) {
+        List<ItemStack> stored = getStoredItems();
+        var inv = player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            if ((favoriteMask & (1L << i)) != 0) continue;
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty()) {
+                boolean exists = false;
+                for (ItemStack s : stored) {
+                    if (ItemStack.isSameItemSameComponents(s, stack)) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (exists) {
+                    ItemStack toStore = stack.copy();
+                    int remaining = storeItem(toStore);
+                    if (remaining < toStore.getCount()) {
+                        stack.setCount(remaining);
+                        if (stack.isEmpty()) inv.setItem(i, ItemStack.EMPTY);
+                    }
+                }
+            }
+        }
+        if (!level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    public void refill(Player player) {
+        var inv = player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && stack.isStackable() && stack.getCount() < stack.getMaxStackSize()) {
+                int needed = stack.getMaxStackSize() - stack.getCount();
+                for (Container c : getAdjacentContainers()) {
+                    if (needed <= 0) break;
+                    for (int j = 0; j < c.getContainerSize(); j++) {
+                        ItemStack s = c.getItem(j);
+                        if (!s.isEmpty() && ItemStack.isSameItemSameComponents(s, stack)) {
+                            int take = Math.min(needed, s.getCount());
+                            s.shrink(take);
+                            stack.grow(take);
+                            needed -= take;
+                            if (s.isEmpty()) c.setItem(j, ItemStack.EMPTY);
+                            c.setChanged();
+                            if (needed <= 0) break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
     @Nullable
     public List<ItemStack> craftAndConsume(NonNullList<Ingredient> ingredients, Set<ItemStack> excludedItems) {
         List<Container> containers = getAdjacentContainers();

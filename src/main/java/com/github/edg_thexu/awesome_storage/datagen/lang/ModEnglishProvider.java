@@ -41,8 +41,7 @@ public class ModEnglishProvider extends LanguageProvider {
         add("magic_storage.tooltip.block_pos", "Your Position: ");
         add("magic_storage.tooltip.error_level", "No Signal");
 
-
-
+        add("magic_storage.deposit_btn.tooltip", "Deposit All - LClick: Store All, Ctrl+LClick: Quick Stack, RClick: Refill");
 
 
 

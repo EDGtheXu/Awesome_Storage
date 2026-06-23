@@ -22,6 +22,4 @@ public class ModDataComponent {
     public static final DeferredHolder<DataComponentType<?>,DataComponentType<LevelAccessorComponent>> LEVEL_ACCESSOR =
             TYPES.register("level", () -> DataComponentType.<LevelAccessorComponent>builder().persistent(LevelAccessorComponent.CODEC).networkSynchronized(LevelAccessorComponent.STREAM_CODEC).cacheEncoding().build());
 
-
-
 }

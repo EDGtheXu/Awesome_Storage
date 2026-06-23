@@ -12,13 +12,16 @@ import com.github.edg_thexu.qtcraft_api.core.widget.container.QContainer;
 import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
 import com.github.edg_thexu.qtcraft_api.menu.QBaseMenu;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class MagicStorageMenu extends QBaseMenu {
     public final ContainerData access;
@@ -36,6 +39,7 @@ public class MagicStorageMenu extends QBaseMenu {
         this.access = pAccess;
         addDataSlots(pAccess);
     }
+
 
     @Override
     public void removed(Player pPlayer) {

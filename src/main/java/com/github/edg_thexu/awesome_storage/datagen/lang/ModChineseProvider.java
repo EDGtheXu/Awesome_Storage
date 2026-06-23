@@ -30,6 +30,7 @@ public class ModChineseProvider extends LanguageProvider {
         add("magic_storage.tooltip.block_pos", "位置: ");
         add("magic_storage.tooltip.error_level", "无信号");
 
+        add("magic_storage.deposit_btn.tooltip", "存入全部 - 左键: 全部存入, Ctrl+左键: 快速堆叠, 右键: 补货");
 
 
         chineseProviders.forEach(a->a.accept(this));

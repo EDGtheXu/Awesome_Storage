@@ -2,6 +2,7 @@ package com.github.edg_thexu.awesome_storage.core.network.c2s;
 
 import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.awesome_storage.config.CraftConfig;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -16,11 +17,20 @@ import org.jetbrains.annotations.NotNull;
 
 import static com.github.edg_thexu.awesome_storage.AwesomeStorage.space;
 
-public record MagicStoragePacket(int id, ItemStack item) implements CustomPacketPayload {
+public record MagicStoragePacket(int id, ItemStack item, long extra) implements CustomPacketPayload {
+    public MagicStoragePacket(int id, ItemStack item) {
+        this(id, item, 0L);
+    }
+
     public static final Type<MagicStoragePacket> TYPE = new Type<>(space("magic_storage_packet_s2c"));
+    private static final StreamCodec<ByteBuf, Long> LONG_STREAM_CODEC = new StreamCodec<>() {
+        public Long decode(ByteBuf buf) { return buf.readLong(); }
+        public void encode(ByteBuf buf, Long v) { buf.writeLong(v); }
+    };
     public static final StreamCodec<RegistryFriendlyByteBuf, MagicStoragePacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, MagicStoragePacket::id,
             ItemStack.OPTIONAL_STREAM_CODEC, MagicStoragePacket::item,
+            LONG_STREAM_CODEC, MagicStoragePacket::extra,
             MagicStoragePacket::new
     );
 
@@ -62,6 +72,29 @@ public record MagicStoragePacket(int id, ItemStack item) implements CustomPacket
                     context.player().containerMenu.setCarried(toStore);
                 }
                 entity.syncToClient(context.player());
+                return;
+            }
+
+            if (id == 2) {
+                entity.depositAll(context.player(), extra);
+                entity.syncToClient(context.player());
+                return;
+            }
+
+            if (id == 3) {
+                entity.quickStack(context.player(), extra);
+                entity.syncToClient(context.player());
+                return;
+            }
+
+            if (id == 4) {
+                entity.refill(context.player());
+                entity.syncToClient(context.player());
+                return;
+            }
+
+            if (id == 5) {
+                context.player().getPersistentData().putLong("FavoriteSlots", extra);
                 return;
             }
 
