@@ -29,4 +29,12 @@ versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
 
+[[dependencies."${mod_id}"]]
+modId = "qtcraft_api"
+type = "required"
+versionRange = "[1.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+
 
