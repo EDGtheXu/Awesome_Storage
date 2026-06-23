@@ -3,9 +3,9 @@ package com.github.edg_thexu.awesome_storage.core.network.c2s;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.api.adapter.AdapterManager;
 import com.github.edg_thexu.awesome_storage.utils.Util;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -18,12 +18,14 @@ import java.util.*;
 
 import static com.github.edg_thexu.awesome_storage.AwesomeStorage.space;
 
-public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID) implements CustomPacketPayload {
+public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID, List<ItemStack> excluded) implements CustomPacketPayload {
 
     public static final Type<MagicCraftPacket> TYPE = new Type<>(space("magic_craft_packet_s2c"));
-    public static final StreamCodec<ByteBuf, MagicCraftPacket> STREAM_CODEC = StreamCodec.composite(
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, MagicCraftPacket> STREAM_CODEC = StreamCodec.composite(
             ResourceLocation.STREAM_CODEC, MagicCraftPacket::id,
             ResourceLocation.STREAM_CODEC, MagicCraftPacket::adapterID,
+            ItemStack.OPTIONAL_LIST_STREAM_CODEC, MagicCraftPacket::excluded,
             MagicCraftPacket::new
     ).cast();
 
@@ -39,15 +41,17 @@ public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID) 
             MagicStorageBlockEntity entity = Util.getStorageEntity(context.player());
             if (entity == null) return;
 
-            // Check and consume ingredients from adjacent containers
-            if (!entity.craftAndConsume(ingredients)) return;
+            // Excluded items sent from client (matched by isSameItemSameComponents on server)
+            Set<ItemStack> excludedItems = new HashSet<>(excluded);
 
-            // Get result
+            // Check and consume ingredients from adjacent containers
+            List<ItemStack> consumed = entity.craftAndConsume(ingredients, excludedItems);
+            if (consumed == null) return;
+
             context.player().awardRecipes(Collections.singleton(recipe));
-            ItemStack result = recipe.value().getResultItem(context.player().level().registryAccess()).copy();
+            ItemStack result = adapter.getCraftResult((RecipeHolder<Recipe<RecipeInput>>) recipe, consumed, context.player().level().registryAccess()).copy();
             result.onCraftedBy(context.player().level(), context.player(), result.getCount());
 
-            // Store result in adjacent containers (or player inventory if full)
             int remaining = entity.storeItem(result);
             if (remaining > 0) {
                 result.setCount(remaining);

@@ -1,5 +1,6 @@
 package com.github.edg_thexu.awesome_storage.api.adapter;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
@@ -35,6 +36,19 @@ public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R e
      */
     public abstract ItemStack getResult(RecipeHolder<R> recipe);
 
+    /**
+     * Compute the actual craft result using the real consumed ItemStacks.
+     * Default implementation uses the recipe's default result.
+     * Override this in adapters that need component inheritance (e.g. SmithingRecipeAdapter).
+     *
+     * @param recipe   the recipe being crafted
+     * @param consumed the actual ItemStacks consumed (with their DataComponents intact)
+     * @param registries registry lookup for the current level
+     * @return the crafted ItemStack
+     */
+    public ItemStack getCraftResult(RecipeHolder<R> recipe, List<ItemStack> consumed, HolderLookup.Provider registries) {
+        return recipe.value().getResultItem(registries);
+    }
 
     public abstract NonNullList<Ingredient> getIngredients(RecipeHolder<R> recipe);
 

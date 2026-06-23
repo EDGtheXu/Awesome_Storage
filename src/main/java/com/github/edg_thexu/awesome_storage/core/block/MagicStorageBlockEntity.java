@@ -23,9 +23,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -284,58 +284,67 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         return result.isEmpty() ? ItemStack.EMPTY : result;
     }
 
-    public boolean craftAndConsume(NonNullList<Ingredient> ingredients) {
-        // First check if all ingredients are available
+    @Nullable
+    public List<ItemStack> craftAndConsume(NonNullList<Ingredient> ingredients, Set<ItemStack> excludedItems) {
         List<Container> containers = getAdjacentContainers();
-        Map<Item, Integer> needed = new HashMap<>();
+
+        // Phase 1: Check availability using Ingredient.test() — skip excluded items
         for (Ingredient ing : ingredients) {
             if (ing.isEmpty()) continue;
-            boolean found = false;
-            for (ItemStack is : ing.getItems()) {
-                Item item = is.getItem();
-                int count = is.getCount();
-                if (countAvailable(containers, item) >= count) {
-                    needed.merge(item, count, Integer::sum);
-                    found = true;
-                    break;
+            int required = ing.getItems().length == 0 ? 1 : ing.getItems()[0].getCount();
+            int available = 0;
+            for (Container c : containers) {
+                for (int i = 0; i < c.getContainerSize(); i++) {
+                    ItemStack s = c.getItem(i);
+                    if (s.isEmpty() || !ing.test(s)) continue;
+                    if (isExcluded(s, excludedItems)) continue;
+                    available += s.getCount();
                 }
             }
-            if (!found) return false;
+            if (available < required) return null;
         }
 
-        // Remove items from containers
-        for (Map.Entry<Item, Integer> entry : needed.entrySet()) {
-            removeFromContainers(containers, entry.getKey(), entry.getValue());
-        }
-        return true;
-    }
+        // Phase 2: Consume and record actual consumed stacks — skip excluded items
+        List<ItemStack> consumed = new ArrayList<>();
+        for (Ingredient ing : ingredients) {
+            if (ing.isEmpty()) continue;
+            int required = ing.getItems().length == 0 ? 1 : ing.getItems()[0].getCount();
+            int remaining = required;
 
-    private int countAvailable(List<Container> containers, Item item) {
-        int total = 0;
-        for (Container c : containers) {
-            for (int i = 0; i < c.getContainerSize(); i++) {
-                ItemStack s = c.getItem(i);
-                if (s.getItem() == item) total += s.getCount();
-            }
-        }
-        return total;
-    }
+            for (Container c : containers) {
+                for (int i = 0; i < c.getContainerSize(); i++) {
+                    if (remaining <= 0) break;
+                    ItemStack s = c.getItem(i);
+                    if (s.isEmpty() || !ing.test(s)) continue;
+                    if (isExcluded(s, excludedItems)) continue;
 
-    private void removeFromContainers(List<Container> containers, Item item, int amount) {
-        for (Container c : containers) {
-            for (int i = 0; i < c.getContainerSize(); i++) {
-                ItemStack s = c.getItem(i);
-                if (s.getItem() == item && amount > 0) {
-                    int take = Math.min(amount, s.getCount());
+                    int take = Math.min(remaining, s.getCount());
+                    ItemStack part = s.copy();
+                    part.setCount(take);
+                    consumed.add(part);
+
                     s.shrink(take);
                     if (s.isEmpty()) c.setItem(i, ItemStack.EMPTY);
                     else c.setItem(i, s);
                     c.setChanged();
-                    amount -= take;
-                    if (amount <= 0) return;
+
+                    remaining -= take;
                 }
             }
         }
+
+        if (!consumed.isEmpty() && level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+
+        return consumed;
+    }
+
+    private boolean isExcluded(ItemStack stack, Set<ItemStack> excluded) {
+        for (ItemStack ex : excluded) {
+            if (ItemStack.isSameItemSameComponents(stack, ex)) return true;
+        }
+        return false;
     }
 
     // ========================================================================
