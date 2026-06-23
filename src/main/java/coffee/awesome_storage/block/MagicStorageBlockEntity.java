@@ -1,11 +1,9 @@
 package coffee.awesome_storage.block;
 
+import coffee.awesome_storage.compat.sophisticated.SophisticatedHelper;
 import coffee.awesome_storage.menu.MagicStorageMenu;
-import coffee.awesome_storage.network.s2c.BlockPosSyncPacket;
 import coffee.awesome_storage.network.s2c.StorageItemsSyncPacket;
 import coffee.awesome_storage.registry.ModBlocks;
-import coffee.awesome_storage.registry.ModDataComponent;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -20,9 +18,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.Container;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -37,14 +33,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.p3pp3rf1y.sophisticatedstorage.block.ChestBlockEntity;
 
 import java.util.*;
 
 public final class MagicStorageBlockEntity extends BlockEntity implements MenuProvider {
     private static final Component CONTAINER_TITLE = Component.translatable("container.awesome_storage.magic_storage");
 
-    public int max_size = 20;
-    public int lvl = 0;
     private List<ItemStack> cachedItems;
 
     private List<String> block_accessors;
@@ -83,15 +78,24 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
                 if (!visited.add(n)) continue;
                 BlockEntity be = level.getBlockEntity(n);
                 if (be == null) continue;
-                if (be instanceof Container c) {
+                if (be instanceof MagicStorageBlockEntity) {
+                    // Storage/crafting blocks are traversal nodes (no items, but connect to containers)
+                    queue.add(n);
+                } else if (be instanceof Container c) {
                     containers.add(c);
-                    queue.add(n); // traverse through ALL containers (chests, barrels, storage blocks, etc.)
+                    queue.add(n);
                 } else {
                     IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, n, dir.getOpposite());
                     if (handler != null) {
                         ItemHandlerContainer ihc = new ItemHandlerContainer(handler);
-                        containers.add(ihc);
-                        queue.add(n); // also traverse through IItemHandler containers
+                        if(SophisticatedHelper.isStorageLoaded() && be instanceof ChestBlockEntity chestBlockEntity) {
+                            if(chestBlockEntity.isMainChest()) {
+                                containers.add(ihc);
+                            }
+                        }else{
+                            containers.add(ihc);
+                        }
+                        queue.add(n);
                     }
                 }
             }
@@ -135,8 +139,8 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     }
 
     public List<ItemStack> getStoredItems() {
-        // On client, return cached items from server sync
-        if (level != null && level.isClientSide) {
+        // For fake/remote entities (level is null) or client side, return cached items from server sync
+        if (level == null || level.isClientSide) {
             return cachedItems != null ? cachedItems : new ArrayList<>();
         }
         // On server, compute from adjacent containers
@@ -183,7 +187,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     }
 
     public int getTotalSlots() {
-        if (level != null && level.isClientSide) {
+        if (level == null || level.isClientSide) {
             return cachedTotalSlots;
         }
         int slots = 0;
@@ -194,7 +198,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     }
 
     public int getUsedSlots() {
-        if (level != null && level.isClientSide) {
+        if (level == null || level.isClientSide) {
             return cachedUsedSlots;
         }
         int used = 0;
@@ -370,7 +374,6 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookupProvider) {
         CompoundTag tag = pkt.getTag();
-        this.lvl = tag.getInt("lvl");
         if (tag.contains("BlockAccessors", 9)) {
             ListTag listTag = tag.getList("BlockAccessors", 8);
             this.block_accessors = new ArrayList<>();
@@ -383,7 +386,6 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        lvl = tag.getInt("lvl");
         if (tag.contains("BlockAccessors", 9)) {
             ListTag listTag = tag.getList("BlockAccessors", 8);
             this.block_accessors = new ArrayList<>();
@@ -396,7 +398,6 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        tag.putInt("lvl", lvl);
         ListTag listTag1 = new ListTag();
         for (String r : block_accessors) {
             listTag1.add(StringTag.valueOf(r));
@@ -408,7 +409,6 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     @Override
     public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt("lvl", lvl);
         ListTag listTag1 = new ListTag();
         for (String r : block_accessors) {
             listTag1.add(StringTag.valueOf(r));
@@ -422,7 +422,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         syncToClient(player);
-        return new MagicStorageMenu(id, inventory, null, new ContainerData() {
+        return new MagicStorageMenu(id, inventory, new ContainerData() {
             public int get(int id) { return 0; }
             public void set(int id, int value) {}
             public int getCount() { return 0; }
@@ -434,21 +434,4 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     // ========================================================================
     public void setFake(boolean fake) { this.fake = fake; }
 
-    @Override
-    public void setChanged() {
-        super.setChanged();
-        if (fake && (level == null || level.isClientSide())) {
-            new Timer().schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    ItemStack stack = Minecraft.getInstance().player.getItemInHand(InteractionHand.MAIN_HAND);
-                    var levelData = stack.getComponents().get(ModDataComponent.LEVEL_ACCESSOR.get());
-                    PacketDistributor.sendToServer(new BlockPosSyncPacket(
-                            getBlockPos(),
-                            levelData != null ? levelData.key() : level.dimension(),
-                            0));
-                }
-            }, 10);
-        }
-    }
 }

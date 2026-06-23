@@ -62,11 +62,12 @@ public class RemoteController extends Item {
                 player.sendSystemMessage(Component.translatable("magic_storage.message.too_far"));
             }else {
                 if (entity instanceof MagicStorageBlockEntity entity1 ) {
-//                Util.setStorageEntity(player, entity1);
                     ((IPlayer) player).awesomeStorage$setContainer(entity1);
-                    player.openMenu(entity1, data.pos());
+                    // Send chunk data FIRST so client has the fake entity before item sync
                     LevelChunk chunk = entity1.getLevel().getChunkAt(data.pos());
                     PacketDistributor.sendToPlayer((ServerPlayer) player, new ChunkPacket(chunk, data.pos()));
+                    // Then open menu → createMenu → syncToClient sends StorageItemsSyncPacket
+                    player.openMenu(entity1, data.pos());
 
                 }
             }
@@ -84,7 +85,7 @@ public class RemoteController extends Item {
             if(data1!= null) {
                 var levelData = stack.get(ModDataComponent.LEVEL_ACCESSOR);
                 if(levelData == null) return;
-                ResourceKey<Level> real = Minecraft.getInstance().level.dimension();
+                ResourceKey<Level> real = context.level().dimension();
                 if(real != levelData.key() && !levelData.on()){
                     tooltipComponents.add(Component.translatable("magic_storage.tooltip.error_level"));
                     return;
@@ -92,11 +93,14 @@ public class RemoteController extends Item {
                 String posText = "X: " + data1.pos().getX() + " Y: " + data1.pos().getY() + " Z: " + data1.pos().getZ();
                 tooltipComponents.add(Component.translatable("magic_storage.tooltip.block_pos").append(posText));
                 BlockPos pos = data1.pos();
-                double distance = Minecraft.getInstance().player.distanceToSqr((float) pos.getX(), (float) pos.getY(), (float) pos.getZ());
-                Component distanceText = Component.translatable("magic_storage.tooltip.distance").append(" " + (int) Math.sqrt(distance)).withColor(
-                        data.range() != -1 && Math.sqrt(distance)-1 > data.range() ? 0xff0000 : 0x00ff00
-                );
-                tooltipComponents.add(distanceText);
+                double distance = 0;
+                if (Minecraft.getInstance().player != null) {
+                    distance = Minecraft.getInstance().player.distanceToSqr((float) pos.getX(), (float) pos.getY(), (float) pos.getZ());
+                    Component distanceText = Component.translatable("magic_storage.tooltip.distance").append(" " + (int) Math.sqrt(distance)).withColor(
+                            data.range() != -1 && Math.sqrt(distance)-1 > data.range() ? 0xff0000 : 0x00ff00
+                    );
+                    tooltipComponents.add(distanceText);
+                }
             }
             tooltipComponents.add(Component.literal(""));
             tooltipComponents.add(Component.translatable("magic_storage.tooltip.controller_range").append(data.range() == -1 ? "inf" : String.valueOf(data.range())));

@@ -1,10 +1,15 @@
 package coffee.awesome_storage.block;
 
+import coffee.awesome_storage.dataComponent.BlockPosComponent;
+import coffee.awesome_storage.dataComponent.LevelAccessorComponent;
+import coffee.awesome_storage.item.RemoteController;
 import coffee.awesome_storage.mix_util.IPlayer;
 import coffee.awesome_storage.registry.ModBlocks;
+import coffee.awesome_storage.registry.ModDataComponent;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
@@ -47,6 +52,28 @@ public class MagicStorageBlock extends BaseEntityBlock {
         if (state.hasBlockEntity()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MagicStorageBlockEntity magic) {
+                // 保存位置
+                if(stack.getItem() instanceof RemoteController){
+                    var data = stack.getComponents().get(ModDataComponent.CONTROLLER_RANGE.get());
+                    if(data!=null) {
+                        stack.set(ModDataComponent.SAVED_BLOCK_POS, new BlockPosComponent(magic.getBlockPos()));
+
+                        // 保存维度
+                        if(!level.isClientSide){
+                            var levelData = stack.getComponents().get(ModDataComponent.LEVEL_ACCESSOR.get());
+                            if(levelData!=null && levelData.on()) {
+                                stack.set(ModDataComponent.LEVEL_ACCESSOR, new LevelAccessorComponent(level.dimension(), true));
+                            }
+                            else{
+                                stack.set(ModDataComponent.LEVEL_ACCESSOR, new LevelAccessorComponent(level.dimension(), false));
+                            }
+                        }
+
+                    }
+                    else
+                        player.sendSystemMessage(Component.translatable("magic_storage.message.no_component"+ ModDataComponent.CONTROLLER_RANGE.get()));
+                    return ItemInteractionResult.SUCCESS;
+                }
                 ((IPlayer) player).awesomeStorage$setContainer(magic);
                 if (!level.isClientSide) {
                     player.openMenu(state.getMenuProvider(level, pos));

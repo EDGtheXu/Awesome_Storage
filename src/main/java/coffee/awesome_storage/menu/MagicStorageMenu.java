@@ -28,20 +28,18 @@ import java.util.List;
 
 public class MagicStorageMenu extends QBaseMenu {
     public final ContainerData access;
-    private final Container container;
     private boolean dirty;
 
     public boolean isDirty() { return dirty; }
     public void setDirty(boolean v) { dirty = v; }
 
     public MagicStorageMenu(int pContainerId, Inventory inventory) {
-        this(pContainerId, inventory, new SimpleContainer(3), new SimpleContainerData(2));
+        this(pContainerId, inventory, new SimpleContainerData(2));
     }
 
-    public MagicStorageMenu(int pContainerId, Inventory pPlayerInventory, Container container, ContainerData pAccess) {
+    public MagicStorageMenu(int pContainerId, Inventory pPlayerInventory, ContainerData pAccess) {
         super(ModMenus.MAGIC_STORAGE_MENU.get(), pContainerId, pPlayerInventory, new StorageWidgetSource());
         this.access = pAccess;
-        this.container = container;
         addDataSlots(pAccess);
     }
 

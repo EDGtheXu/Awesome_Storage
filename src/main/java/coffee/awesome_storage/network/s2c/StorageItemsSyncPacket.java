@@ -1,6 +1,7 @@
 package coffee.awesome_storage.network.s2c;
 
 import coffee.awesome_storage.block.MagicStorageBlockEntity;
+import coffee.awesome_storage.remote.RemoteBlockEntityCache;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -31,9 +32,21 @@ public record StorageItemsSyncPacket(BlockPos pos, List<ItemStack> items, int us
 
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
+            // Check level BE first (local access)
             var level = context.player().level();
-            if (level.getBlockEntity(pos) instanceof MagicStorageBlockEntity be) {
+            MagicStorageBlockEntity be = null;
+            if (level.getBlockEntity(pos) instanceof MagicStorageBlockEntity e) {
+                be = e;
+            }
+            // Check RemoteBlockEntityCache for remote/fake entities
+            if (be == null) {
+                be = RemoteBlockEntityCache.getInstance().get(pos);
+            }
+            if (be != null) {
                 be.setCachedItems(items, usedSlots, totalSlots);
+                if(RemoteBlockEntityCache.getInstance().get(pos) != null) {
+                    RemoteBlockEntityCache.getInstance().get(pos).setCachedItems(items, usedSlots, totalSlots);
+                }
             }
         });
     }
