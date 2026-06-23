@@ -17,27 +17,18 @@ public class ModItems {
     public static final DeferredRegister.Items  ITEMS = DeferredRegister.createItems("awesome_storage");
 
 
-    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_1000 = register("remote_controller_1k","1k 控制器", ()->new RemoteController(new Item.Properties()
+    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_1000 = register("base_portable_remote_storage_access","基础便捷远程存储装置", ()->new RemoteController(new Item.Properties()
             .component(ModDataComponent.CONTROLLER_RANGE.get(),new RangeComponent(1000))
     ));
 
-    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_5000 = register("remote_controller_5k","5k 控制器", ()->new RemoteController(new Item.Properties()
+    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_5000 = register("advance_portable_remote_storage_access","进阶便捷远程存储装置", ()->new RemoteController(new Item.Properties()
             .component(ModDataComponent.CONTROLLER_RANGE.get(),new RangeComponent(5000))
     ));
 
-    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_10000 = register("remote_controller_10k","10k 控制器", ()->new RemoteController(new Item.Properties()
-            .component(ModDataComponent.CONTROLLER_RANGE.get(),new RangeComponent(10000))
-    ));
-
-    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_INF = register("remote_controller_inf","INF 控制器", ()->new RemoteController(new Item.Properties()
-            .component(ModDataComponent.CONTROLLER_RANGE.get(),new RangeComponent(-1))
-    ));
-
-    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_THROUGH_CROSS_LEVEL = register("remote_controller_through_cross_level","跨纬度控制器", ()->new RemoteController(new Item.Properties()
+    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_THROUGH_CROSS_LEVEL = register("final_portable_remote_storage_access","终极便捷远程存储装置", ()->new RemoteController(new Item.Properties()
             .component(ModDataComponent.CONTROLLER_RANGE.get(),new RangeComponent(-1))
             .component(ModDataComponent.LEVEL_ACCESSOR.get(),new LevelAccessorComponent(Level.OVERWORLD,true))
     ));
-
 
 
     public static DeferredHolder<Item,Item> register(String en, String zh, Supplier<Item> supplier) {

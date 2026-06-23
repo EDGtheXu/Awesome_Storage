@@ -2,8 +2,8 @@
   "credit": "Made with Blockbench",
   "texture_size": [64, 64],
   "textures": {
-    "0": "awesome_storage:block/magic_storage_block",
-    "particle": "awesome_storage:block/magic_storage_block"
+    "0": "awesome_storage:block/storage_core",
+    "particle": "awesome_storage:block/storage_core"
   },
   "elements": [
     {

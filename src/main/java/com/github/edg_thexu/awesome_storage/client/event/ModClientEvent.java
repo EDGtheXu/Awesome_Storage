@@ -1,6 +1,6 @@
 package com.github.edg_thexu.awesome_storage.client.event;
 
-import com.github.edg_thexu.awesome_storage.client.screen.MagicStorageScreen;
+import com.github.edg_thexu.awesome_storage.client.screen.magicstorage.MagicStorageScreen;
 import com.github.edg_thexu.awesome_storage.core.registry.ModMenus;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;

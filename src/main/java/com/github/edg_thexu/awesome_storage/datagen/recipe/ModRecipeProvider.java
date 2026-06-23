@@ -29,7 +29,7 @@ public class ModRecipeProvider extends RecipeProvider {
     protected void buildRecipes(RecipeOutput recipeOutput) {
 
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.MAGIC_STORAGE_BLOCK.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CRAFTING_UNIT__BLOCK.get())
                 .pattern("AAA")
                 .pattern("B B")
                 .pattern("CCC")

@@ -1,4 +1,4 @@
-package com.github.edg_thexu.awesome_storage.client.screen;
+package com.github.edg_thexu.awesome_storage.client.widget;
 
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;

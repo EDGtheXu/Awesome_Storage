@@ -1,9 +1,9 @@
 package com.github.edg_thexu.awesome_storage.core.registry;
 
 import com.github.edg_thexu.awesome_storage.AwesomeStorage;
-import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlock;
+import com.github.edg_thexu.awesome_storage.core.block.CraftingUnitBlock;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
-import com.github.edg_thexu.awesome_storage.core.block.StorageOnlyBlock;
+import com.github.edg_thexu.awesome_storage.core.block.StorageCoreBlock;
 import com.mojang.datafixers.DSL;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
@@ -28,11 +28,12 @@ public class ModBlocks {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, AwesomeStorage.MODID);
     public static final DeferredRegister.Items BLOCK_ITEMS = DeferredRegister.createItems(AwesomeStorage.MODID);
 
-    public static final Supplier<BaseEntityBlock> STORAGE_BLOCK = register("storage_block","存储块", () -> new StorageOnlyBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).destroyTime(20).noOcclusion()));
+    public static final Supplier<BaseEntityBlock> STORAGE_CORE_BLOCK = register("storage_core","存储核心", () -> new StorageCoreBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).destroyTime(20).noOcclusion()));
 
-    public static final Supplier<BaseEntityBlock> MAGIC_STORAGE_BLOCK = register("magic_storage_block","魔法存储块", () -> new MagicStorageBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).destroyTime(20).noOcclusion()));
+    public static final Supplier<BaseEntityBlock> CRAFTING_UNIT__BLOCK = register("crafting_unit","合成单元", () -> new CraftingUnitBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).destroyTime(20).noOcclusion()));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MagicStorageBlockEntity>> MAGIC_STORAGE_BLOCK_ENTITY =
-            BLOCK_ENTITIES.register("magic_storage_block_entity", () -> BlockEntityType.Builder.of(MagicStorageBlockEntity::new, MAGIC_STORAGE_BLOCK.get(), STORAGE_BLOCK.get()).build(DSL.remainderType()));
+            BLOCK_ENTITIES.register("magic_storage_block_entity", () -> BlockEntityType.Builder.of(MagicStorageBlockEntity::new, CRAFTING_UNIT__BLOCK.get(), STORAGE_CORE_BLOCK.get()).build(DSL.remainderType()));
 
     public static <T extends Block>Supplier<T> register(String name, String zh, Supplier<T> blockSupplier) {
         DeferredBlock<T> block =  BLOCKS.register(name, blockSupplier);

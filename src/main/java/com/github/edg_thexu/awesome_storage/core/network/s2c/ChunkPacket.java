@@ -61,9 +61,9 @@ public class ChunkPacket implements CustomPacketPayload  {
         this.chunkData.getBlockEntitiesTagsConsumer(x,z).accept((pos,type,tag)->{
 
             if(this.pos.equals(pos)) {
-                Minecraft.getInstance().level.setBlock(pos, ModBlocks.MAGIC_STORAGE_BLOCK.get().defaultBlockState(), 2);
-                if(type.getValidBlocks().contains(ModBlocks.MAGIC_STORAGE_BLOCK.get())){
-                    BlockEntity blockEntity = type.create(pos, ModBlocks.MAGIC_STORAGE_BLOCK.get().defaultBlockState());
+                Minecraft.getInstance().level.setBlock(pos, ModBlocks.CRAFTING_UNIT__BLOCK.get().defaultBlockState(), 2);
+                if(type.getValidBlocks().contains(ModBlocks.CRAFTING_UNIT__BLOCK.get())){
+                    BlockEntity blockEntity = type.create(pos, ModBlocks.CRAFTING_UNIT__BLOCK.get().defaultBlockState());
                     if(blockEntity instanceof MagicStorageBlockEntity magic) {
                         magic.loadWithComponents(tag,Minecraft.getInstance().level.registryAccess());
                         magic.setFake(true);

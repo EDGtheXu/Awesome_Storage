@@ -22,13 +22,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 
-public class StorageOnlyBlock extends BaseEntityBlock {
+public class StorageCoreBlock extends BaseEntityBlock {
 
-    public StorageOnlyBlock(Properties properties) {
+    public StorageCoreBlock(Properties properties) {
         super(properties);
     }
 
-    public static final MapCodec<StorageOnlyBlock> CODEC = simpleCodec(StorageOnlyBlock::new);
+    public static final MapCodec<StorageCoreBlock> CODEC = simpleCodec(StorageCoreBlock::new);
 
     @Override
     protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {

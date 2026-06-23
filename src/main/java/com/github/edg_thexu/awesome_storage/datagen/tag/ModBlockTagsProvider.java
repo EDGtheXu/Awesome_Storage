@@ -23,11 +23,11 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.@NotNull Provider provider) {
-        tag(BlockTags.NEEDS_STONE_TOOL).add(ModBlocks.MAGIC_STORAGE_BLOCK.get());
+        tag(BlockTags.NEEDS_STONE_TOOL).add(ModBlocks.CRAFTING_UNIT__BLOCK.get());
 
 
         this.tag(BlockTags.MINEABLE_WITH_PICKAXE).add(
-                ModBlocks.MAGIC_STORAGE_BLOCK.get()
+                ModBlocks.CRAFTING_UNIT__BLOCK.get()
         );
     }
 
