@@ -3,6 +3,7 @@ package com.github.edg_thexu.awesome_storage.client.screen;
 import com.github.edg_thexu.awesome_storage.api.adapter.AbstractMagicCraftRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.api.adapter.AdapterManager;
 import com.github.edg_thexu.awesome_storage.api.adapter.CommonRecipeAdapter;
+import com.github.edg_thexu.awesome_storage.api.filter.FilterRuleRegistry;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.block.StorageOnlyBlock;
 import com.github.edg_thexu.awesome_storage.config.CraftConfig;
@@ -141,15 +142,16 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         FilterBar(QHBoxLayout row, Object owner, String keyPrefix, Runnable onRefresh) {
             sortCombo = new QComboBox();
             sortCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-            sortCombo.addItem("Default"); sortCombo.addItem("By ID");
-            sortCombo.addItem("By Name"); sortCombo.addItem("By Count");
+            sortCombo.addItem("Default");
+            for (var rule : FilterRuleRegistry.getSortRules()) sortCombo.addItem(rule.name());
             sortCombo.setFixedHeight(16);
             sortCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, owner, new SlotKeyConsumer<>(keyPrefix + "s", (self, idx) -> onRefresh.run()));
             row.addWidget(sortCombo, 1);
 
             categoryCombo = new QComboBox();
             categoryCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-            for (String l : new String[]{"All", "Weapon", "Tool", "Material", "Block", "Misc"}) categoryCombo.addItem(l);
+            categoryCombo.addItem("All");
+            for (var rule : FilterRuleRegistry.getCategoryRules()) categoryCombo.addItem(rule.name());
             categoryCombo.setFixedHeight(16);
             categoryCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, owner, new SlotKeyConsumer<>(keyPrefix + "c", (self, idx) -> onRefresh.run()));
             row.addWidget(categoryCombo, 1);
@@ -184,22 +186,30 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             for (ItemStack s : items) {
                 if (s.isEmpty()) continue;
                 if (!search.isEmpty() && !s.getDisplayName().getString().toLowerCase().contains(search)) continue;
+                // Category filter (registered rules)
                 if (!catFilter.equals("All")) {
-                    String id = BuiltInRegistries.ITEM.getKey(s.getItem()).getPath();
-                    if (catFilter.equals("Weapon") && !id.contains("sword") && !id.contains("bow") && !id.contains("crossbow") && !id.contains("trident")) continue;
-                    if (catFilter.equals("Tool") && !id.contains("pickaxe") && !id.contains("axe") && !id.contains("shovel") && !id.contains("hoe")) continue;
-                    if (catFilter.equals("Block") && !(s.getItem() instanceof BlockItem)) continue;
-                    if (catFilter.equals("Material") && (s.getItem() instanceof BlockItem)) continue;
+                    boolean match = false;
+                    for (var rule : FilterRuleRegistry.getCategoryRules()) {
+                        if (catFilter.equals(rule.name()) && rule.predicate().test(s)) {
+                            match = true;
+                            break;
+                        }
+                    }
+                    if (!match) continue;
                 }
                 if (stackText.equals("Stackable") && !s.isStackable()) continue;
                 if (stackText.equals("Non-stackable") && s.isStackable()) continue;
                 if (!modFilter.equals("All Mods") && !BuiltInRegistries.ITEM.getKey(s.getItem()).getNamespace().equals(modFilter)) continue;
                 filtered.add(s);
             }
-            switch (sortText) {
-                case "By ID" -> filtered.sort(Comparator.comparing(i -> BuiltInRegistries.ITEM.getKey(i.getItem()).toString()));
-                case "By Name" -> filtered.sort(Comparator.comparing(i -> i.getDisplayName().getString()));
-                case "By Count" -> filtered.sort(Comparator.comparingInt(ItemStack::getCount).reversed());
+            // Sort by registered rule
+            if (!sortText.equals("Default")) {
+                for (var rule : FilterRuleRegistry.getSortRules()) {
+                    if (sortText.equals(rule.name())) {
+                        filtered.sort(rule.comparator());
+                        break;
+                    }
+                }
             }
             return filtered;
         }
@@ -815,17 +825,26 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         }
 
         private int getMaxCraftable() {
-            int maxP = Integer.MAX_VALUE;
+            // Group ingredient slots by first item (same as ingredient display)
+            java.util.LinkedHashMap<Item, Integer> needPerCraft = new java.util.LinkedHashMap<>();
+            java.util.LinkedHashMap<Item, Ingredient> ingByItem = new java.util.LinkedHashMap<>();
             for (Ingredient ing : ings) {
-                if (ing.isEmpty()) continue;
-                int req = ing.getItems().length == 0 ? 1 : ing.getItems()[0].getCount();
+                if (ing.getItems().length == 0) continue;
+                Item item = ing.getItems()[0].getItem();
+                needPerCraft.merge(item, 1, Integer::sum);
+                ingByItem.putIfAbsent(item, ing);
+            }
+            int maxP = Integer.MAX_VALUE;
+            for (java.util.Map.Entry<Item, Integer> e : needPerCraft.entrySet()) {
+                Ingredient ing = ingByItem.get(e.getKey());
+                int need = e.getValue();
                 int avail = 0;
-                for (Map.Entry<ItemStack, Integer> e : parent.haveIngredients.entrySet()) {
-                    if (!ing.test(e.getKey())) continue;
-                    if (isExcluded(e.getKey())) continue;
-                    avail += e.getValue();
+                for (Map.Entry<ItemStack, Integer> h : parent.haveIngredients.entrySet()) {
+                    if (!ing.test(h.getKey())) continue;
+                    if (isExcluded(h.getKey())) continue;
+                    avail += h.getValue();
                 }
-                if (req > 0) maxP = Math.min(maxP, avail / req);
+                if (need > 0) maxP = Math.min(maxP, avail / need);
             }
             return Math.max(1, maxP);
         }
@@ -902,8 +921,9 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             ings = casted.getIngredients((RecipeHolder<Recipe<RecipeInput>>) (Object) recipe);
             rebuildIngredients();
             if (CraftConfig.ENABLED_RECIPES.containsKey(adapter.getRecipe())) {
+                java.util.Set<Block> seen = new java.util.HashSet<>();
                 for (Block b : CraftConfig.ENABLED_RECIPES.get(adapter.getRecipe())) {
-                    requiredStations.add(new ItemStack(b));
+                    if (seen.add(b)) requiredStations.add(new ItemStack(b));
                 }
             }
             hasRecipe = true;

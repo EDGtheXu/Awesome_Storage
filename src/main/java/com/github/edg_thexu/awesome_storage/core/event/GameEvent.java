@@ -3,6 +3,7 @@ package com.github.edg_thexu.awesome_storage.core.event;
 import com.github.edg_thexu.awesome_storage.AwesomeStorage;
 import com.github.edg_thexu.awesome_storage.api.adapter.AdapterManager;
 import com.github.edg_thexu.awesome_storage.api.event.RegisterWorkstationEvent;
+import com.github.edg_thexu.awesome_storage.api.filter.FilterRuleRegistry;
 import com.github.edg_thexu.awesome_storage.config.CraftConfig;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.ConfigSyncPacket;
 import com.github.edg_thexu.awesome_storage.utils.RemoteBlockEntityCache;
@@ -46,5 +47,6 @@ public class GameEvent {
         ModLoader.postEvent(new RegisterWorkstationEvent());
 
         AdapterManager.init();
+        FilterRuleRegistry.init();
     }
 }
