@@ -29,6 +29,7 @@ import com.github.edg_thexu.qtcraft_api.core.widget.container.QSmoothScrollArea;
 import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QComboBox;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QLineEdit;
+import com.github.edg_thexu.qtcraft_api.util.WidgetTooltip;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -661,6 +662,14 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         private List<Integer> storageIndices = new ArrayList<>();
         private List<Boolean> overlayFlags = new ArrayList<>();
         private int hoverIndex = -1;
+
+        @Override
+        public WidgetTooltip toolTip() {
+            if (hoverIndex >= 0 && hoverIndex < items.size() && !items.get(hoverIndex).isEmpty()) {
+                return WidgetTooltip.create(items.get(hoverIndex));
+            }
+            return null;
+        }
         private int cols = 8;
         private int slotSize = 18;
         private java.util.function.BiConsumer<ItemStack, Integer> clickHandler;

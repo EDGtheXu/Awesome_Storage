@@ -133,7 +133,7 @@ public class FloatingWindow extends QDockWidget {
         QPainter p = event.painter();
         if (p == null) return;
 
-        p.translate(0, 0, 250);
+        p.translate(0, 0, 300);
 
         p.fillRect(0, 0, width(), height(), new QColor(0xCC1E1E1E));
         p.setColor(new QColor(0xFF555555));
