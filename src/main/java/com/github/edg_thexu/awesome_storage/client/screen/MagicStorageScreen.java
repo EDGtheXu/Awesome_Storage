@@ -130,58 +130,39 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     }
 
     // ========================================================================
-    // Storage Panel
+    // Shared filter bar (sort / category / stack / mod + filter + sort logic)
     // ========================================================================
-    private class StoragePanel extends QWidget {
-        private final QLineEdit searchField;
-        private final QComboBox sortCombo;
-        private final QComboBox categoryCombo;
-        private final QComboBox stackCombo;
-        private final QComboBox modCombo;
-        ItemGridWidget itemGrid;
-        private final QLabel capacityLabel;
-        private final QSmoothScrollArea scrollArea;
+    private static class FilterBar {
+        final QComboBox sortCombo;
+        final QComboBox categoryCombo;
+        final QComboBox stackCombo;
+        final QComboBox modCombo;
 
-        StoragePanel() {
-            QVBoxLayout vl = new QVBoxLayout(this);
-            vl.setSpacing(1);
-            vl.setContentsMargins(3, 3, 3, 3);
-
-            QHBoxLayout searchRow = new QHBoxLayout();
-            searchField = new QLineEdit();
-            searchField.setPlaceholderText("Search...");
-            searchField.setFixedHeight(16);
-            searchField.connect(QLineEdit.TEXT_CHANGED, this, new SlotKeyConsumer<>("ss", (self, v) -> refresh()));
-            searchRow.addWidget(searchField, 1);
-            vl.addLayout(searchRow);
-
-            // Filter row: sort / category / stack as dropdowns
-            QHBoxLayout filterRow = new QHBoxLayout();
-            filterRow.setSpacing(2);
-
+        FilterBar(QHBoxLayout row, Object owner, String keyPrefix, Runnable onRefresh) {
             sortCombo = new QComboBox();
+            sortCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
             sortCombo.addItem("Default"); sortCombo.addItem("By ID");
             sortCombo.addItem("By Name"); sortCombo.addItem("By Count");
             sortCombo.setFixedHeight(16);
-            sortCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-            sortCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("sc", (self, idx) -> { if (itemGrid != null) refresh(); }));
-            filterRow.addWidget(sortCombo, 1);
+            sortCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, owner, new SlotKeyConsumer<>(keyPrefix + "s", (self, idx) -> onRefresh.run()));
+            row.addWidget(sortCombo, 1);
 
             categoryCombo = new QComboBox();
+            categoryCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
             for (String l : new String[]{"All", "Weapon", "Tool", "Material", "Block", "Misc"}) categoryCombo.addItem(l);
             categoryCombo.setFixedHeight(16);
-            categoryCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-            categoryCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("cc", (self, idx) -> { if (itemGrid != null) refresh(); }));
-            filterRow.addWidget(categoryCombo, 1);
+            categoryCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, owner, new SlotKeyConsumer<>(keyPrefix + "c", (self, idx) -> onRefresh.run()));
+            row.addWidget(categoryCombo, 1);
 
             stackCombo = new QComboBox();
+            stackCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
             stackCombo.addItem("All"); stackCombo.addItem("Stackable"); stackCombo.addItem("Non-stackable");
             stackCombo.setFixedHeight(16);
-            stackCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-            stackCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("cs", (self, idx) -> { if (itemGrid != null) refresh(); }));
-            filterRow.addWidget(stackCombo, 1);
+            stackCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, owner, new SlotKeyConsumer<>(keyPrefix + "t", (self, idx) -> onRefresh.run()));
+            row.addWidget(stackCombo, 1);
 
             modCombo = new QComboBox();
+            modCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
             modCombo.addItem("All Mods");
             java.util.TreeSet<String> allMods = new java.util.TreeSet<>();
             for (var item : BuiltInRegistries.ITEM) {
@@ -189,29 +170,11 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             }
             for (String mod : allMods) modCombo.addItem(mod);
             modCombo.setFixedHeight(16);
-            modCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-            modCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("smc", (self, idx) -> { if (itemGrid != null) refresh(); }));
-            filterRow.addWidget(modCombo, 1);
-
-            vl.addLayout(filterRow);
-
-            scrollArea = new QSmoothScrollArea();
-            itemGrid = new ItemGridWidget();
-            itemGrid.setClickHandler(this::onItemClick);
-            scrollArea.setWidget(itemGrid);
-            scrollArea.setWidgetResizable(true);
-            vl.addWidget(scrollArea, 1);
-
-            capacityLabel = new QLabel(Component.literal("Capacity: 0/0"));
-            vl.addWidget(capacityLabel);
-
-            refresh();
+            modCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, owner, new SlotKeyConsumer<>(keyPrefix + "m", (self, idx) -> onRefresh.run()));
+            row.addWidget(modCombo, 1);
         }
 
-        void refresh() {
-            List<ItemStack> items = getStorageItems(minecraft.player);
-            if (items == null) return;
-            String search = searchField.text().toLowerCase();
+        List<ItemStack> apply(List<ItemStack> items, String search) {
             String catFilter = categoryCombo.currentText();
             String sortText = sortCombo.currentText();
             String stackText = stackCombo.currentText();
@@ -238,6 +201,55 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 case "By Name" -> filtered.sort(Comparator.comparing(i -> i.getDisplayName().getString()));
                 case "By Count" -> filtered.sort(Comparator.comparingInt(ItemStack::getCount).reversed());
             }
+            return filtered;
+        }
+    }
+
+    // ========================================================================
+    // Storage Panel
+    // ========================================================================
+    private class StoragePanel extends QWidget {
+        private final QLineEdit searchField;
+        private final FilterBar filterBar;
+        ItemGridWidget itemGrid;
+        private final QLabel capacityLabel;
+        private final QSmoothScrollArea scrollArea;
+
+        StoragePanel() {
+            QVBoxLayout vl = new QVBoxLayout(this);
+            vl.setSpacing(1);
+            vl.setContentsMargins(3, 3, 3, 3);
+
+            QHBoxLayout searchRow = new QHBoxLayout();
+            searchField = new QLineEdit();
+            searchField.setPlaceholderText("Search...");
+            searchField.setFixedHeight(16);
+            searchField.connect(QLineEdit.TEXT_CHANGED, this, new SlotKeyConsumer<>("ss", (self, v) -> refresh()));
+            searchRow.addWidget(searchField, 1);
+            vl.addLayout(searchRow);
+
+            QHBoxLayout filterRow = new QHBoxLayout();
+            filterRow.setSpacing(2);
+            filterBar = new FilterBar(filterRow, this, "s", this::refresh);
+            vl.addLayout(filterRow);
+
+            scrollArea = new QSmoothScrollArea();
+            itemGrid = new ItemGridWidget();
+            itemGrid.setClickHandler(this::onItemClick);
+            scrollArea.setWidget(itemGrid);
+            scrollArea.setWidgetResizable(true);
+            vl.addWidget(scrollArea, 1);
+
+            capacityLabel = new QLabel(Component.literal("Capacity: 0/0"));
+            vl.addWidget(capacityLabel);
+
+            refresh();
+        }
+
+        void refresh() {
+            List<ItemStack> items = getStorageItems(minecraft.player);
+            if (items == null) return;
+            List<ItemStack> filtered = filterBar.apply(items, searchField.text().toLowerCase());
             itemGrid.setItems(filtered);
             scrollArea.updateLayout();
             scrollArea.markDirty();
@@ -265,10 +277,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     // ========================================================================
     private class CraftPanel extends QWidget {
         private final QLineEdit searchField;
-        private final QComboBox sortCombo;
-        private final QComboBox categoryCombo;
-        private final QComboBox stackCombo;
-        private final QComboBox modCombo;
+        private final FilterBar filterBar;
         private final StationsRowWidget stationsRow;
         ItemGridWidget craftableGrid;
         private final QLabel capacityLabel;
@@ -315,44 +324,10 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             funcRow.addWidget(searchField, 1);
             leftLayout.addLayout(funcRow);
 
-            // Filter row: sort / category / stack as dropdowns
+            // Filter row: sort / category / stack / mod
             QHBoxLayout filterRow = new QHBoxLayout();
             filterRow.setSpacing(2);
-
-            sortCombo = new QComboBox();
-            sortCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-            sortCombo.addItem("Default"); sortCombo.addItem("By ID");
-            sortCombo.addItem("By Name"); sortCombo.addItem("By Count");
-            sortCombo.setFixedHeight(16);
-            sortCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("csc", (self, idx) -> { if (craftableGrid != null) refresh(); }));
-            filterRow.addWidget(sortCombo, 1);
-
-            categoryCombo = new QComboBox();
-            categoryCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-            for (String l : new String[]{"All", "Weapon", "Tool", "Material", "Block", "Misc"}) categoryCombo.addItem(l);
-            categoryCombo.setFixedHeight(16);
-            categoryCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("ccc", (self, idx) -> { if (craftableGrid != null) refresh(); }));
-            filterRow.addWidget(categoryCombo, 1);
-
-            stackCombo = new QComboBox();
-            stackCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-            stackCombo.addItem("All"); stackCombo.addItem("Stackable"); stackCombo.addItem("Non-stackable");
-            stackCombo.setFixedHeight(16);
-            stackCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("cst", (self, idx) -> { if (craftableGrid != null) refresh(); }));
-            filterRow.addWidget(stackCombo, 1);
-
-            modCombo = new QComboBox();
-            modCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-            modCombo.addItem("All Mods");
-            java.util.TreeSet<String> allMods = new java.util.TreeSet<>();
-            for (var item : BuiltInRegistries.ITEM) {
-                allMods.add(BuiltInRegistries.ITEM.getKey(item).getNamespace());
-            }
-            for (String mod : allMods) modCombo.addItem(mod);
-            modCombo.setFixedHeight(16);
-            modCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("cmc", (self, idx) -> { if (craftableGrid != null) refresh(); }));
-            filterRow.addWidget(modCombo, 1);
-
+            filterBar = new FilterBar(filterRow, this, "c", () -> { if (craftableGrid != null) refresh(); });
             leftLayout.addLayout(filterRow);
 
             stationsRow = new StationsRowWidget();
@@ -526,31 +501,16 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             cachedResults = new ArrayList<>(craftable);
             if (!showCraftableOnly) cachedResults.addAll(partial);
 
-            String search = searchField.text().toLowerCase();
-            String catFilter = categoryCombo.currentText();
-            String sortText = sortCombo.currentText();
-            String stackText = stackCombo.currentText();
-            String modFilter = modCombo.currentText();
+            List<ItemStack> resultItems = cachedResults.stream().map(p -> p.getA()).collect(Collectors.toList());
+            List<ItemStack> filtered = filterBar.apply(resultItems, searchField.text().toLowerCase());
             List<ItemStack> display = new ArrayList<>();
-            for (Pair<ItemStack, RecipeHolder<?>> p : cachedResults) {
-                ItemStack s = p.getA();
-                if (!search.isEmpty() && !s.getDisplayName().getString().toLowerCase().contains(search)) continue;
-                if (!catFilter.equals("All")) {
-                    String id = BuiltInRegistries.ITEM.getKey(s.getItem()).getPath();
-                    if (catFilter.equals("Weapon") && !id.contains("sword") && !id.contains("bow") && !id.contains("crossbow") && !id.contains("trident")) continue;
-                    if (catFilter.equals("Tool") && !id.contains("pickaxe") && !id.contains("axe") && !id.contains("shovel") && !id.contains("hoe")) continue;
-                    if (catFilter.equals("Block") && !(s.getItem() instanceof BlockItem)) continue;
-                    if (catFilter.equals("Material") && (s.getItem() instanceof BlockItem)) continue;
+            for (ItemStack fs : filtered) {
+                for (int ci = 0; ci < cachedResults.size(); ci++) {
+                    if (ItemStack.isSameItemSameComponents(fs, cachedResults.get(ci).getA())) {
+                        display.add(cachedResults.get(ci).getA());
+                        break;
+                    }
                 }
-                if (stackText.equals("Stackable") && !s.isStackable()) continue;
-                if (stackText.equals("Non-stackable") && s.isStackable()) continue;
-                if (!modFilter.equals("All Mods") && !BuiltInRegistries.ITEM.getKey(s.getItem()).getNamespace().equals(modFilter)) continue;
-                display.add(s);
-            }
-            switch (sortText) {
-                case "By ID" -> display.sort(Comparator.comparing(s -> BuiltInRegistries.ITEM.getKey(s.getItem()).toString()));
-                case "By Name" -> display.sort(Comparator.comparing(s -> s.getDisplayName().getString()));
-                case "By Count" -> display.sort(Comparator.comparingInt(s -> -s.getCount()));
             }
             // Map display indices to cachedResults indices, and compute craftable overlays
             craftDisplayIndex.clear();
