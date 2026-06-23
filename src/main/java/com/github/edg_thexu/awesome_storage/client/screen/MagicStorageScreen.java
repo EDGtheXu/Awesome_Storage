@@ -137,8 +137,10 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         private final QComboBox sortCombo;
         private final QComboBox categoryCombo;
         private final QComboBox stackCombo;
+        private final QComboBox modCombo;
         ItemGridWidget itemGrid;
         private final QLabel capacityLabel;
+        private final QSmoothScrollArea scrollArea;
 
         StoragePanel() {
             QVBoxLayout vl = new QVBoxLayout(this);
@@ -179,14 +181,26 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             stackCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("cs", (self, idx) -> { if (itemGrid != null) refresh(); }));
             filterRow.addWidget(stackCombo, 1);
 
+            modCombo = new QComboBox();
+            modCombo.addItem("All Mods");
+            java.util.TreeSet<String> allMods = new java.util.TreeSet<>();
+            for (var item : BuiltInRegistries.ITEM) {
+                allMods.add(BuiltInRegistries.ITEM.getKey(item).getNamespace());
+            }
+            for (String mod : allMods) modCombo.addItem(mod);
+            modCombo.setFixedHeight(16);
+            modCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
+            modCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("smc", (self, idx) -> { if (itemGrid != null) refresh(); }));
+            filterRow.addWidget(modCombo, 1);
+
             vl.addLayout(filterRow);
 
-            QSmoothScrollArea area = new QSmoothScrollArea();
+            scrollArea = new QSmoothScrollArea();
             itemGrid = new ItemGridWidget();
             itemGrid.setClickHandler(this::onItemClick);
-            area.setWidget(itemGrid);
-            area.setWidgetResizable(true);
-            vl.addWidget(area, 1);
+            scrollArea.setWidget(itemGrid);
+            scrollArea.setWidgetResizable(true);
+            vl.addWidget(scrollArea, 1);
 
             capacityLabel = new QLabel(Component.literal("Capacity: 0/0"));
             vl.addWidget(capacityLabel);
@@ -201,6 +215,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             String catFilter = categoryCombo.currentText();
             String sortText = sortCombo.currentText();
             String stackText = stackCombo.currentText();
+            String modFilter = modCombo.currentText();
 
             List<ItemStack> filtered = new ArrayList<>();
             for (ItemStack s : items) {
@@ -215,6 +230,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 }
                 if (stackText.equals("Stackable") && !s.isStackable()) continue;
                 if (stackText.equals("Non-stackable") && s.isStackable()) continue;
+                if (!modFilter.equals("All Mods") && !BuiltInRegistries.ITEM.getKey(s.getItem()).getNamespace().equals(modFilter)) continue;
                 filtered.add(s);
             }
             switch (sortText) {
@@ -223,6 +239,8 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 case "By Count" -> filtered.sort(Comparator.comparingInt(ItemStack::getCount).reversed());
             }
             itemGrid.setItems(filtered);
+            scrollArea.updateLayout();
+            scrollArea.markDirty();
             MagicStorageBlockEntity be = Util.getStorageEntity(minecraft.player);
             if (be != null) {
                 capacityLabel.setText(Component.literal("容量: " + be.getUsedSlots() + "/" + be.getTotalSlots()));
@@ -250,6 +268,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         private final QComboBox sortCombo;
         private final QComboBox categoryCombo;
         private final QComboBox stackCombo;
+        private final QComboBox modCombo;
         private final StationsRowWidget stationsRow;
         ItemGridWidget craftableGrid;
         private final QLabel capacityLabel;
@@ -321,6 +340,18 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             stackCombo.setFixedHeight(16);
             stackCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("cst", (self, idx) -> { if (craftableGrid != null) refresh(); }));
             filterRow.addWidget(stackCombo, 1);
+
+            modCombo = new QComboBox();
+            modCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
+            modCombo.addItem("All Mods");
+            java.util.TreeSet<String> allMods = new java.util.TreeSet<>();
+            for (var item : BuiltInRegistries.ITEM) {
+                allMods.add(BuiltInRegistries.ITEM.getKey(item).getNamespace());
+            }
+            for (String mod : allMods) modCombo.addItem(mod);
+            modCombo.setFixedHeight(16);
+            modCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, this, new SlotKeyConsumer<>("cmc", (self, idx) -> { if (craftableGrid != null) refresh(); }));
+            filterRow.addWidget(modCombo, 1);
 
             leftLayout.addLayout(filterRow);
 
@@ -499,6 +530,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             String catFilter = categoryCombo.currentText();
             String sortText = sortCombo.currentText();
             String stackText = stackCombo.currentText();
+            String modFilter = modCombo.currentText();
             List<ItemStack> display = new ArrayList<>();
             for (Pair<ItemStack, RecipeHolder<?>> p : cachedResults) {
                 ItemStack s = p.getA();
@@ -512,6 +544,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 }
                 if (stackText.equals("Stackable") && !s.isStackable()) continue;
                 if (stackText.equals("Non-stackable") && s.isStackable()) continue;
+                if (!modFilter.equals("All Mods") && !BuiltInRegistries.ITEM.getKey(s.getItem()).getNamespace().equals(modFilter)) continue;
                 display.add(s);
             }
             switch (sortText) {
