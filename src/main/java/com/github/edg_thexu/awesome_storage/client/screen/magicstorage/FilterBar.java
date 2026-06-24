@@ -66,12 +66,28 @@ class FilterBar {
         String stackText = stackCombo.currentText();
         String modFilter = modCombo.currentText();
 
+        // Parse search prefix: @modname, #itemid, otherwise name search
+        String searchLower = search.toLowerCase();
+        String modSearch = null;
+        String idSearch = null;
+        String nameSearch = null;
+        if (searchLower.startsWith("@")) {
+            modSearch = searchLower.substring(1);
+        } else if (searchLower.startsWith("#")) {
+            idSearch = searchLower.substring(1);
+        } else if (!searchLower.isEmpty()) {
+            nameSearch = searchLower;
+        }
+
         List<ItemStack> filtered = new ArrayList<>();
         for (ItemStack s : items) {
             if (s.isEmpty()) continue;
-            if (!search.isEmpty() && !s.getDisplayName().getString().toLowerCase().contains(search)) continue;
+            var key = BuiltInRegistries.ITEM.getKey(s.getItem());
+            if (nameSearch != null && !s.getDisplayName().getString().toLowerCase().contains(nameSearch)) continue;
+            if (modSearch != null && !key.getNamespace().contains(modSearch)) continue;
+            if (idSearch != null && !key.getPath().contains(idSearch)) continue;
             // Category filter (registered rules)
-            if (!catFilter.equals("All")) {
+            if (!catFilter.equals(Component.translatable("magic_storage_screen.all").getString())) {
                 boolean match = false;
                 for (var rule : FilterRuleRegistry.getCategoryRules()) {
                     if (catFilter.equals(rule.name()) && rule.predicate().test(s)) {
@@ -81,14 +97,14 @@ class FilterBar {
                 }
                 if (!match) continue;
             }
-            if (stackText.equals("Stackable") && !s.isStackable()) continue;
-            if (stackText.equals("Non-stackable") && s.isStackable()) continue;
-            if (!modFilter.equals("All Mods") && !BuiltInRegistries.ITEM.getKey(s.getItem()).getNamespace().equals(modFilter))
+            if (stackText.equals(Component.translatable("magic_storage_screen.stackable").getString()) && !s.isStackable()) continue;
+            if (stackText.equals(Component.translatable("magic_storage_screen.non_stackable").getString()) && s.isStackable()) continue;
+            if (!modFilter.equals(Component.translatable("magic_storage_screen.all_mods").getString()) && !key.getNamespace().equals(modFilter))
                 continue;
             filtered.add(s);
         }
         // Sort by registered rule
-        if (!sortText.equals("Default")) {
+        if (!sortText.equals(Component.translatable("magic_storage_screen.default").getString())) {
             for (var rule : FilterRuleRegistry.getSortRules()) {
                 if (sortText.equals(rule.name())) {
                     filtered.sort(rule.comparator());

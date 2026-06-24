@@ -1,5 +1,6 @@
 package com.github.edg_thexu.awesome_storage.client.screen.magicstorage;
 
+import com.github.edg_thexu.awesome_storage.client.widget.CapacityBar;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
 import com.github.edg_thexu.awesome_storage.utils.FavoriteSystem;
@@ -13,7 +14,6 @@ import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.signal_slot.slots.SlotKeyConsumer;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QSmoothScrollArea;
-import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QLineEdit;
 import com.github.edg_thexu.qtcraft_api.util.WidgetTooltip;
 import net.minecraft.client.Minecraft;
@@ -35,7 +35,7 @@ class StoragePanel extends QWidget {
     private final QLineEdit searchField;
     private final FilterBar filterBar;
     ItemGridWidget itemGrid;
-    private final QLabel capacityLabel;
+    private final CapacityBar capacityBar;
     private final QSmoothScrollArea scrollArea;
 
     StoragePanel(MagicStorageScreen parent) {
@@ -67,8 +67,8 @@ class StoragePanel extends QWidget {
         scrollArea.setWidgetResizable(true);
         vl.addWidget(scrollArea, 1);
 
-        capacityLabel = new QLabel(Component.translatable("magic_storage_screen.capacity_format", "0", "0"));
-        vl.addWidget(capacityLabel);
+        capacityBar = new CapacityBar();
+        vl.addWidget(capacityBar);
 
         refresh();
     }
@@ -82,7 +82,7 @@ class StoragePanel extends QWidget {
         scrollArea.markDirty();
         MagicStorageBlockEntity be = Util.getStorageEntity(Minecraft.getInstance().player);
         if (be != null) {
-            capacityLabel.setText(Component.translatable("magic_storage_screen.capacity_format", String.valueOf(be.getUsedSlots()), String.valueOf(be.getTotalSlots())));
+            capacityBar.setSlots(be.getUsedSlots(), be.getTotalSlots());
         }
     }
 

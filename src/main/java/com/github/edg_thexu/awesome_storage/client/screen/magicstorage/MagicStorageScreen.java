@@ -198,6 +198,14 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         if (!stack.isEmpty()) {
             p.renderItemStack(stack, x + (size - 16) / 2, y + (size - 16) / 2);
             p.renderItemDecorations(stack, x + (size - 16) / 2, y + (size - 16) / 2);
+            int count = stack.getCount();
+            if (count > 0) {
+                String countStr = count >= 1000 ? count / 1000 + "k" : String.valueOf(count);
+                int tw = countStr.length() * 5 + 2;
+                p.fillRect(x + size - tw - 1, y + size - 9, tw, 8, new QColor(0xCC000000));
+                p.setColor(new QColor(0xFFFFAA00));
+                p.drawText(countStr, x + size - tw, y + size - 9);
+            }
         }
     }
 

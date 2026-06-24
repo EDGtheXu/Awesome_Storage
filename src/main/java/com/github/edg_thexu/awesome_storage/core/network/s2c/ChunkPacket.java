@@ -50,7 +50,7 @@ public class ChunkPacket implements CustomPacketPayload  {
         buffer.writeInt(this.pos.getZ());
     }
 
-    public static final CustomPacketPayload.Type<ChunkPacket> TYPE = new CustomPacketPayload.Type<>(space("chrunkc_packet_s2c"));
+    public static final CustomPacketPayload.Type<ChunkPacket> TYPE = new CustomPacketPayload.Type<>(space("chunk_packet_s2c"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ChunkPacket> STREAM_CODEC = StreamCodec.ofMember(
             ChunkPacket::write,

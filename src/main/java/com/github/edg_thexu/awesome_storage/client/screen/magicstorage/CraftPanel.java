@@ -3,6 +3,7 @@ package com.github.edg_thexu.awesome_storage.client.screen.magicstorage;
 import com.github.edg_thexu.awesome_storage.api.adapter.AbstractMagicCraftRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.api.adapter.AdapterManager;
 import com.github.edg_thexu.awesome_storage.api.adapter.CommonRecipeAdapter;
+import com.github.edg_thexu.awesome_storage.client.widget.CapacityBar;
 import com.github.edg_thexu.awesome_storage.config.CraftConfig;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicCraftPacket;
@@ -51,7 +52,7 @@ class CraftPanel extends QWidget {
     private final FilterBar filterBar;
     private final StationsRowWidget stationsRow;
     ItemGridWidget craftableGrid;
-    private final QLabel capacityLabel;
+    private final CapacityBar capacityBar;
     final CraftInfoPanel infoPanel;
     private final QSmoothScrollArea craftableScrollArea;
     private boolean showCraftableOnly = true;
@@ -122,8 +123,8 @@ class CraftPanel extends QWidget {
         leftLayout.addWidget(area, 1);
         craftableScrollArea = area;
 
-        capacityLabel = new QLabel(Component.translatable("magic_storage_screen.capacity_format", "0", "0"));
-        leftLayout.addWidget(capacityLabel);
+        capacityBar = new CapacityBar();
+        leftLayout.addWidget(capacityBar);
 
         mainLayout.addWidget(leftSide, 1);
 
@@ -367,7 +368,7 @@ class CraftPanel extends QWidget {
     void updateCapacity() {
         MagicStorageBlockEntity be = Util.getStorageEntity(Minecraft.getInstance().player);
         if (be != null) {
-            capacityLabel.setText(Component.translatable("magic_storage_screen.capacity_format", String.valueOf(be.getUsedSlots()), String.valueOf(be.getTotalSlots())));
+            capacityBar.setSlots(be.getUsedSlots(), be.getTotalSlots());
         }
     }
 

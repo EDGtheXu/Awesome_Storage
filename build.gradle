@@ -111,6 +111,13 @@ dependencies {
 
     runtimeOnly "curse.maven:sophisticated-core-618298:7552275"
     runtimeOnly "curse.maven:sophisticated-storage-619320:7531079"
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.0"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
 }
 
 tasks.withType(ProcessResources).configureEach {

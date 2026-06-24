@@ -5,6 +5,7 @@ import com.github.edg_thexu.awesome_storage.api.event.RegisterSortRuleEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.neoforged.fml.ModLoader;
 
 import java.util.*;
@@ -38,6 +39,15 @@ public class FilterRuleRegistry {
         sortRules.add(new SortRule("By ID", Comparator.comparing(a -> BuiltInRegistries.ITEM.getKey(a.getItem()).toString())));
         sortRules.add(new SortRule("By Name", Comparator.comparing(a -> a.getDisplayName().getString())));
         sortRules.add(new SortRule("By Count", Comparator.comparingInt(ItemStack::getCount).reversed()));
+        sortRules.add(new SortRule("By Rarity", Comparator.comparingInt(a -> a.getRarity().ordinal())));
+        sortRules.add(new SortRule("By Mod", Comparator.comparing(a -> BuiltInRegistries.ITEM.getKey(a.getItem()).getNamespace())));
+        sortRules.add(new SortRule("By Enchantments", (a, b) -> {
+            int ea = EnchantmentHelper.getEnchantmentsForCrafting(a).size();
+            int eb = EnchantmentHelper.getEnchantmentsForCrafting(b).size();
+            if (ea != eb) return Integer.compare(ea, eb);
+            return Integer.compare(a.getCount(), b.getCount());
+        }));
+        sortRules.add(new SortRule("By Damage", Comparator.comparingInt(a -> a.getDamageValue())));
 
         categoryRules.add(new CategoryRule("Weapon", s -> {
             String id = BuiltInRegistries.ITEM.getKey(s.getItem()).getPath();
