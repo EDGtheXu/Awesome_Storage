@@ -1,8 +1,10 @@
 package com.github.edg_thexu.awesome_storage.core.network.c2s;
 
+import com.github.edg_thexu.awesome_storage.api.adapter.AbstractMagicCraftRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.api.adapter.AdapterManager;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.utils.Util;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -97,11 +99,12 @@ public record QueueActionPacket(int action, int slotIndex, int entryIndex, Resou
     private int getCookTime(IPayloadContext context) {
         var optRecipe = context.player().level().getRecipeManager().byKey(recipeId);
         if (optRecipe.isEmpty()) return 200;
-        RecipeHolder<?> holder = optRecipe.get();
-        Recipe<?> recipe = holder.value();
-        if (recipe instanceof AbstractCookingRecipe cooking) {
-            return cooking.cookingTime;
-        }
-        return 200;
+        var recipeType = BuiltInRegistries.RECIPE_TYPE.get(adapterID);
+        if (recipeType == null) return 200;
+        AbstractMagicCraftRecipeAdapter<?, ?> adapter = AdapterManager.Adapters.get(recipeType);
+        if (adapter == null) return 200;
+        @SuppressWarnings("unchecked")
+        int time = adapter.getCookTime((RecipeHolder) optRecipe.get());
+        return time > 0 ? time : 200;
     }
 }

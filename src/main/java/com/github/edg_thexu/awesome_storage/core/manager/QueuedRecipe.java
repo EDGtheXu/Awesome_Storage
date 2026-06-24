@@ -12,11 +12,11 @@ public class QueuedRecipe {
     public static final String TAG_PROGRESS = "Progress";
     public static final String TAG_TOTAL_TIME = "TotalTime";
 
-    ResourceLocation recipeId;
-    ResourceLocation recipeTypeId;
-    int quantity;
-    int progress;
-    int totalCookTime;
+    public ResourceLocation recipeId;
+    public ResourceLocation recipeTypeId;
+    public int quantity;
+    public int progress;
+    public int totalCookTime;
 
     public QueuedRecipe(ResourceLocation recipeId, ResourceLocation recipeTypeId, int quantity, int totalCookTime) {
         this.recipeId = recipeId;

@@ -56,8 +56,14 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
 
     public CraftingQueueManager getQueueManager() { return queueMgr; }
 
+    private int tickCounter;
+
     public static void serverTick(Level level, BlockPos pos, BlockState state, MagicStorageBlockEntity blockEntity) {
         blockEntity.queueMgr.tick();
+        blockEntity.tickCounter++;
+        if (blockEntity.tickCounter % 5 == 0 && !blockEntity.queueMgr.isIdle()) {
+            level.sendBlockUpdated(pos, state, state, 2);
+        }
     }
 
     // ========================================================================
@@ -67,6 +73,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     @Override public Level getLevel() { return level; }
     @Override public boolean isClientSide() { return level != null && level.isClientSide; }
     @Override public ItemOperationManager getItemOps() { return itemOps; }
+    @Override public List<String> getBlockAccessors() { return workstationMgr.getBlockAccessors(); }
 
     // ========================================================================
     // Delegated methods

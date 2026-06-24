@@ -3,6 +3,7 @@ package com.github.edg_thexu.awesome_storage.core.manager;
 import com.github.edg_thexu.awesome_storage.api.adapter.AbstractMagicCraftRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.api.adapter.AdapterManager;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.QueueSyncPacket;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -12,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,6 +33,7 @@ public class CraftingQueueManager {
         boolean isClientSide();
         ItemOperationManager getItemOps();
         void setChanged();
+        List<String> getBlockAccessors();
     }
 
     public static class QueueSlot {
@@ -88,6 +91,13 @@ public class CraftingQueueManager {
         return slots;
     }
 
+    public boolean isIdle() {
+        for (QueueSlot slot : slots) {
+            if (!slot.isIdle()) return false;
+        }
+        return true;
+    }
+
     public int addToQueue(ResourceLocation recipeId, ResourceLocation recipeTypeId, int quantity, int totalCookTime) {
         for (QueueSlot slot : slots) {
             if (slot.isIdle() || (!slot.paused && slot.queue.size() < 16)) {
@@ -135,13 +145,34 @@ public class CraftingQueueManager {
         if (level == null) return;
         RecipeManager recipeManager = level.getRecipeManager();
 
+        // Resolve workstation blocks from accessor IDs
+        Set<Block> workstations = new HashSet<>();
+        for (String id : access.getBlockAccessors()) {
+            Block b = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id));
+            if (b != null) workstations.add(b);
+        }
+
         boolean dirty = false;
         for (QueueSlot slot : slots) {
             if (slot.paused || slot.isIdle()) continue;
             QueuedRecipe current = slot.current();
             if (current == null) continue;
 
-            current.progress += TICK_INTERVAL;
+            // Compute speed multiplier for this recipe based on workstations
+            float speed = 1.0f;
+            RecipeType<?> recipeType = BuiltInRegistries.RECIPE_TYPE.get(current.recipeTypeId);
+            if (recipeType != null) {
+                AbstractMagicCraftRecipeAdapter adapter = AdapterManager.Adapters.get(recipeType);
+                if (adapter != null) {
+                    var optRecipe = recipeManager.byKey(current.recipeId);
+                    if (optRecipe.isPresent()) {
+                        speed = adapter.getSpeedMultiplier(optRecipe.get(), workstations);
+                    }
+                }
+            }
+
+            current.progress += (int) (TICK_INTERVAL * speed);
+            dirty = true;
             if (current.progress >= current.totalCookTime) {
                 current.progress = 0;
                 if (tryCraft(current, recipeManager)) {
@@ -149,16 +180,13 @@ public class CraftingQueueManager {
                     if (current.isDone()) {
                         slot.queue.pollFirst();
                     }
-                    dirty = true;
                 } else {
                     slot.paused = true;
-                    dirty = true;
                 }
             }
         }
         if (dirty) {
             access.setChanged();
-            syncToAllPlayers();
         }
     }
 
@@ -172,7 +200,7 @@ public class CraftingQueueManager {
         AbstractMagicCraftRecipeAdapter adapter = AdapterManager.Adapters.get(recipeType);
         if (adapter == null) return false;
         RecipeHolder<?> holder = optRecipe.get();
-        var ingredients = adapter.getIngredients(holder);
+        @SuppressWarnings("unchecked") NonNullList<Ingredient> ingredients = adapter.getIngredients(holder);
         var consumed = access.getItemOps().craftAndConsume(ingredients, Set.of());
         if (consumed == null) return false;
         ItemStack result = adapter.getCraftResult(holder, consumed, level.registryAccess());

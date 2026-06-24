@@ -142,16 +142,25 @@ class CraftPanel extends QWidget {
         craftBtnCtrl = new QPushButton(Component.translatable("magic_storage_screen.craft"));
         craftBtnCtrl.setFixedHeight(14);
         craftBtnCtrl.setOnClick(() -> {
-            if (infoPanel.hasRecipe && infoPanel.parent.selectedRecipe != null && infoPanel.parent.selectedAdapter != null) {
-                int count = Math.max(1, infoPanel.craftQuantity);
+            if (!infoPanel.hasRecipe || infoPanel.parent.selectedRecipe == null || infoPanel.parent.selectedAdapter == null)
+                return;
+            int count = Math.max(1, infoPanel.craftQuantity);
+            var recipeId = infoPanel.parent.selectedRecipe.id();
+            var adapterId = BuiltInRegistries.RECIPE_TYPE.getKey(infoPanel.parent.selectedAdapter.getRecipe());
+            int cookTime = infoPanel.parent.selectedAdapter.getCookTime(infoPanel.parent.selectedRecipe);
+            if (cookTime <= 0) {
+                // Instant craft
                 List<ItemStack> excluded = new ArrayList<>(infoPanel.excludedItems);
                 for (int i = 0; i < count; i++)
-                    PacketDistributor.sendToServer(new MagicCraftPacket(infoPanel.parent.selectedRecipe.id(), BuiltInRegistries.RECIPE_TYPE.getKey(infoPanel.parent.selectedAdapter.getRecipe()), excluded));
-                var be = Util.getStorageEntity(Minecraft.getInstance().player);
-                if (be != null) be.setChanged();
-                updateTakeLabel();
-                scheduleRefresh();
+                    PacketDistributor.sendToServer(new MagicCraftPacket(recipeId, adapterId, excluded));
+            } else {
+                // Add to queue
+                PacketDistributor.sendToServer(QueueActionPacket.add(recipeId, adapterId, count));
             }
+            var be = Util.getStorageEntity(Minecraft.getInstance().player);
+            if (be != null) be.setChanged();
+            updateTakeLabel();
+            scheduleRefresh();
         });
         // Take: rendered item + count
         QWidget takeArea = new QWidget();
@@ -219,23 +228,10 @@ class CraftPanel extends QWidget {
         // Take item widget at bottom (above the scroll)
         rvl.addWidget(scrollArea, 1);
 
-        // Queue button
-        QPushButton queueBtn = new QPushButton(Component.translatable("magic_storage_screen.queue"));
-        queueBtn.setFixedHeight(12);
-        queueBtn.setOnClick(() -> {
-            if (infoPanel.hasRecipe && infoPanel.parent.selectedRecipe != null && infoPanel.parent.selectedAdapter != null) {
-                int count = Math.max(1, infoPanel.craftQuantity);
-                PacketDistributor.sendToServer(QueueActionPacket.add(
-                        infoPanel.parent.selectedRecipe.id(),
-                        BuiltInRegistries.RECIPE_TYPE.getKey(infoPanel.parent.selectedAdapter.getRecipe()),
-                        count));
-            }
-        });
         // Top row: left = qty+craft, right = take
         QHBoxLayout topRow = new QHBoxLayout();
         topRow.addWidget(qtyLabelCtrl);
         topRow.addWidget(craftBtnCtrl, 0, QLayout.ALIGN_CENTER);
-        topRow.addWidget(queueBtn, 0, QLayout.ALIGN_CENTER);
         topRow.addWidget(takeArea, 1);
         rvl.addLayout(topRow);
 
@@ -442,6 +438,7 @@ class CraftPanel extends QWidget {
         private final List<ItemStack> requiredStations = new ArrayList<>();
         private boolean hasRecipe;
         private int craftQuantity = 1;
+        private int cookTime;
 
         // The raw ingredients list for proper Ingredient.test() matching
         private NonNullList<Ingredient> ings = NonNullList.create();
@@ -571,6 +568,7 @@ class CraftPanel extends QWidget {
                     if (seen.add(b)) requiredStations.add(new ItemStack(b));
                 }
             }
+            cookTime = adapter.getCookTime((RecipeHolder) recipe);
             hasRecipe = true;
 
             markDirty();
@@ -606,6 +604,12 @@ class CraftPanel extends QWidget {
             hoverSlotY.add(y);
             hoverSlotSize.add(20);
             y += 38;
+
+            if (cookTime > 0) {
+                p.setColor(new QColor(0xFF8888FF));
+                p.drawText("Time: " + (cookTime / 20) + "s", 6, y);
+                y += 11;
+            }
 
             p.setColor(QColor.WHITE);
             p.drawText(Component.translatable("magic_storage_screen.ingredients").getString(), 6, y);

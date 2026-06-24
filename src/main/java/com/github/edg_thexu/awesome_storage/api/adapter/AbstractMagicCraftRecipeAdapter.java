@@ -4,9 +4,11 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.block.Block;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R extends Recipe<I>> {
     RecipeType<R> recipeType;
@@ -51,5 +53,20 @@ public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R e
     }
 
     public abstract NonNullList<Ingredient> getIngredients(RecipeHolder<R> recipe);
+
+    /**
+     * @return cook time in ticks for this recipe. 0 means instant.
+     */
+    public int getCookTime(RecipeHolder<R> recipe) {
+        return 0;
+    }
+
+    /**
+     * @return speed multiplier based on available workstation blocks.
+     * 1.0 = normal speed, 2.0 = twice as fast (half time).
+     */
+    public float getSpeedMultiplier(RecipeHolder<R> recipe, Set<Block> workstations) {
+        return 1.0f;
+    }
 
 }
