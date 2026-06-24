@@ -9,6 +9,7 @@ import com.github.edg_thexu.awesome_storage.utils.FavoriteSystem;
 import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.client.painter.ModernDrawDevice;
 import com.github.edg_thexu.qtcraft_api.client.screen.QContainerWidgetScreen;
+import com.github.edg_thexu.qtcraft_api.client.screen.WidgetScreenDelegate;
 import com.github.edg_thexu.qtcraft_api.core.geometry.QPoint;
 import com.github.edg_thexu.qtcraft_api.core.geometry.QSize;
 import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
@@ -18,6 +19,7 @@ import com.github.edg_thexu.qtcraft_api.core.widget.container.QContainer;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QMainWindow;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QSlot;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
@@ -102,6 +104,15 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
 
     public MagicStorageScreen(MagicStorageMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
+        this.widgetDelegate = new WidgetScreenDelegate(this) {
+            @Override
+            public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+                if (this.rootWindow != null) {
+                    QPainter painter = new QPainter(new ModernDrawDevice(guiGraphics));
+                    this.renderWidgetTree(painter, mouseX, mouseY, partialTick);
+                }
+            }
+        };
     }
 
     @Override
@@ -216,12 +227,17 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         }
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 //        updateFavoriteTracking();
+        guiGraphics.pose().pushPose();
         drawFavoriteBorders(guiGraphics);
+        QPainter painter = new QPainter(new ModernDrawDevice(guiGraphics));
         if(FavoriteSystem.getInstance().clickedSlotWasFav && !menu.getCarried().isEmpty()) {
-            QPainter painter = new QPainter(new ModernDrawDevice(guiGraphics));
             painter.translate(0, 0, 350);
             painter.fillRoundRect(mouseX - 10, mouseY - 10, 20, 20, 6, new QColor(0xFF4444FF));
         }
+        guiGraphics.pose().popPose();
+
+        this.widgetDelegate.paintTooltip(painter, mouseX, mouseY);
+        Minecraft.getInstance().renderBuffers().bufferSource().endBatch(); // jei render conflict
     }
 
     @Override
@@ -272,8 +288,6 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                     }
                 }
             }
-        }else if(button == 1) {
-            System.out.println("Right click");
         }
 
         // Let QTCraft widgets handle clicks first (grid, stations row, etc.)

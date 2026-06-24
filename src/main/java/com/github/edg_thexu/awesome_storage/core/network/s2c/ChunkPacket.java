@@ -67,7 +67,7 @@ public class ChunkPacket implements CustomPacketPayload  {
                     if(blockEntity instanceof MagicStorageBlockEntity magic) {
                         magic.loadWithComponents(tag,Minecraft.getInstance().level.registryAccess());
                         magic.setFake(true);
-                        RemoteBlockEntityCache.getInstance().put(pos, magic);
+                        RemoteBlockEntityCache.getInstance().put(new BlockPos(pos.getX(), pos.getY(), pos.getZ()), magic);
                         Util.setStorageEntity(handler.player(), magic);
                         if(handler.player().containerMenu instanceof MagicStorageMenu menu){
                             menu.setDirty(true);
