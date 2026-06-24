@@ -2,16 +2,17 @@ package com.github.edg_thexu.awesome_storage.core.network.s2c;
 
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.menu.MagicStorageMenu;
-import com.github.edg_thexu.awesome_storage.core.registry.ModBlocks;
 import com.github.edg_thexu.awesome_storage.utils.RemoteBlockEntityCache;
 import com.github.edg_thexu.awesome_storage.utils.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -25,13 +26,15 @@ public class ChunkPacket implements CustomPacketPayload  {
     private final ClientboundLevelChunkPacketData chunkData;
     LevelChunk chunk;
     BlockPos pos;
-    public ChunkPacket(LevelChunk chunk, BlockPos pos) {
+    Block block;
+    public ChunkPacket(LevelChunk chunk, BlockPos pos, Block block) {
         ChunkPos chunkpos = chunk.getPos();
         this.x = chunkpos.x;
         this.z = chunkpos.z;
         this.chunk = chunk;
         this.chunkData = new ClientboundLevelChunkPacketData(chunk);
         this.pos = pos;
+        this.block = block;
     }
 
     private ChunkPacket(RegistryFriendlyByteBuf buffer) {
@@ -39,6 +42,7 @@ public class ChunkPacket implements CustomPacketPayload  {
         this.z = buffer.readInt();
         this.chunkData = new ClientboundLevelChunkPacketData(buffer, this.x, this.z);
         this.pos = new BlockPos(buffer.readInt(), buffer.readInt(), buffer.readInt());
+        this.block = BuiltInRegistries.BLOCK.get(buffer.readResourceLocation());
     }
 
     private void write(RegistryFriendlyByteBuf buffer) {
@@ -48,6 +52,7 @@ public class ChunkPacket implements CustomPacketPayload  {
         buffer.writeInt(this.pos.getX());
         buffer.writeInt(this.pos.getY());
         buffer.writeInt(this.pos.getZ());
+        buffer.writeResourceLocation(BuiltInRegistries.BLOCK.getKey(block));
     }
 
     public static final CustomPacketPayload.Type<ChunkPacket> TYPE = new CustomPacketPayload.Type<>(space("chunk_packet_s2c"));
@@ -62,9 +67,9 @@ public class ChunkPacket implements CustomPacketPayload  {
         this.chunkData.getBlockEntitiesTagsConsumer(x,z).accept((pos,type,tag)->{
 
             if(this.pos.equals(pos)) {
-                Minecraft.getInstance().level.setBlock(pos, ModBlocks.CRAFTING_UNIT_BLOCK.get().defaultBlockState(), 2);
-                if(type.getValidBlocks().contains(ModBlocks.CRAFTING_UNIT_BLOCK.get())){
-                    BlockEntity blockEntity = type.create(pos, ModBlocks.CRAFTING_UNIT_BLOCK.get().defaultBlockState());
+                Minecraft.getInstance().level.setBlock(pos, block.defaultBlockState(), 2);
+                if(type.getValidBlocks().contains(block)){
+                    BlockEntity blockEntity = type.create(pos, block.defaultBlockState());
                     if(blockEntity instanceof MagicStorageBlockEntity magic) {
                         magic.loadWithComponents(tag, Minecraft.getInstance().level.registryAccess());
                         RemoteBlockEntityCache.getInstance().put(new BlockPos(pos.getX(), pos.getY(), pos.getZ()), magic);

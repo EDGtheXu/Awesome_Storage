@@ -65,7 +65,7 @@ public class RemoteController extends Item {
                     ((IPlayer) player).awesomeStorage$setContainer(entity1);
                     // Send chunk data FIRST so client has the fake entity before item sync
                     LevelChunk chunk = entity1.getLevel().getChunkAt(data.pos());
-                    PacketDistributor.sendToPlayer((ServerPlayer) player, new ChunkPacket(chunk, data.pos()));
+                    PacketDistributor.sendToPlayer((ServerPlayer) player, new ChunkPacket(chunk, data.pos(), entity.getBlockState().getBlock()));
                     // Then open menu → createMenu → syncToClient sends StorageItemsSyncPacket
                     player.openMenu(entity1, data.pos());
 

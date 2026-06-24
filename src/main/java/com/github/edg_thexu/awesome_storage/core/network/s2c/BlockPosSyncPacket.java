@@ -34,7 +34,7 @@ public record BlockPosSyncPacket(BlockPos pos, ResourceKey<Level> levelResourceK
                 Level real = context.player().getServer().getLevel(levelResourceKey);
                 if(real == null) return;
                 LevelChunk chunk = real.getChunkAt(pos);
-                PacketDistributor.sendToPlayer((ServerPlayer) context.player(),new ChunkPacket(chunk, pos));
+                PacketDistributor.sendToPlayer((ServerPlayer) context.player(),new ChunkPacket(chunk, pos, real.getBlockState(pos).getBlock()));
 //                PacketDistributor.sendToPlayer((ServerPlayer) context.player(),new ChunkPacket(chunk, pos));
             }
         });
