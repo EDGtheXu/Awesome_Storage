@@ -50,7 +50,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     private UpgradePage upgradePage;
     private long nextRefresh;
     private long lastPeriodicRefresh;
-    List<String> lastAccessors = new ArrayList<>();
+    private List<String> lastAccessors = new ArrayList<>();
 
     private static int storageX = 200, storageY = 30, storageW = 220, storageH = 220;
     private static int craftX = 200, craftY = 30, craftW = 220, craftH = 220;

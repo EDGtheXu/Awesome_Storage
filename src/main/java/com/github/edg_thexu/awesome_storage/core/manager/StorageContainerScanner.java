@@ -18,9 +18,16 @@ import java.util.*;
 
 public class StorageContainerScanner {
 
+    public record ScanResult(List<Container> containers, List<BlockPos> magicStoragePositions) {}
+
     public List<Container> getAdjacentContainers(Level level, BlockPos worldPosition) {
+        return scan(level, worldPosition).containers();
+    }
+
+    public ScanResult scan(Level level, BlockPos worldPosition) {
         List<Container> containers = new ArrayList<>();
-        if (level == null) return containers;
+        List<BlockPos> magicPositions = new ArrayList<>();
+        if (level == null) return new ScanResult(containers, magicPositions);
         Set<BlockPos> visited = new HashSet<>();
         Queue<BlockPos> queue = new LinkedList<>();
         int maxSteps = 128;
@@ -36,8 +43,10 @@ public class StorageContainerScanner {
                 BlockEntity be = level.getBlockEntity(n);
                 switch (be) {
                     case null -> {}
-                    case MagicStorageBlockEntity ignored ->
+                    case MagicStorageBlockEntity ignored -> {
                         queue.add(n);
+                        if (!n.equals(worldPosition)) magicPositions.add(n);
+                    }
                     case Container c -> {
                         containers.add(c);
                         queue.add(n);
@@ -59,7 +68,7 @@ public class StorageContainerScanner {
                 }
             }
         }
-        return containers;
+        return new ScanResult(containers, magicPositions);
     }
 
     public static class ItemHandlerContainer implements Container {

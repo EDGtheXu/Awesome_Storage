@@ -34,15 +34,25 @@ public class ItemOperationManager {
     private List<Container> getAllContainers() {
         Level level = blockEntity.getLevel();
         BlockPos pos = blockEntity.getBlockPos();
-        List<Container> containers = scanner.getAdjacentContainers(level, pos);
+        var result = scanner.scan(level, pos);
+        Set<BlockPos> addedWireless = new HashSet<>();
+        List<Container> containers = new ArrayList<>(result.containers());
 
-        // Add wireless containers if applicable
-        if (blockEntity instanceof MagicStorageBlockEntity be) {
-            ItemStack upgrade = be.getUpgradeSlot();
-            if (upgrade.getItem() instanceof WirelessNetworkCard card && be.getFrequency() != 0) {
-                var connected = WirelessNetworkManager.getInstance()
-                        .findConnectedCores(pos, level.dimension(), be.getFrequency(), card.getRange());
-                for (BlockPos remotePos : connected) {
+        // Check each discovered MagicStorageBlockEntity for wireless capability
+        List<BlockPos> toCheck = new ArrayList<>(result.magicStoragePositions());
+        toCheck.add(pos); // also check ourselves
+
+        java.util.Map<BlockPos, List<Container>> wirelessCache = new java.util.HashMap<>();
+        for (BlockPos p : toCheck) {
+            BlockEntity be = level.getBlockEntity(p);
+            if (!(be instanceof MagicStorageBlockEntity mbe)) continue;
+            ItemStack upgrade = mbe.getUpgradeSlot();
+            if (!(upgrade.getItem() instanceof WirelessNetworkCard card)) continue;
+            if (mbe.getFrequency() == 0) continue;
+            var connected = WirelessNetworkManager.getInstance()
+                    .findConnectedCores(p, level.dimension(), mbe.getFrequency(), card.getRange());
+            for (BlockPos remotePos : connected) {
+                if (addedWireless.add(remotePos)) {
                     containers.addAll(scanner.getAdjacentContainers(level, remotePos));
                 }
             }

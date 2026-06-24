@@ -92,7 +92,6 @@ class StationsRowWidget extends QWidget {
                 var be = Util.getStorageEntity(Minecraft.getInstance().player);
                 if (be != null) be.setChanged();
                 // Schedule recipe reload — it will trigger after server syncs accessors
-                parent.lastAccessors = new ArrayList<>();
                 parent.scheduleRefresh();
             }
             event.accept();
