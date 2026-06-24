@@ -20,7 +20,7 @@ import static com.github.edg_thexu.awesome_storage.AwesomeStorage.space;
 
 public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID, List<ItemStack> excluded) implements CustomPacketPayload {
 
-    public static final Type<MagicCraftPacket> TYPE = new Type<>(space("magic_craft_packet_s2c"));
+    public static final Type<MagicCraftPacket> TYPE = new Type<>(space("magic_craft_packet_c2s"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, MagicCraftPacket> STREAM_CODEC = StreamCodec.composite(
             ResourceLocation.STREAM_CODEC, MagicCraftPacket::id,

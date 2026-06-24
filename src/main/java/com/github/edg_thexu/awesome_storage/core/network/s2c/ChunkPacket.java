@@ -15,6 +15,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
 
 import static com.github.edg_thexu.awesome_storage.AwesomeStorage.space;
 
@@ -61,18 +62,16 @@ public class ChunkPacket implements CustomPacketPayload  {
         this.chunkData.getBlockEntitiesTagsConsumer(x,z).accept((pos,type,tag)->{
 
             if(this.pos.equals(pos)) {
-                Minecraft.getInstance().level.setBlock(pos, ModBlocks.CRAFTING_UNIT__BLOCK.get().defaultBlockState(), 2);
-                if(type.getValidBlocks().contains(ModBlocks.CRAFTING_UNIT__BLOCK.get())){
-                    BlockEntity blockEntity = type.create(pos, ModBlocks.CRAFTING_UNIT__BLOCK.get().defaultBlockState());
+                Minecraft.getInstance().level.setBlock(pos, ModBlocks.CRAFTING_UNIT_BLOCK.get().defaultBlockState(), 2);
+                if(type.getValidBlocks().contains(ModBlocks.CRAFTING_UNIT_BLOCK.get())){
+                    BlockEntity blockEntity = type.create(pos, ModBlocks.CRAFTING_UNIT_BLOCK.get().defaultBlockState());
                     if(blockEntity instanceof MagicStorageBlockEntity magic) {
-                        magic.loadWithComponents(tag,Minecraft.getInstance().level.registryAccess());
-                        magic.setFake(true);
+                        magic.loadWithComponents(tag, Minecraft.getInstance().level.registryAccess());
                         RemoteBlockEntityCache.getInstance().put(new BlockPos(pos.getX(), pos.getY(), pos.getZ()), magic);
                         Util.setStorageEntity(handler.player(), magic);
                         if(handler.player().containerMenu instanceof MagicStorageMenu menu){
                             menu.setDirty(true);
                         }
-
                     }
                 }
             }
@@ -81,7 +80,7 @@ public class ChunkPacket implements CustomPacketPayload  {
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

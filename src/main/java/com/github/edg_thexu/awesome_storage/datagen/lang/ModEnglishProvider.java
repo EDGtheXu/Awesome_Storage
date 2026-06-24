@@ -43,6 +43,27 @@ public class ModEnglishProvider extends LanguageProvider {
 
         add("magic_storage.deposit_btn.tooltip", "Deposit All - LClick: Store All, Ctrl+LClick: Quick Stack, RClick: Refill");
 
+        add("config.jade.plugin_awesome_storage.magic_block", "Magic Storage");
+
+        add("magic_storage_screen.search", "Search...");
+        add("magic_storage_screen.save", "Save");
+        add("magic_storage_screen.capacity_format", "Capacity: %s/%s");
+        add("magic_storage_screen.craftable", "Craftable");
+        add("magic_storage_screen.all", "All");
+        add("magic_storage_screen.max", "Max");
+        add("magic_storage_screen.reset", "Reset");
+        add("magic_storage_screen.select_item", "Select an item");
+        add("magic_storage_screen.output", "Output:");
+        add("magic_storage_screen.ingredients", "Ingredients:");
+        add("magic_storage_screen.stations", "Stations:");
+        add("magic_storage_screen.in_storage", "In Storage:");
+        add("magic_storage_screen.controller", "Controller");
+        add("magic_storage_screen.rename", "Rename");
+        add("magic_storage_screen.default", "Default");
+        add("magic_storage_screen.stackable", "Stackable");
+        add("magic_storage_screen.non_stackable", "Non-stackable");
+        add("magic_storage_screen.all_mods", "All Mods");
+
 
 
 

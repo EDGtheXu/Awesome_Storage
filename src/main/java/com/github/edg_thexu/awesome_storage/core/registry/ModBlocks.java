@@ -30,10 +30,10 @@ public class ModBlocks {
 
     public static final Supplier<BaseEntityBlock> STORAGE_CORE_BLOCK = register("storage_core","存储核心", () -> new StorageCoreBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).destroyTime(20).noOcclusion()));
 
-    public static final Supplier<BaseEntityBlock> CRAFTING_UNIT__BLOCK = register("crafting_unit","合成单元", () -> new CraftingUnitBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).destroyTime(20).noOcclusion()));
+    public static final Supplier<BaseEntityBlock> CRAFTING_UNIT_BLOCK = register("crafting_unit","合成单元", () -> new CraftingUnitBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).destroyTime(20).noOcclusion()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MagicStorageBlockEntity>> MAGIC_STORAGE_BLOCK_ENTITY =
-            BLOCK_ENTITIES.register("magic_storage_block_entity", () -> BlockEntityType.Builder.of(MagicStorageBlockEntity::new, CRAFTING_UNIT__BLOCK.get(), STORAGE_CORE_BLOCK.get()).build(DSL.remainderType()));
+            BLOCK_ENTITIES.register("magic_storage_block_entity", () -> BlockEntityType.Builder.of(MagicStorageBlockEntity::new, CRAFTING_UNIT_BLOCK.get(), STORAGE_CORE_BLOCK.get()).build(DSL.remainderType()));
 
     public static <T extends Block>Supplier<T> register(String name, String zh, Supplier<T> blockSupplier) {
         DeferredBlock<T> block =  BLOCKS.register(name, blockSupplier);

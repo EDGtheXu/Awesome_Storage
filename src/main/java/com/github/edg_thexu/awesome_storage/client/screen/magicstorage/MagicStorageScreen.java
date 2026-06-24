@@ -1,5 +1,6 @@
 package com.github.edg_thexu.awesome_storage.client.screen.magicstorage;
 
+import com.github.edg_thexu.awesome_storage.api.event.RegisterScreenPageEvent;
 import com.github.edg_thexu.awesome_storage.client.widget.FloatingWindow;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.block.StorageCoreBlock;
@@ -14,10 +15,12 @@ import com.github.edg_thexu.qtcraft_api.core.geometry.QPoint;
 import com.github.edg_thexu.qtcraft_api.core.geometry.QSize;
 import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
 import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
+import com.github.edg_thexu.qtcraft_api.core.signal_slot.SignalSlotUtil;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QContainer;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QMainWindow;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QSlot;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -25,6 +28,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.fml.ModLoader;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.*;
@@ -139,21 +143,37 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         if (!storageOnly) {
             // Craft window
             craftPanel = new CraftPanel(this);
-            craftWin = new FloatingWindow("Crafting");
+            craftWin = new FloatingWindow(Component.translatable("magic_storage_screen.craft").getString());
+            craftWin.setParent(win);
+
+            craftWin.addPage(craftWin.windowTitle(), craftPanel);
+            ModLoader.postEventWithReturn(new RegisterScreenPageEvent.Craft(craftWin)).buildPages();
+
+            craftWin.connectPages();
+
             craftWin.setWidget(craftPanel);
             craftWin.setGeometry(craftX, craftY, craftW, craftH);
-            craftWin.setParent(win);
             craftPanel.updateLayout();
-            craftPanel.refresh();
+            craftWin.connect(FloatingWindow.ON_CLOSE, craftWin, SignalSlotUtil.createSlotRunner("close", (obj)-> onClose()));
+
 
         }else{
             // Storage window
             storagePanel = new StoragePanel(this);
-            storageWin = new FloatingWindow("Storage");
+            storageWin = new FloatingWindow(Component.translatable("magic_storage_screen.storage").getString());
+            storageWin.setParent(win);
+
+            storageWin.addPage(storageWin.windowTitle(), storagePanel);
+            var event = ModLoader.postEventWithReturn(new RegisterScreenPageEvent.Storage(craftWin));
+            storageWin.addPage(Component.translatable("magic_storage_screen.controller").getString(), ControllerWidget.create(event));
+            event.buildPages();
+            storageWin.connectPages();
+
             storageWin.setWidget(storagePanel);
             storageWin.setGeometry(storageX, storageY, storageW, storageH);
-            storageWin.setParent(win);
             storagePanel.updateLayout();
+            storageWin.connect(FloatingWindow.ON_CLOSE, storageWin, SignalSlotUtil.createSlotRunner("close", (obj)-> onClose()));
+
         }
 
         return win;
@@ -174,7 +194,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     static void renderSlot(QPainter p, int x, int y, int size, ItemStack stack, boolean highlight, boolean overlay) {
         p.fillRect(x, y, size, size, new QColor(0xFF333333));
         if (overlay) p.fillRect(x, y, size, size, new QColor(0x55FF0000));
-        if (highlight) p.fillRect(x, y, size, size, new QColor(0x55FFFFFF));
+        if (highlight) p.fillRoundRect(x, y, size, size, 3, new QColor(0x55FFFFFF));
         if (!stack.isEmpty()) {
             p.renderItemStack(stack, x + (size - 16) / 2, y + (size - 16) / 2);
             p.renderItemDecorations(stack, x + (size - 16) / 2, y + (size - 16) / 2);
@@ -290,8 +310,6 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             }
         }
 
-        // Let QTCraft widgets handle clicks first (grid, stations row, etc.)
-        if (widgetDelegate.mouseClicked(mouseX, mouseY, button)) return true;
         // Store action into storage window (carrying item, click anywhere on storage window)
         if (!menu.getCarried().isEmpty() && storageWin != null && storageWin.isVisible()
                 && mouseX >= storageWin.x() && mouseX <= storageWin.x() + storageWin.width()
@@ -301,6 +319,10 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             scheduleRefresh();
             return true;
         }
+
+        // Let QTCraft widgets handle clicks first (grid, stations row, etc.)
+        if (widgetDelegate.mouseClicked(mouseX, mouseY, button)) return true;
+
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
@@ -326,6 +348,15 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         super.resize(minecraft, width, height);
     }
 
+
     @Override
-    protected void renderBg(net.minecraft.client.gui.GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {}
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        InputConstants.Key mouseKey = InputConstants.getKey(keyCode, scanCode);
+        if (this.minecraft.options.keyInventory.isActiveAndMatches(mouseKey)) {
+            // avoid closing when press E
+            return this.widgetDelegate.keyPressed(keyCode, scanCode, modifiers);
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+//        return false;
+    }
 }

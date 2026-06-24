@@ -49,7 +49,7 @@ class StoragePanel extends QWidget {
         depositBtn.setFixedSize(32, 16);
         searchRow.addWidget(depositBtn);
         searchField = new QLineEdit();
-        searchField.setPlaceholderText("Search...");
+        searchField.setPlaceholderText(Component.translatable("magic_storage_screen.search").getString());
         searchField.setFixedHeight(16);
         searchField.connect(QLineEdit.TEXT_CHANGED, this, new SlotKeyConsumer<>("ss", (self, v) -> refresh()));
         searchRow.addWidget(searchField, 1);
@@ -67,7 +67,7 @@ class StoragePanel extends QWidget {
         scrollArea.setWidgetResizable(true);
         vl.addWidget(scrollArea, 1);
 
-        capacityLabel = new QLabel(Component.literal("Capacity: 0/0"));
+        capacityLabel = new QLabel(Component.translatable("magic_storage_screen.capacity_format", "0", "0"));
         vl.addWidget(capacityLabel);
 
         refresh();
@@ -82,7 +82,7 @@ class StoragePanel extends QWidget {
         scrollArea.markDirty();
         MagicStorageBlockEntity be = Util.getStorageEntity(Minecraft.getInstance().player);
         if (be != null) {
-            capacityLabel.setText(Component.literal("容量: " + be.getUsedSlots() + "/" + be.getTotalSlots()));
+            capacityLabel.setText(Component.translatable("magic_storage_screen.capacity_format", String.valueOf(be.getUsedSlots()), String.valueOf(be.getTotalSlots())));
         }
     }
 
@@ -120,7 +120,7 @@ class StoragePanel extends QWidget {
             p.setColor(new QColor(0xFF666666));
             p.drawRect(0, 0, w, h);
             p.setColor(new QColor(0xFFFFFFFF));
-            p.drawCenteredText("Save", w / 2, (h - p.textHeight()) / 2 );
+            p.drawCenteredText(Component.translatable("magic_storage_screen.save").getString(), w / 2, (h - p.textHeight()) / 2 );
         }
 
         @Override

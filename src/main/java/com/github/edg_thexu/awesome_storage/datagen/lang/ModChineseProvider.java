@@ -32,6 +32,26 @@ public class ModChineseProvider extends LanguageProvider {
 
         add("magic_storage.deposit_btn.tooltip", "存入全部 - 左键: 全部存入, Ctrl+左键: 快速堆叠, 右键: 补货");
 
+        add("config.jade.plugin_awesome_storage.magic_block", "魔法存储");
+
+        add("magic_storage_screen.search", "搜索...");
+        add("magic_storage_screen.save", "保存");
+        add("magic_storage_screen.capacity_format", "容量: %s/%s");
+        add("magic_storage_screen.craftable", "可合成");
+        add("magic_storage_screen.all", "全部");
+        add("magic_storage_screen.max", "最大");
+        add("magic_storage_screen.reset", "重置");
+        add("magic_storage_screen.select_item", "选择一个物品");
+        add("magic_storage_screen.output", "输出:");
+        add("magic_storage_screen.ingredients", "材料:");
+        add("magic_storage_screen.stations", "工作站:");
+        add("magic_storage_screen.in_storage", "存储中:");
+        add("magic_storage_screen.controller", "控制器");
+        add("magic_storage_screen.rename", "重命名");
+        add("magic_storage_screen.default", "默认");
+        add("magic_storage_screen.stackable", "可堆叠");
+        add("magic_storage_screen.non_stackable", "不可堆叠");
+        add("magic_storage_screen.all_mods", "所有模组");
 
         chineseProviders.forEach(a->a.accept(this));
     }

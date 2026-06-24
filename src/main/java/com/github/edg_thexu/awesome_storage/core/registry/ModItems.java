@@ -17,15 +17,15 @@ public class ModItems {
     public static final DeferredRegister.Items  ITEMS = DeferredRegister.createItems("awesome_storage");
 
 
-    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_1000 = register("base_portable_remote_storage_access","基础便捷远程存储装置", ()->new RemoteController(new Item.Properties()
+    public static final DeferredHolder<Item,Item> BASE_REMOTE_CONTROLLER = register("base_portable_remote_storage_access","基础便捷远程存储装置", ()->new RemoteController(new Item.Properties()
             .component(ModDataComponent.CONTROLLER_RANGE.get(),new RangeComponent(1000))
     ));
 
-    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_5000 = register("advance_portable_remote_storage_access","进阶便捷远程存储装置", ()->new RemoteController(new Item.Properties()
+    public static final DeferredHolder<Item,Item> ADVANCE_REMOTE_CONTROLLER = register("advance_portable_remote_storage_access","进阶便捷远程存储装置", ()->new RemoteController(new Item.Properties()
             .component(ModDataComponent.CONTROLLER_RANGE.get(),new RangeComponent(5000))
     ));
 
-    public static final DeferredHolder<Item,Item> REMOTE_CONTROLLER_THROUGH_CROSS_LEVEL = register("final_portable_remote_storage_access","终极便捷远程存储装置", ()->new RemoteController(new Item.Properties()
+    public static final DeferredHolder<Item,Item> FINAL_REMOTE_CONTROLLER = register("final_portable_remote_storage_access","终极便捷远程存储装置", ()->new RemoteController(new Item.Properties()
             .component(ModDataComponent.CONTROLLER_RANGE.get(),new RangeComponent(-1))
             .component(ModDataComponent.LEVEL_ACCESSOR.get(),new LevelAccessorComponent(Level.OVERWORLD,true))
     ));

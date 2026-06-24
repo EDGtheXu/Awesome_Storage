@@ -6,6 +6,7 @@ import com.github.edg_thexu.qtcraft_api.core.layouts.QHBoxLayout;
 import com.github.edg_thexu.qtcraft_api.core.signal_slot.slots.SlotKeyConsumer;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QComboBox;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ class FilterBar {
     FilterBar(QHBoxLayout row, Object owner, String keyPrefix, Runnable onRefresh) {
         sortCombo = new QComboBox();
         sortCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-        sortCombo.addItem("Default");
+        sortCombo.addItem(Component.translatable("magic_storage_screen.default").getString());
         for (var rule : FilterRuleRegistry.getSortRules()) sortCombo.addItem(rule.name());
         sortCombo.setFixedHeight(16);
         sortCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, owner, new SlotKeyConsumer<>(keyPrefix + "s", (self, idx) -> onRefresh.run()));
@@ -31,7 +32,7 @@ class FilterBar {
 
         categoryCombo = new QComboBox();
         categoryCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-        categoryCombo.addItem("All");
+        categoryCombo.addItem(Component.translatable("magic_storage_screen.all").getString());
         for (var rule : FilterRuleRegistry.getCategoryRules()) categoryCombo.addItem(rule.name());
         categoryCombo.setFixedHeight(16);
         categoryCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, owner, new SlotKeyConsumer<>(keyPrefix + "c", (self, idx) -> onRefresh.run()));
@@ -39,16 +40,16 @@ class FilterBar {
 
         stackCombo = new QComboBox();
         stackCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-        stackCombo.addItem("All");
-        stackCombo.addItem("Stackable");
-        stackCombo.addItem("Non-stackable");
+        stackCombo.addItem(Component.translatable("magic_storage_screen.all").getString());
+        stackCombo.addItem(Component.translatable("magic_storage_screen.stackable").getString());
+        stackCombo.addItem(Component.translatable("magic_storage_screen.non_stackable").getString());
         stackCombo.setFixedHeight(16);
         stackCombo.connect(QComboBox.CURRENT_INDEX_CHANGED, owner, new SlotKeyConsumer<>(keyPrefix + "t", (self, idx) -> onRefresh.run()));
         row.addWidget(stackCombo, 1);
 
         modCombo = new QComboBox();
         modCombo.setSizePolicy(new QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed));
-        modCombo.addItem("All Mods");
+        modCombo.addItem(Component.translatable("magic_storage_screen.all_mods").getString());
         java.util.TreeSet<String> allMods = new java.util.TreeSet<>();
         for (var item : BuiltInRegistries.ITEM) {
             allMods.add(BuiltInRegistries.ITEM.getKey(item).getNamespace());

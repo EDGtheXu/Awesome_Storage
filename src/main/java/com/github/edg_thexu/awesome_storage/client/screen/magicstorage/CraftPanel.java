@@ -81,14 +81,14 @@ class CraftPanel extends QWidget {
 
         QHBoxLayout funcRow = new QHBoxLayout();
         funcRow.setSpacing(2);
-        QPushButton showCraftBtn = new QPushButton(Component.literal("Craftable"));
+        QPushButton showCraftBtn = new QPushButton(Component.translatable("magic_storage_screen.craftable"));
         showCraftBtn.setFixedHeight(16);
         showCraftBtn.setOnClick(() -> {
             showCraftableOnly = true;
             refresh();
         });
         funcRow.addWidget(showCraftBtn);
-        QPushButton showAllBtn = new QPushButton(Component.literal("All"));
+        QPushButton showAllBtn = new QPushButton(Component.translatable("magic_storage_screen.all"));
         showAllBtn.setFixedHeight(16);
         showAllBtn.setOnClick(() -> {
             showCraftableOnly = false;
@@ -96,7 +96,7 @@ class CraftPanel extends QWidget {
         });
         funcRow.addWidget(showAllBtn);
         searchField = new QLineEdit();
-        searchField.setPlaceholderText("Search...");
+        searchField.setPlaceholderText(Component.translatable("magic_storage_screen.search").getString());
         searchField.setFixedHeight(16);
         searchField.connect(QLineEdit.TEXT_CHANGED, this, new SlotKeyConsumer<>("cs", (self, v) -> refresh()));
         funcRow.addWidget(searchField, 1);
@@ -122,7 +122,7 @@ class CraftPanel extends QWidget {
         leftLayout.addWidget(area, 1);
         craftableScrollArea = area;
 
-        capacityLabel = new QLabel(Component.literal("Capacity: 0/0"));
+        capacityLabel = new QLabel(Component.translatable("magic_storage_screen.capacity_format", "0", "0"));
         leftLayout.addWidget(capacityLabel);
 
         mainLayout.addWidget(leftSide, 1);
@@ -137,7 +137,7 @@ class CraftPanel extends QWidget {
         // Control buttons below info panel
         qtyLabelCtrl = new QLabel(Component.literal("x1   "));
         qtyLabelCtrl.setTextColor(new QColor(0xFFFFAA00));
-        craftBtnCtrl = new QPushButton(Component.literal("Craft"));
+        craftBtnCtrl = new QPushButton(Component.translatable("magic_storage_screen.craft"));
         craftBtnCtrl.setFixedHeight(14);
         craftBtnCtrl.setOnClick(() -> {
             if (infoPanel.hasRecipe && infoPanel.parent.selectedRecipe != null && infoPanel.parent.selectedAdapter != null) {
@@ -172,7 +172,7 @@ class CraftPanel extends QWidget {
 
         QPushButton p1 = new QPushButton(Component.literal("+1")), p10 = new QPushButton(Component.literal("+10")), p100 = new QPushButton(Component.literal("+100"));
         QPushButton m1 = new QPushButton(Component.literal("-1")), m10 = new QPushButton(Component.literal("-10")), m100 = new QPushButton(Component.literal("-100"));
-        QPushButton maxB = new QPushButton(Component.literal("Max")), rstB = new QPushButton(Component.literal("Reset"));
+        QPushButton maxB = new QPushButton(Component.translatable("magic_storage_screen.max")), rstB = new QPushButton(Component.translatable("magic_storage_screen.reset"));
         for (QPushButton b : new QPushButton[]{p1, p10, p100, m1, m10, m100, maxB, rstB}) {
             b.setFixedHeight(12);
         }
@@ -367,7 +367,7 @@ class CraftPanel extends QWidget {
     void updateCapacity() {
         MagicStorageBlockEntity be = Util.getStorageEntity(Minecraft.getInstance().player);
         if (be != null) {
-            capacityLabel.setText(Component.literal("Capacity:" + be.getUsedSlots() + "/" + be.getTotalSlots()));
+            capacityLabel.setText(Component.translatable("magic_storage_screen.capacity_format", String.valueOf(be.getUsedSlots()), String.valueOf(be.getTotalSlots())));
         }
     }
 
@@ -571,7 +571,7 @@ class CraftPanel extends QWidget {
 
             if (!hasRecipe) {
                 p.setColor(new QColor(0xFF888888));
-                p.drawText("Select an item", 8, 20);
+                p.drawText(Component.translatable("magic_storage_screen.select_item").getString(), 8, 20);
                 return;
             }
 
@@ -583,7 +583,7 @@ class CraftPanel extends QWidget {
             int y = 6, ss = 18, cw = width();
 
             p.setColor(new QColor(0xFFFFAA00));
-            p.drawText("Output:", 6, y);
+            p.drawText(Component.translatable("magic_storage_screen.output").getString(), 6, y);
             y += 11;
             MagicStorageScreen.renderSlot(p, 6, y, 20, outputItem, false);
             hoverSlots.add(outputItem);
@@ -593,7 +593,7 @@ class CraftPanel extends QWidget {
             y += 38;
 
             p.setColor(QColor.WHITE);
-            p.drawText("Ingredients:", 6, y);
+            p.drawText(Component.translatable("magic_storage_screen.ingredients").getString(), 6, y);
             y += 11;
             int ix = 6;
             for (ItemStack ing : ingredients) {
@@ -628,7 +628,7 @@ class CraftPanel extends QWidget {
             }
             if (!ingredients.isEmpty()) y += (ix > 6 ? ss + 6 : 4);
 
-            p.drawText("Stations:", 6, y);
+            p.drawText(Component.translatable("magic_storage_screen.stations").getString(), 6, y);
             y += 11;
             ix = 6;
             for (ItemStack st : requiredStations) {
@@ -646,7 +646,7 @@ class CraftPanel extends QWidget {
             if (!requiredStations.isEmpty()) y += ss + 6;
 
             // In Storage: show each component-group that matches any ingredient — red overlay if excluded
-            p.drawText("In Storage:", 6, y);
+            p.drawText(Component.translatable("magic_storage_screen.in_storage").getString(), 6, y);
             y += 11;
             ix = 6;
             storageItems.clear();

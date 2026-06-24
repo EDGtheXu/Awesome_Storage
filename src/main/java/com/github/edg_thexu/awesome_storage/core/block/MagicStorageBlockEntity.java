@@ -25,6 +25,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -38,12 +39,11 @@ import net.p3pp3rf1y.sophisticatedstorage.block.ChestBlockEntity;
 import java.util.*;
 
 public final class MagicStorageBlockEntity extends BlockEntity implements MenuProvider {
-    private static final Component CONTAINER_TITLE = Component.translatable("container.awesome_storage.magic_storage");
+
+    public Component displayName = Component.empty();
 
     private List<ItemStack> cachedItems;
-
     private List<String> block_accessors;
-    boolean fake = false;
 
     public MagicStorageBlockEntity(BlockEntityType<MagicStorageBlockEntity> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -77,25 +77,29 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
                 BlockPos n = cur.relative(dir);
                 if (!visited.add(n)) continue;
                 BlockEntity be = level.getBlockEntity(n);
-                if (be == null) continue;
-                if (be instanceof MagicStorageBlockEntity) {
-                    // Storage/crafting blocks are traversal nodes (no items, but connect to containers)
-                    queue.add(n);
-                } else if (be instanceof Container c) {
-                    containers.add(c);
-                    queue.add(n);
-                } else {
-                    IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, n, dir.getOpposite());
-                    if (handler != null) {
-                        ItemHandlerContainer ihc = new ItemHandlerContainer(handler);
-                        if(SophisticatedHelper.isStorageLoaded() && be instanceof ChestBlockEntity chestBlockEntity) {
-                            if(chestBlockEntity.isMainChest()) {
+                switch (be) {
+                    case null -> {
+                    }
+                    case MagicStorageBlockEntity magicStorageBlockEntity ->
+                        // Storage/crafting blocks are traversal nodes (no items, but connect to containers)
+                            queue.add(n);
+                    case Container c -> {
+                        containers.add(c);
+                        queue.add(n);
+                    }
+                    default -> {
+                        IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, n, dir.getOpposite());
+                        if (handler != null) {
+                            ItemHandlerContainer ihc = new ItemHandlerContainer(handler);
+                            if (SophisticatedHelper.isStorageLoaded() && be instanceof ChestBlockEntity chestBlockEntity) {
+                                if (chestBlockEntity.isMainChest()) {
+                                    containers.add(ihc);
+                                }
+                            } else {
                                 containers.add(ihc);
                             }
-                        }else{
-                            containers.add(ihc);
+                            queue.add(n);
                         }
-                        queue.add(n);
                     }
                 }
             }
@@ -109,15 +113,15 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         ItemHandlerContainer(IItemHandler handler) { this.handler = handler; }
         @Override public int getContainerSize() { return handler.getSlots(); }
         @Override public boolean isEmpty() { for (int i = 0; i < handler.getSlots(); i++) if (!handler.getStackInSlot(i).isEmpty()) return false; return true; }
-        @Override public ItemStack getItem(int slot) { return handler.getStackInSlot(slot); }
-        @Override public ItemStack removeItem(int slot, int amount) { return handler.extractItem(slot, amount, false); }
-        @Override public ItemStack removeItemNoUpdate(int slot) { return handler.extractItem(slot, handler.getStackInSlot(slot).getCount(), false); }
-        @Override public void setItem(int slot, ItemStack stack) {
+        @Override public @NotNull ItemStack getItem(int slot) { return handler.getStackInSlot(slot); }
+        @Override public @NotNull ItemStack removeItem(int slot, int amount) { return handler.extractItem(slot, amount, false); }
+        @Override public @NotNull ItemStack removeItemNoUpdate(int slot) { return handler.extractItem(slot, handler.getStackInSlot(slot).getCount(), false); }
+        @Override public void setItem(int slot, @NotNull ItemStack stack) {
             handler.extractItem(slot, handler.getStackInSlot(slot).getCount(), false);
             handler.insertItem(slot, stack, false);
         }
         @Override public void setChanged() {}
-        @Override public boolean stillValid(Player player) { return true; }
+        @Override public boolean stillValid(@NotNull Player player) { return true; }
         @Override public void clearContent() { for (int i = 0; i < handler.getSlots(); i++) handler.extractItem(i, handler.getStackInSlot(i).getCount(), false); }
         @Override public int getMaxStackSize() { return 64; }
     }
@@ -278,9 +282,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
                 }
             }
         }
-        if (!level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        this.updateClient();
         return result.isEmpty() ? ItemStack.EMPTY : result;
     }
 
@@ -298,9 +300,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
                 }
             }
         }
-        if (!level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        this.updateClient();
     }
 
     public void quickStack(Player player, long favoriteMask) {
@@ -327,9 +327,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
                 }
             }
         }
-        if (!level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        this.updateClient();
     }
 
     public void refill(Player player) {
@@ -355,9 +353,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
                 }
             }
         }
-        if (!level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        this.updateClient();
     }
 
     @Nullable
@@ -384,8 +380,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         List<ItemStack> consumed = new ArrayList<>();
         for (Ingredient ing : ingredients) {
             if (ing.isEmpty()) continue;
-            int required = ing.getItems().length == 0 ? 1 : ing.getItems()[0].getCount();
-            int remaining = required;
+            int remaining = ing.getItems().length == 0 ? 1 : ing.getItems()[0].getCount();
 
             for (Container c : containers) {
                 for (int i = 0; i < c.getContainerSize(); i++) {
@@ -409,8 +404,8 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
             }
         }
 
-        if (!consumed.isEmpty() && level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        if (!consumed.isEmpty()) {
+            this.updateClient();
         }
 
         return consumed;
@@ -431,20 +426,23 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     public void addBlockAccessor(String name) {
         if (!block_accessors.contains(name)) {
             block_accessors.add(name);
-            setChanged();
-            if (level != null && !level.isClientSide) {
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            }
+            this.setChanged();
+            this.updateClient();
         }
     }
 
     public void removeBlockAccessor(int index) {
         if (index >= 0 && index < block_accessors.size()) {
             block_accessors.remove(index);
-            setChanged();
-            if (level != null && !level.isClientSide) {
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            }
+            this.setChanged();
+            this.updateClient();
+        }
+    }
+
+    private void updateClient() {
+        Level level = getLevel();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 
@@ -457,7 +455,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     }
 
     @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookupProvider) {
+    public void onDataPacket(@NotNull Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.@NotNull Provider lookupProvider) {
         CompoundTag tag = pkt.getTag();
         if (tag.contains("BlockAccessors", 9)) {
             ListTag listTag = tag.getList("BlockAccessors", 8);
@@ -466,10 +464,14 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
                 this.block_accessors.add(t.getAsString());
             }
         }
+
+        if(tag.contains("DisplayName")) {
+            this.displayName = Component.Serializer.fromJson(tag.getString("DisplayName"), lookupProvider);
+        }
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    protected void loadAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.loadAdditional(tag, registries);
         if (tag.contains("BlockAccessors", 9)) {
             ListTag listTag = tag.getList("BlockAccessors", 8);
@@ -478,34 +480,39 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
                 this.block_accessors.add(t.getAsString());
             }
         }
+        if(tag.contains("DisplayName")) {
+            this.displayName = Component.Serializer.fromJson(tag.getString("DisplayName"), registries);
+        }
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+    public @NotNull CompoundTag getUpdateTag(HolderLookup.@NotNull Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         ListTag listTag1 = new ListTag();
         for (String r : block_accessors) {
             listTag1.add(StringTag.valueOf(r));
         }
         tag.put("BlockAccessors", listTag1);
+        tag.putString("DisplayName", Component.Serializer.toJson(displayName, registries));
         return tag;
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    public void saveAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.saveAdditional(tag, registries);
         ListTag listTag1 = new ListTag();
         for (String r : block_accessors) {
             listTag1.add(StringTag.valueOf(r));
         }
         tag.put("BlockAccessors", listTag1);
+        tag.putString("DisplayName", Component.Serializer.toJson(displayName, registries));
     }
 
     @Override
-    public Component getDisplayName() { return CONTAINER_TITLE; }
+    public @NotNull Component getDisplayName() { return displayName; }
 
     @Override
-    public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
+    public AbstractContainerMenu createMenu(int id, @NotNull Inventory inventory, @NotNull Player player) {
         syncToClient(player);
         return new MagicStorageMenu(id, inventory, new ContainerData() {
             public int get(int id) { return 0; }
@@ -513,10 +520,5 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
             public int getCount() { return 0; }
         });
     }
-
-    // ========================================================================
-    // Fake entity support
-    // ========================================================================
-    public void setFake(boolean fake) { this.fake = fake; }
 
 }

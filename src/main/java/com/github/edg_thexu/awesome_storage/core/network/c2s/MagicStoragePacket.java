@@ -22,7 +22,7 @@ public record MagicStoragePacket(int id, ItemStack item, long extra) implements 
         this(id, item, 0L);
     }
 
-    public static final Type<MagicStoragePacket> TYPE = new Type<>(space("magic_storage_packet_s2c"));
+    public static final Type<MagicStoragePacket> TYPE = new Type<>(space("magic_storage_packet_c2s"));
     private static final StreamCodec<ByteBuf, Long> LONG_STREAM_CODEC = new StreamCodec<>() {
         public Long decode(ByteBuf buf) { return buf.readLong(); }
         public void encode(ByteBuf buf, Long v) { buf.writeLong(v); }
@@ -44,6 +44,7 @@ public record MagicStoragePacket(int id, ItemStack item, long extra) implements 
             var entity = Util.getStorageEntity(context.player());
             if (entity == null) return;
 
+            // add block accessor
             if (id == 1) {
                 if (item.getItem() instanceof BlockItem block && CraftConfig.isEnabledBlock(block.getBlock())) {
                     String blockName = BuiltInRegistries.BLOCK.getKey(block.getBlock()).toString();
@@ -57,10 +58,25 @@ public record MagicStoragePacket(int id, ItemStack item, long extra) implements 
                     }
                     context.player().containerMenu.broadcastChanges();
                 }
-                entity.syncToClient(context.player());
                 return;
             }
 
+            // remove block accessor
+            if (id >= 20000 && id < 30000) {
+                int index = id - 20000;
+                var accessors = entity.getBlock_accessors();
+                if (index >= 0 && index < accessors.size()) {
+                    String blockName = accessors.remove(index);
+                    Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(blockName));
+                    context.player().getInventory().add(new ItemStack(block.asItem()));
+                    entity.getLevel().sendBlockUpdated(entity.getBlockPos(), entity.getBlockState(),
+                            entity.getBlockState(), 3);
+                    entity.setChanged();
+                }
+                return;
+            }
+
+            // store item
             if (id == 0) {
                 if (context.player().containerMenu.getCarried().isEmpty()) return;
                 ItemStack toStore = context.player().containerMenu.getCarried().copy();
@@ -75,30 +91,8 @@ public record MagicStoragePacket(int id, ItemStack item, long extra) implements 
                 return;
             }
 
-            if (id == 2) {
-                entity.depositAll(context.player(), extra);
-                entity.syncToClient(context.player());
-                return;
-            }
-
-            if (id == 3) {
-                entity.quickStack(context.player(), extra);
-                entity.syncToClient(context.player());
-                return;
-            }
-
-            if (id == 4) {
-                entity.refill(context.player());
-                entity.syncToClient(context.player());
-                return;
-            }
-
-            if (id == 5) {
-                context.player().getPersistentData().putLong("FavoriteSlots", extra);
-                return;
-            }
-
-            if (id < 20000) {
+            // take item
+            if (id >= 10000 && id < 20000) {
                 int index = id - 10000;
                 ItemStack taken = entity.takeItem(index);
                 if (!taken.isEmpty()) {
@@ -108,18 +102,35 @@ public record MagicStoragePacket(int id, ItemStack item, long extra) implements 
                 return;
             }
 
-            if (id < 30000) {
-                int index = id - 20000;
-                var accessors = entity.getBlock_accessors();
-                if (index >= 0 && index < accessors.size()) {
-                    String blockName = accessors.remove(index);
-                    Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(blockName));
-                    context.player().getInventory().add(new ItemStack(block.asItem()));
-                    entity.getLevel().sendBlockUpdated(entity.getBlockPos(), entity.getBlockState(),
-                            entity.getBlockState(), 3);
-                }
+            // deposit all
+            if (id == 2) {
+                entity.depositAll(context.player(), extra);
                 entity.syncToClient(context.player());
+                return;
             }
+
+            // quick stack
+            if (id == 3) {
+                entity.quickStack(context.player(), extra);
+                entity.syncToClient(context.player());
+                return;
+            }
+
+            // refill
+            if (id == 4) {
+                entity.refill(context.player());
+                entity.syncToClient(context.player());
+                return;
+            }
+
+            // favorite slots
+            if (id == 5) {
+                context.player().getPersistentData().putLong("FavoriteSlots", extra);
+                return;
+            }
+
+
+
         });
     }
 }

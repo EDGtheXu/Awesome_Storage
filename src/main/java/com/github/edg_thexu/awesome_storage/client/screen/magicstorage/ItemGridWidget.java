@@ -5,6 +5,7 @@ import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
 import com.github.edg_thexu.qtcraft_api.core.geometry.QSize;
+import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
 import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.util.WidgetTooltip;
@@ -23,6 +24,7 @@ public class ItemGridWidget extends QWidget {
     private final List<Integer> storageIndices = new ArrayList<>();
     private List<Boolean> overlayFlags = new ArrayList<>();
     private int hoverIndex = -1;
+    private int selIndex = -1;
 
     @Override
     public WidgetTooltip toolTip() {
@@ -110,21 +112,28 @@ public class ItemGridWidget extends QWidget {
         if (p == null) return;
         updateCols();
         for (int i = 0; i < items.size(); i++) {
+
             int col = i % cols, row = i / cols;
             boolean over = i < overlayFlags.size() && overlayFlags.get(i);
+
             MagicStorageScreen.renderSlot(p, col * slotSize, row * slotSize, slotSize, items.get(i), i == hoverIndex, over);
+            if(selIndex == i) {
+                p.fillRoundRect(col * slotSize, row * slotSize, slotSize, slotSize, 3, new QColor(0x8F0BF8FF));
+            }
         }
     }
 
     @Override
     protected void mousePressEvent(QMouseEvent event) {
-        event.accept();
         if (event.button() == QMouseEvent.Button.Left) {
             updateCols();
             int col = event.x() / slotSize, row = event.y() / slotSize;
             int idx = row * cols + col;
-            if (idx >= 0 && idx < items.size() && !items.get(idx).isEmpty() && clickHandler != null) {
+            selIndex = -1;
+            if (idx >= 0 && idx < items.size() && !items.get(idx).isEmpty() && clickHandler != null && col < cols) {
                 clickHandler.accept(items.get(idx), idx);
+                selIndex = idx;
+                event.accept();
             }
         }
     }
@@ -133,9 +142,10 @@ public class ItemGridWidget extends QWidget {
     protected void mouseMoveEvent(QMouseEvent event) {
         updateCols();
         int col = event.x() / slotSize, row = event.y() / slotSize;
+
         int idx = row * cols + col;
         int prev = hoverIndex;
-        hoverIndex = (idx >= 0 && idx < items.size()) ? idx : -1;
+        hoverIndex = (idx >= 0 && idx < items.size() && col < cols) ? idx : -1;
         if (prev != hoverIndex) {
             markDirty();
             update();

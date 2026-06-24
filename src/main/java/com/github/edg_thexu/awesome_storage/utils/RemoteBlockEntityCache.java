@@ -34,7 +34,7 @@ public class RemoteBlockEntityCache {
     }
     public MagicStorageBlockEntity load(BlockEntityInfo blockEntityInfo){
         BlockPos pos = new BlockPos(blockEntityInfo.packedXZ >> 4, blockEntityInfo.y, blockEntityInfo.packedXZ & 15);
-        MagicStorageBlockEntity entity = new MagicStorageBlockEntity(pos, ModBlocks.CRAFTING_UNIT__BLOCK.get().defaultBlockState());
+        MagicStorageBlockEntity entity = new MagicStorageBlockEntity(pos, ModBlocks.CRAFTING_UNIT_BLOCK.get().defaultBlockState());
         entity.saveAdditional(blockEntityInfo.tag, Minecraft.getInstance().level.registryAccess());
         return entity;
     }

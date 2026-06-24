@@ -60,7 +60,7 @@ public class MagicStorageMenu extends QBaseMenu {
                     itemStack.shrink(itemStack.getCount() - remaining);
                     if (itemStack.isEmpty()) slots.get(slotIndex).set(ItemStack.EMPTY);
                     be.syncToClient(player);
-                    this.broadcastChanges();
+//                    this.broadcastChanges();
                 }
             }
         }

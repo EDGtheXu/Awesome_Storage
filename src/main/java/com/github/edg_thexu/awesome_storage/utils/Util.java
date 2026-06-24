@@ -1,23 +1,14 @@
 package com.github.edg_thexu.awesome_storage.utils;
 
-import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
 import com.github.edg_thexu.awesome_storage.mix_util.IPlayer;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.core.NonNullList;
-import net.neoforged.fml.loading.FMLPaths;
-import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.util.*;
-
-import static com.github.edg_thexu.awesome_storage.AwesomeStorage.MODID;
 
 
 public class Util {
@@ -47,15 +38,6 @@ public class Util {
         return haveIngredients;
     }
 
-    public static void renderItemStack(GuiGraphics guiGraphics, ItemStack it, int x, int y, boolean overLay) {
-        var minecraft = Minecraft.getInstance();
-        guiGraphics.pose().pushPose();
-        if (overLay) guiGraphics.setColor(1F, 0.5F, 0.5F, 1F);
-        guiGraphics.renderItem(it, x, y);
-        guiGraphics.setColor(1F, 1, 1, 1F);
-        guiGraphics.renderItemDecorations(minecraft.font, it, x, y);
-        guiGraphics.pose().popPose();
-    }
 
     public static boolean canCraftSimple(Map<Item, Integer> haveIngredients, NonNullList<Ingredient> ingredients) {
         boolean canCraft = true;
