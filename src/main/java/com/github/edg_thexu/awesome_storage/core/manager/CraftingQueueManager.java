@@ -34,6 +34,7 @@ public class CraftingQueueManager {
         ItemOperationManager getItemOps();
         void setChanged();
         List<String> getBlockAccessors();
+        void syncItemsToTrackingPlayers();
     }
 
     public static class QueueSlot {
@@ -180,6 +181,8 @@ public class CraftingQueueManager {
                     if (current.isDone()) {
                         slot.queue.pollFirst();
                     }
+                    // Sync items to all players viewing this storage
+                    access.syncItemsToTrackingPlayers();
                 } else {
                     slot.paused = true;
                 }

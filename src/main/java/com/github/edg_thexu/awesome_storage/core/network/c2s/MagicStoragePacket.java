@@ -93,8 +93,13 @@ public record MagicStoragePacket(int id, ItemStack item, long extra) implements 
 
             // take item
             if (id >= 10000 && id < 20000) {
-                int index = id - 10000;
-                ItemStack taken = entity.takeItem(index);
+                ItemStack taken;
+                if (!item.isEmpty()) {
+                    taken = entity.takeItem(item);
+                } else {
+                    int index = id - 10000;
+                    taken = entity.takeItem(index);
+                }
                 if (!taken.isEmpty()) {
                     context.player().getInventory().placeItemBackInInventory(taken.copy());
                 }

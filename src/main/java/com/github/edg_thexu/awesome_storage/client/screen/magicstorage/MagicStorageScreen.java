@@ -11,6 +11,7 @@ import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.client.painter.ModernDrawDevice;
 import com.github.edg_thexu.qtcraft_api.client.screen.QContainerWidgetScreen;
 import com.github.edg_thexu.qtcraft_api.client.screen.WidgetScreenDelegate;
+import com.github.edg_thexu.qtcraft_api.core.QTheme;
 import com.github.edg_thexu.qtcraft_api.core.geometry.QPoint;
 import com.github.edg_thexu.qtcraft_api.core.geometry.QSize;
 import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
@@ -23,6 +24,7 @@ import com.github.edg_thexu.qtcraft_api.core.widget.input.QSlot;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
@@ -200,23 +202,53 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     }
 
     static void renderSlot(QPainter p, int x, int y, int size, ItemStack stack, boolean highlight, boolean overlay) {
+        p.push();
+        p.translate(x, y);
+        x = 0;
+        y = 0;
         p.fillRect(x, y, size, size, new QColor(0xFF333333));
         if (overlay) p.fillRect(x, y, size, size, new QColor(0x55FF0000));
         if (highlight) p.fillRoundRect(x, y, size, size, 3, new QColor(0x55FFFFFF));
         if (!stack.isEmpty()) {
             p.renderItemStack(stack, x + (size - 16) / 2, y + (size - 16) / 2);
-            p.renderItemDecorations(stack, x + (size - 16) / 2, y + (size - 16) / 2);
             int count = stack.getCount();
-            if (count > 0) {
-                String countStr = count >= 1000 ? count / 1000 + "k" : String.valueOf(count);
-                int tw = countStr.length() * 5 + 2;
-                p.fillRect(x + size - tw - 1, y + size - 9, tw, 8, new QColor(0xCC000000));
-                p.setColor(new QColor(0xFFFFAA00));
-                p.drawText(countStr, x + size - tw, y + size - 9);
+            if (stack.isBarVisible()) {
+                p.push();
+                p.translate(0, 0, 190);
+                int l = stack.getBarWidth();
+                int i = stack.getBarColor();
+                int j = x + 2;
+                int k = y + 13;
+                p.fillRect(j, k, 13, 2, new QColor(-16777216));
+                p.fillRect(j, k, l, 1, new QColor(i | -16777216));
+                p.pop();
+            }
+            if (count > 1) {
+                p.push();
+                p.translate(size, size, 200);
+                p.scale(0.7f, 0.7f);
+                String countStr = formatCount(count);
+                int tw = p.textWidth(countStr) + 2;
+
+                if(count > 999) {
+                    p.setColor(QTheme.TEXT.title);
+                }else{
+                    p.setColor(QColor.WHITE);
+                }
+                p.drawText(countStr, x - tw, y - p.textHeight());
+
+                p.pop();
             }
         }
+        p.pop();
     }
 
+
+    static String formatCount(int count) {
+        if (count >= 1000000) return String.format("%.1fM", count / 1000000.0);
+        if (count >= 1000) return String.format("%.1fk", count / 1000.0);
+        return String.valueOf(count);
+    }
 
     // ========================================================================
     // Screen Rendering

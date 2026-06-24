@@ -44,27 +44,28 @@ public class ItemOperationManager {
             return cachedItems != null ? cachedItems : new ArrayList<>();
         }
         List<Container> containers = scanner.getAdjacentContainers(level, blockEntity.getBlockPos());
-        List<ItemStack> result = new ArrayList<>();
+        // Merge all same items into single stacks regardless of max stack size
+        java.util.Map<ItemStack, Integer> merged = new java.util.HashMap<>();
         for (Container c : containers) {
             for (int i = 0; i < c.getContainerSize(); i++) {
                 ItemStack s = c.getItem(i);
                 if (s.isEmpty()) continue;
-                boolean merged = false;
-                for (ItemStack r : result) {
-                    if (ItemStack.isSameItemSameComponents(r, s)) {
-                        int add = Math.min(s.getCount(), r.getMaxStackSize() - r.getCount());
-                        r.grow(add);
-                        if (add < s.getCount()) {
-                            ItemStack remainder = s.copy();
-                            remainder.setCount(s.getCount() - add);
-                            result.add(remainder);
-                        }
-                        merged = true;
+                boolean found = false;
+                for (Map.Entry<ItemStack, Integer> e : merged.entrySet()) {
+                    if (ItemStack.isSameItemSameComponents(e.getKey(), s)) {
+                        merged.put(e.getKey(), e.getValue() + s.getCount());
+                        found = true;
                         break;
                     }
                 }
-                if (!merged) result.add(s.copy());
+                if (!found) merged.put(s.copy(), s.getCount());
             }
+        }
+        List<ItemStack> result = new ArrayList<>();
+        for (Map.Entry<ItemStack, Integer> e : merged.entrySet()) {
+            ItemStack stack = e.getKey();
+            stack.setCount(e.getValue());
+            result.add(stack);
         }
         result.sort(Comparator.comparing(a -> a.getDisplayName().getString()));
         return result;
@@ -156,12 +157,26 @@ public class ItemOperationManager {
         return toAdd;
     }
 
-    public ItemStack takeItem(int index) {
+    public ItemStack takeItem(ItemStack stack) {
         Level level = blockEntity.getLevel();
         List<ItemStack> all = getStoredItems();
+        for (int i = 0; i < all.size(); i++) {
+            if (ItemStack.isSameItemSameComponents(all.get(i), stack)) {
+                return takeItem(i, all);
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+    public ItemStack takeItem(int index) {
+        return takeItem(index, getStoredItems());
+    }
+
+    private ItemStack takeItem(int index, List<ItemStack> all) {
+        Level level = blockEntity.getLevel();
+//        List<ItemStack> all = getStoredItems();
         if (index < 0 || index >= all.size()) return ItemStack.EMPTY;
         ItemStack target = all.get(index);
-        int needed = target.getCount();
+        int needed = Math.min(target.getCount(), target.getMaxStackSize());
         ItemStack result = target.copy();
         result.setCount(0);
 

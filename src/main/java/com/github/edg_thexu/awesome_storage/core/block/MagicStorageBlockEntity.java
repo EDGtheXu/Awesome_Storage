@@ -18,6 +18,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
@@ -74,6 +75,14 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     @Override public boolean isClientSide() { return level != null && level.isClientSide; }
     @Override public ItemOperationManager getItemOps() { return itemOps; }
     @Override public List<String> getBlockAccessors() { return workstationMgr.getBlockAccessors(); }
+    @Override public void syncItemsToTrackingPlayers() {
+        if (level == null || level.isClientSide) return;
+        for (Player p : level.players()) {
+            if (p instanceof ServerPlayer sp && sp.containerMenu instanceof MagicStorageMenu) {
+                itemOps.syncToClient(sp);
+            }
+        }
+    }
 
     // ========================================================================
     // Delegated methods
@@ -121,6 +130,10 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
 
     public ItemStack takeItem(int index) {
         return itemOps.takeItem(index);
+    }
+
+    public ItemStack takeItem(ItemStack stack) {
+        return itemOps.takeItem(stack);
     }
 
     public void depositAll(Player player, long favoriteMask) {

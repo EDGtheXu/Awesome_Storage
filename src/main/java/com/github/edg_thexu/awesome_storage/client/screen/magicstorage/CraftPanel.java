@@ -537,10 +537,8 @@ class CraftPanel extends QWidget {
         private void doTake() {
             List<ItemStack> stored = getStorageItems(Minecraft.getInstance().player);
             if (stored == null || outputItem.isEmpty()) return;
-            // Server-side takeItem(index) uses its own getStoredItems() list and matches by
-            // isSameItemSameComponents — we just need the correct index for the item type.
             for (int i = 0; i < stored.size(); i++) {
-                if (stored.get(i).getItem() == outputItem.getItem()) {
+                if (ItemStack.isSameItemSameComponents(stored.get(i), outputItem)) {
                     PacketDistributor.sendToServer(new MagicStoragePacket(i + 10000, stored.get(i).copy()));
                     var be = Util.getStorageEntity(Minecraft.getInstance().player);
                     if (be != null) be.setChanged();

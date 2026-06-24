@@ -93,7 +93,7 @@ public class StorageStatsPage extends QWidget {
             nameLabel.setTextColor(QColor.WHITE);
             itemRow.addWidget(nameLabel, 1);
 
-            QLabel countLabel = new QLabel(Component.literal("x" + stack.getCount()));
+            QLabel countLabel = new QLabel(Component.literal("x" + MagicStorageScreen.formatCount(stack.getCount())));
             countLabel.setTextColor(new QColor(0xFFFFAA00));
             itemRow.addWidget(countLabel);
 
@@ -122,7 +122,7 @@ public class StorageStatsPage extends QWidget {
             QLabel modLabel = new QLabel(Component.literal(e.getKey()));
             modLabel.setTextColor(QColor.WHITE);
             modRow.addWidget(modLabel, 1);
-            QLabel modCount = new QLabel(Component.literal("x" + e.getValue()));
+            QLabel modCount = new QLabel(Component.literal("x" + MagicStorageScreen.formatCount(e.getValue())));
             modCount.setTextColor(new QColor(0xFF8888FF));
             modRow.addWidget(modCount);
             layout.addLayout(modRow);

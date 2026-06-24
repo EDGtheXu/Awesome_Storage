@@ -91,7 +91,7 @@ class StoragePanel extends QWidget {
         if (parent.getMenu().getCarried().isEmpty() && !stack.isEmpty()) {
             int storageIdx = itemGrid.getStorageIndex(index);
             if (storageIdx >= 0) {
-                PacketDistributor.sendToServer(new MagicStoragePacket(storageIdx + 10000, new ItemStack(net.minecraft.world.item.Items.WOODEN_AXE)));
+                PacketDistributor.sendToServer(new MagicStoragePacket(storageIdx + 10000, stack.copy()));
                 getStorageEntity(Minecraft.getInstance().player).setChanged();
                 parent.scheduleRefresh();
             }
