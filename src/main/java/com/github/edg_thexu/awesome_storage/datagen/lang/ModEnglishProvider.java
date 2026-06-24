@@ -69,9 +69,13 @@ public class ModEnglishProvider extends LanguageProvider {
         add("magic_storage_screen.queue_idle", "Idle");
         add("magic_storage_screen.queue_clear_all", "Clear All");
 
-
-
-
+        add("magic_storage_screen.stats_title", "Statistics");
+        add("magic_storage_screen.stats_overview", "Overview");
+        add("magic_storage_screen.stats_unique_types", "Item Types:");
+        add("magic_storage_screen.stats_total_count", "Total Items:");
+        add("magic_storage_screen.stats_top_items", "Top Items");
+        add("magic_storage_screen.stats_empty", "No items stored");
+        add("magic_storage_screen.stats_mods", "Mod Distribution");
 
         englishProviders.forEach(a->a.accept(this));
     }

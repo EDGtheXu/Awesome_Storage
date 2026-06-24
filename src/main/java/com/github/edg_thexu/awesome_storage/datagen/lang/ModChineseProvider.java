@@ -58,6 +58,14 @@ public class ModChineseProvider extends LanguageProvider {
         add("magic_storage_screen.queue_idle", "空闲");
         add("magic_storage_screen.queue_clear_all", "清空全部");
 
+        add("magic_storage_screen.stats_title", "统计");
+        add("magic_storage_screen.stats_overview", "概览");
+        add("magic_storage_screen.stats_unique_types", "物品种类:");
+        add("magic_storage_screen.stats_total_count", "物品总数:");
+        add("magic_storage_screen.stats_top_items", "热门物品");
+        add("magic_storage_screen.stats_empty", "暂无存储物品");
+        add("magic_storage_screen.stats_mods", "模组分布");
+
         chineseProviders.forEach(a->a.accept(this));
     }
 
