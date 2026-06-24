@@ -1,5 +1,6 @@
 package com.github.edg_thexu.awesome_storage.core.block;
 
+import com.github.edg_thexu.awesome_storage.core.manager.CraftingQueueManager;
 import com.github.edg_thexu.awesome_storage.core.manager.ItemOperationManager;
 import com.github.edg_thexu.awesome_storage.core.manager.StorageContainerScanner;
 import com.github.edg_thexu.awesome_storage.core.manager.WorkstationManager;
@@ -32,27 +33,40 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Set;
 
-public final class MagicStorageBlockEntity extends BlockEntity implements MenuProvider {
+public final class MagicStorageBlockEntity extends BlockEntity implements MenuProvider, CraftingQueueManager.BlockEntityAccess {
 
     public Component displayName = Component.empty();
 
     private final StorageContainerScanner scanner;
     private final ItemOperationManager itemOps;
     private final WorkstationManager workstationMgr;
+    private final CraftingQueueManager queueMgr;
 
     public MagicStorageBlockEntity(BlockEntityType<MagicStorageBlockEntity> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         this.scanner = new StorageContainerScanner();
         this.itemOps = new ItemOperationManager(this, scanner);
         this.workstationMgr = new WorkstationManager(this);
+        this.queueMgr = new CraftingQueueManager(this);
     }
 
     public MagicStorageBlockEntity(BlockPos pos, BlockState state) {
         this(ModBlocks.MAGIC_STORAGE_BLOCK_ENTITY.get(), pos, state);
     }
 
+    public CraftingQueueManager getQueueManager() { return queueMgr; }
+
     public static void serverTick(Level level, BlockPos pos, BlockState state, MagicStorageBlockEntity blockEntity) {
+        blockEntity.queueMgr.tick();
     }
+
+    // ========================================================================
+    // CraftingQueueManager.BlockEntityAccess
+    // ========================================================================
+
+    @Override public Level getLevel() { return level; }
+    @Override public boolean isClientSide() { return level != null && level.isClientSide; }
+    @Override public ItemOperationManager getItemOps() { return itemOps; }
 
     // ========================================================================
     // Delegated methods
@@ -144,7 +158,9 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     public void onDataPacket(@NotNull Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.@NotNull Provider lookupProvider) {
         CompoundTag tag = pkt.getTag();
         workstationMgr.loadFromNbt(tag, lookupProvider);
-
+        if (tag.contains("CraftingQueue")) {
+            queueMgr.loadSlots(tag.getCompound("CraftingQueue"));
+        }
         if(tag.contains("DisplayName")) {
             this.displayName = Component.Serializer.fromJson(tag.getString("DisplayName"), lookupProvider);
         }
@@ -154,6 +170,9 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     protected void loadAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.loadAdditional(tag, registries);
         workstationMgr.loadFromNbt(tag, registries);
+        if (tag.contains("CraftingQueue")) {
+            queueMgr.loadSlots(tag.getCompound("CraftingQueue"));
+        }
         if(tag.contains("DisplayName")) {
             this.displayName = Component.Serializer.fromJson(tag.getString("DisplayName"), registries);
         }
@@ -163,6 +182,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     public @NotNull CompoundTag getUpdateTag(HolderLookup.@NotNull Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         workstationMgr.saveToNbt(tag);
+        tag.put("CraftingQueue", queueMgr.saveSlots());
         tag.putString("DisplayName", Component.Serializer.toJson(displayName, registries));
         return tag;
     }
@@ -171,6 +191,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     public void saveAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.saveAdditional(tag, registries);
         workstationMgr.saveToNbt(tag);
+        tag.put("CraftingQueue", queueMgr.saveSlots());
         tag.putString("DisplayName", Component.Serializer.toJson(displayName, registries));
     }
 
@@ -180,6 +201,9 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     @Override
     public AbstractContainerMenu createMenu(int id, @NotNull Inventory inventory, @NotNull Player player) {
         syncToClient(player);
+        if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
+            queueMgr.syncToPlayer(sp);
+        }
         return new MagicStorageMenu(id, inventory, new ContainerData() {
             public int get(int id) { return 0; }
             public void set(int id, int value) {}

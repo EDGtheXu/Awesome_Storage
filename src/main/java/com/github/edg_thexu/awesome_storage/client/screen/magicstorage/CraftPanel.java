@@ -8,6 +8,7 @@ import com.github.edg_thexu.awesome_storage.config.CraftConfig;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicCraftPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
+import com.github.edg_thexu.awesome_storage.core.network.c2s.QueueActionPacket;
 import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.core.QSizePolicy;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
@@ -218,10 +219,23 @@ class CraftPanel extends QWidget {
         // Take item widget at bottom (above the scroll)
         rvl.addWidget(scrollArea, 1);
 
+        // Queue button
+        QPushButton queueBtn = new QPushButton(Component.translatable("magic_storage_screen.queue"));
+        queueBtn.setFixedHeight(12);
+        queueBtn.setOnClick(() -> {
+            if (infoPanel.hasRecipe && infoPanel.parent.selectedRecipe != null && infoPanel.parent.selectedAdapter != null) {
+                int count = Math.max(1, infoPanel.craftQuantity);
+                PacketDistributor.sendToServer(QueueActionPacket.add(
+                        infoPanel.parent.selectedRecipe.id(),
+                        BuiltInRegistries.RECIPE_TYPE.getKey(infoPanel.parent.selectedAdapter.getRecipe()),
+                        count));
+            }
+        });
         // Top row: left = qty+craft, right = take
         QHBoxLayout topRow = new QHBoxLayout();
         topRow.addWidget(qtyLabelCtrl);
         topRow.addWidget(craftBtnCtrl, 0, QLayout.ALIGN_CENTER);
+        topRow.addWidget(queueBtn, 0, QLayout.ALIGN_CENTER);
         topRow.addWidget(takeArea, 1);
         rvl.addLayout(topRow);
 

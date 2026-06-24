@@ -64,6 +64,11 @@ public class ModEnglishProvider extends LanguageProvider {
         add("magic_storage_screen.non_stackable", "Non-stackable");
         add("magic_storage_screen.all_mods", "All Mods");
 
+        add("magic_storage_screen.queue", "Queue");
+        add("magic_storage_screen.queue_title", "Crafting Queue");
+        add("magic_storage_screen.queue_idle", "Idle");
+        add("magic_storage_screen.queue_clear_all", "Clear All");
+
 
 
 

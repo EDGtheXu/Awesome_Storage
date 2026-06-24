@@ -53,6 +53,11 @@ public class ModChineseProvider extends LanguageProvider {
         add("magic_storage_screen.non_stackable", "不可堆叠");
         add("magic_storage_screen.all_mods", "所有模组");
 
+        add("magic_storage_screen.queue", "排队合成");
+        add("magic_storage_screen.queue_title", "合成队列");
+        add("magic_storage_screen.queue_idle", "空闲");
+        add("magic_storage_screen.queue_clear_all", "清空全部");
+
         chineseProviders.forEach(a->a.accept(this));
     }
 

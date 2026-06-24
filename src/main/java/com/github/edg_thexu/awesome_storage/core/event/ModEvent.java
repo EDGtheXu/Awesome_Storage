@@ -7,10 +7,12 @@ import com.github.edg_thexu.awesome_storage.api.event.RegisterAdapterEvent;
 import com.github.edg_thexu.awesome_storage.api.event.RegisterScreenPageEvent;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicCraftPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
+import com.github.edg_thexu.awesome_storage.core.network.c2s.QueueActionPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.RenameBlockPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.BlockPosSyncPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.ChunkPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.ConfigSyncPacket;
+import com.github.edg_thexu.awesome_storage.core.network.s2c.QueueSyncPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.StorageItemsSyncPacket;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -36,7 +38,10 @@ public class ModEvent {
         registrar.playToClient(ConfigSyncPacket.TYPE, ConfigSyncPacket.STREAM_CODEC, ConfigSyncPacket::handle);
         registrar.playToClient(ChunkPacket.TYPE, ChunkPacket.STREAM_CODEC, ChunkPacket::handle);
         registrar.playToClient(StorageItemsSyncPacket.TYPE, StorageItemsSyncPacket.STREAM_CODEC, StorageItemsSyncPacket::handle);
- 
+
+        registrar.playToServer(QueueActionPacket.TYPE, QueueActionPacket.STREAM_CODEC, QueueActionPacket::handle);
+        registrar.playToClient(QueueSyncPacket.TYPE, QueueSyncPacket.STREAM_CODEC, QueueSyncPacket::handle);
+
     }
 
     @SubscribeEvent
