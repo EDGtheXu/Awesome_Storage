@@ -77,6 +77,17 @@ public class ModEnglishProvider extends LanguageProvider {
         add("magic_storage_screen.stats_empty", "No items stored");
         add("magic_storage_screen.stats_mods", "Mod Distribution");
 
+        add("magic_storage_screen.upgrade_title", "Upgrades");
+        add("magic_storage_screen.upgrade_slot", "Network Card");
+        add("magic_storage_screen.upgrade_range", "Range: %s");
+        add("magic_storage_screen.upgrade_frequency", "Frequency");
+        add("magic_storage_screen.upgrade_freq_hint", "Enter frequency...");
+        add("magic_storage_screen.upgrade_set", "Set");
+        add("magic_storage_screen.upgrade_connected", "Connected Cores");
+        add("magic_storage_screen.upgrade_no_cores", "No cores found");
+
+        add("magic_storage.tooltip.network_range", "Range: %s");
+
         englishProviders.forEach(a->a.accept(this));
     }
 

@@ -66,6 +66,17 @@ public class ModChineseProvider extends LanguageProvider {
         add("magic_storage_screen.stats_empty", "暂无存储物品");
         add("magic_storage_screen.stats_mods", "模组分布");
 
+        add("magic_storage_screen.upgrade_title", "升级");
+        add("magic_storage_screen.upgrade_slot", "无线网卡");
+        add("magic_storage_screen.upgrade_range", "范围: %s");
+        add("magic_storage_screen.upgrade_frequency", "频率");
+        add("magic_storage_screen.upgrade_freq_hint", "输入频率...");
+        add("magic_storage_screen.upgrade_set", "设置");
+        add("magic_storage_screen.upgrade_connected", "已连接的核心");
+        add("magic_storage_screen.upgrade_no_cores", "未找到核心");
+
+        add("magic_storage.tooltip.network_range", "范围: %s");
+
         chineseProviders.forEach(a->a.accept(this));
     }
 

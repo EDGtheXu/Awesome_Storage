@@ -1,6 +1,9 @@
 package com.github.edg_thexu.awesome_storage.core.manager;
 
+import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
+import com.github.edg_thexu.awesome_storage.core.item.WirelessNetworkCard;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.StorageItemsSyncPacket;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -28,6 +31,25 @@ public class ItemOperationManager {
         this.scanner = scanner;
     }
 
+    private List<Container> getAllContainers() {
+        Level level = blockEntity.getLevel();
+        BlockPos pos = blockEntity.getBlockPos();
+        List<Container> containers = scanner.getAdjacentContainers(level, pos);
+
+        // Add wireless containers if applicable
+        if (blockEntity instanceof MagicStorageBlockEntity be) {
+            ItemStack upgrade = be.getUpgradeSlot();
+            if (upgrade.getItem() instanceof WirelessNetworkCard card && be.getFrequency() != 0) {
+                var connected = WirelessNetworkManager.getInstance()
+                        .findConnectedCores(pos, level.dimension(), be.getFrequency(), card.getRange());
+                for (BlockPos remotePos : connected) {
+                    containers.addAll(scanner.getAdjacentContainers(level, remotePos));
+                }
+            }
+        }
+        return containers;
+    }
+
     public void setCachedItems(List<ItemStack> items) {
         this.cachedItems = items;
     }
@@ -43,7 +65,7 @@ public class ItemOperationManager {
         if (level == null || level.isClientSide) {
             return cachedItems != null ? cachedItems : new ArrayList<>();
         }
-        List<Container> containers = scanner.getAdjacentContainers(level, blockEntity.getBlockPos());
+        List<Container> containers = getAllContainers();
         // Merge all same items into single stacks regardless of max stack size
         java.util.Map<ItemStack, Integer> merged = new java.util.HashMap<>();
         for (Container c : containers) {
@@ -94,7 +116,7 @@ public class ItemOperationManager {
             return cachedTotalSlots;
         }
         int slots = 0;
-        for (Container c : scanner.getAdjacentContainers(level, blockEntity.getBlockPos())) {
+        for (Container c : getAllContainers()) {
             slots += c.getContainerSize();
         }
         return slots;
@@ -106,7 +128,7 @@ public class ItemOperationManager {
             return cachedUsedSlots;
         }
         int used = 0;
-        for (Container c : scanner.getAdjacentContainers(level, blockEntity.getBlockPos())) {
+        for (Container c : getAllContainers()) {
             for (int i = 0; i < c.getContainerSize(); i++) {
                 if (!c.getItem(i).isEmpty()) used++;
             }
@@ -118,7 +140,7 @@ public class ItemOperationManager {
         if (stack.isEmpty()) return 0;
         Level level = blockEntity.getLevel();
         ItemStack remaining = stack.copy();
-        for (Container c : scanner.getAdjacentContainers(level, blockEntity.getBlockPos())) {
+        for (Container c : getAllContainers()) {
             remaining = tryAddToContainer(c, remaining);
             if (remaining.isEmpty()) return 0;
         }
@@ -181,7 +203,7 @@ public class ItemOperationManager {
         result.setCount(0);
 
         outer:
-        for (Container c : scanner.getAdjacentContainers(level, blockEntity.getBlockPos())) {
+        for (Container c : getAllContainers()) {
             for (int i = 0; i < c.getContainerSize(); i++) {
                 ItemStack s = c.getItem(i);
                 if (!s.isEmpty() && ItemStack.isSameItemSameComponents(s, target)) {
@@ -253,7 +275,7 @@ public class ItemOperationManager {
             ItemStack stack = inv.getItem(i);
             if (!stack.isEmpty() && stack.isStackable() && stack.getCount() < stack.getMaxStackSize()) {
                 int needed = stack.getMaxStackSize() - stack.getCount();
-                for (Container c : scanner.getAdjacentContainers(level, blockEntity.getBlockPos())) {
+                for (Container c : getAllContainers()) {
                     if (needed <= 0) break;
                     for (int j = 0; j < c.getContainerSize(); j++) {
                         ItemStack s = c.getItem(j);
@@ -275,7 +297,7 @@ public class ItemOperationManager {
 
     public List<ItemStack> craftAndConsume(NonNullList<Ingredient> ingredients, Set<ItemStack> excludedItems) {
         Level level = blockEntity.getLevel();
-        List<Container> containers = scanner.getAdjacentContainers(level, blockEntity.getBlockPos());
+        List<Container> containers = getAllContainers();
 
         for (Ingredient ing : ingredients) {
             if (ing.isEmpty()) continue;

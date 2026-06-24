@@ -9,6 +9,7 @@ import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicCraftPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.QueueActionPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.RenameBlockPacket;
+import com.github.edg_thexu.awesome_storage.core.network.c2s.UpgradePacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.BlockPosSyncPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.ChunkPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.ConfigSyncPacket;
@@ -41,6 +42,8 @@ public class ModEvent {
 
         registrar.playToServer(QueueActionPacket.TYPE, QueueActionPacket.STREAM_CODEC, QueueActionPacket::handle);
         registrar.playToClient(QueueSyncPacket.TYPE, QueueSyncPacket.STREAM_CODEC, QueueSyncPacket::handle);
+
+        registrar.playToServer(UpgradePacket.TYPE, UpgradePacket.STREAM_CODEC, UpgradePacket::handle);
 
     }
 

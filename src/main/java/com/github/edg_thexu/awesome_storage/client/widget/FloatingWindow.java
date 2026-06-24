@@ -1,5 +1,6 @@
 package com.github.edg_thexu.awesome_storage.client.widget;
 
+import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
 import com.github.edg_thexu.qtcraft_api.core.QObject;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
@@ -14,6 +15,8 @@ import com.github.edg_thexu.qtcraft_api.core.widget.QCursor;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QDockWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QVNavigationBar;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,8 +54,10 @@ public class FloatingWindow extends QDockWidget {
 
     @Override
     public List<QObject> children() {
-        List<QObject> children = new ArrayList<>(super.children());
+        List<QObject> children = new ArrayList<>();
 //        children.removeIf(o -> o == leftMenu);
+        children.add(leftMenu);
+        children.add(contentWidget);
         return children;
     }
 

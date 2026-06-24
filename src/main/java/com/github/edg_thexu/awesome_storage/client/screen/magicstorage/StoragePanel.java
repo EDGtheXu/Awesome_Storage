@@ -95,6 +95,10 @@ class StoragePanel extends QWidget {
                 getStorageEntity(Minecraft.getInstance().player).setChanged();
                 parent.scheduleRefresh();
             }
+        }else if(!parent.getMenu().getCarried().isEmpty() && !FavoriteSystem.getInstance().clickedSlotWasFav) {
+            PacketDistributor.sendToServer(new MagicStoragePacket(0, parent.getMenu().getCarried()));
+            getStorageEntity(Minecraft.getInstance().player).setChanged();
+            parent.scheduleRefresh();
         }
     }
 

@@ -1,8 +1,10 @@
 package com.github.edg_thexu.awesome_storage.core.block;
 
+import com.github.edg_thexu.awesome_storage.core.item.WirelessNetworkCard;
 import com.github.edg_thexu.awesome_storage.core.manager.CraftingQueueManager;
 import com.github.edg_thexu.awesome_storage.core.manager.ItemOperationManager;
 import com.github.edg_thexu.awesome_storage.core.manager.StorageContainerScanner;
+import com.github.edg_thexu.awesome_storage.core.manager.WirelessNetworkManager;
 import com.github.edg_thexu.awesome_storage.core.manager.WorkstationManager;
 import com.github.edg_thexu.awesome_storage.core.menu.MagicStorageMenu;
 import com.github.edg_thexu.awesome_storage.core.registry.ModBlocks;
@@ -15,10 +17,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
@@ -43,6 +45,9 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     private final WorkstationManager workstationMgr;
     private final CraftingQueueManager queueMgr;
 
+    private ItemStack upgradeSlot = ItemStack.EMPTY;
+    private int frequency;
+
     public MagicStorageBlockEntity(BlockEntityType<MagicStorageBlockEntity> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         this.scanner = new StorageContainerScanner();
@@ -56,6 +61,72 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
     }
 
     public CraftingQueueManager getQueueManager() { return queueMgr; }
+
+    // -- Wireless Upgrade --
+
+    public ItemStack getUpgradeSlot() { return upgradeSlot; }
+
+    public void setUpgradeSlot(ItemStack stack) {
+        this.upgradeSlot = stack.copy();
+        setChanged();
+        updateWirelessRegistration();
+    }
+
+    public int getFrequency() { return frequency; }
+
+    public void setFrequency(int freq) {
+        this.frequency = freq;
+        setChanged();
+        updateWirelessRegistration();
+        this.updateClient();
+    }
+
+    private void updateClient() {
+        Level level = getLevel();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    public int getWirelessRange() {
+        if (upgradeSlot.getItem() instanceof WirelessNetworkCard card) {
+            return card.getRange();
+        }
+        return 0;
+    }
+
+    private void updateWirelessRegistration() {
+        if (level == null || level.isClientSide) return;
+        if (upgradeSlot.getItem() instanceof WirelessNetworkCard card && frequency != 0) {
+            WirelessNetworkManager.getInstance().register(worldPosition, level.dimension(), frequency, card.getRange());
+        } else {
+            WirelessNetworkManager.getInstance().unregister(worldPosition);
+        }
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && !level.isClientSide) {
+            updateWirelessRegistration();
+        }
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        if (level != null && !level.isClientSide) {
+            WirelessNetworkManager.getInstance().unregister(worldPosition);
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level != null && !level.isClientSide) {
+            WirelessNetworkManager.getInstance().unregister(worldPosition);
+        }
+    }
 
     private int tickCounter;
 
@@ -181,6 +252,10 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         if (tag.contains("CraftingQueue")) {
             queueMgr.loadSlots(tag.getCompound("CraftingQueue"));
         }
+        if (tag.contains("UpgradeSlot")) {
+            upgradeSlot = ItemStack.parseOptional(lookupProvider, tag.getCompound("UpgradeSlot"));
+        }
+        frequency = tag.getInt("Frequency");
         if(tag.contains("DisplayName")) {
             this.displayName = Component.Serializer.fromJson(tag.getString("DisplayName"), lookupProvider);
         }
@@ -193,6 +268,10 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         if (tag.contains("CraftingQueue")) {
             queueMgr.loadSlots(tag.getCompound("CraftingQueue"));
         }
+        if (tag.contains("UpgradeSlot")) {
+            upgradeSlot = ItemStack.parseOptional(registries, tag.getCompound("UpgradeSlot"));
+        }
+        frequency = tag.getInt("Frequency");
         if(tag.contains("DisplayName")) {
             this.displayName = Component.Serializer.fromJson(tag.getString("DisplayName"), registries);
         }
@@ -203,6 +282,10 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         CompoundTag tag = super.getUpdateTag(registries);
         workstationMgr.saveToNbt(tag);
         tag.put("CraftingQueue", queueMgr.saveSlots());
+        if (!upgradeSlot.isEmpty()) {
+            tag.put("UpgradeSlot", upgradeSlot.saveOptional(registries));
+        }
+        tag.putInt("Frequency", frequency);
         tag.putString("DisplayName", Component.Serializer.toJson(displayName, registries));
         return tag;
     }
@@ -212,6 +295,10 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         super.saveAdditional(tag, registries);
         workstationMgr.saveToNbt(tag);
         tag.put("CraftingQueue", queueMgr.saveSlots());
+        if (!upgradeSlot.isEmpty()) {
+            tag.put("UpgradeSlot", upgradeSlot.saveOptional(registries));
+        }
+        tag.putInt("Frequency", frequency);
         tag.putString("DisplayName", Component.Serializer.toJson(displayName, registries));
     }
 

@@ -4,6 +4,7 @@ import com.github.edg_thexu.awesome_storage.AwesomeStorage;
 import com.github.edg_thexu.awesome_storage.core.data_component.LevelAccessorComponent;
 import com.github.edg_thexu.awesome_storage.core.data_component.RangeComponent;
 import com.github.edg_thexu.awesome_storage.core.item.RemoteController;
+import com.github.edg_thexu.awesome_storage.core.item.WirelessNetworkCard;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -30,6 +31,15 @@ public class ModItems {
             .component(ModDataComponent.LEVEL_ACCESSOR.get(),new LevelAccessorComponent(Level.OVERWORLD,true))
     ));
 
+
+    public static final DeferredHolder<Item,Item> BASE_NETWORK_CARD = register("base_wireless_network_card","基础无线网卡",
+            () -> new WirelessNetworkCard(new Item.Properties().stacksTo(1), 10));
+
+    public static final DeferredHolder<Item,Item> ADVANCE_NETWORK_CARD = register("advance_wireless_network_card","进阶无线网卡",
+            () -> new WirelessNetworkCard(new Item.Properties().stacksTo(1), 50));
+
+    public static final DeferredHolder<Item,Item> FINAL_NETWORK_CARD = register("final_wireless_network_card","终极无线网卡",
+            () -> new WirelessNetworkCard(new Item.Properties().stacksTo(1), 100));
 
     public static DeferredHolder<Item,Item> register(String en, String zh, Supplier<Item> supplier) {
         DeferredItem<Item> holder = ITEMS.register(en, supplier);

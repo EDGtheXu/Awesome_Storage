@@ -47,6 +47,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     private CraftPanel craftPanel;
     private QueuePage queuePage;
     private StorageStatsPage statsPage;
+    private UpgradePage upgradePage;
     private long nextRefresh;
     private long lastPeriodicRefresh;
     List<String> lastAccessors = new ArrayList<>();
@@ -177,6 +178,8 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             event.buildPages();
             statsPage = new StorageStatsPage();
             storageWin.addPage(Component.translatable("magic_storage_screen.stats_title").getString(), statsPage);
+            upgradePage = new UpgradePage();
+            storageWin.addPage(Component.translatable("magic_storage_screen.upgrade_title").getString(), upgradePage);
             storageWin.connectPages();
 
             storageWin.setWidget(storagePanel);
@@ -281,6 +284,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         }
         if (queuePage != null) queuePage.refresh();
         if (statsPage != null) statsPage.refresh();
+        if (upgradePage != null) upgradePage.refresh();
     }
 
     @Override
@@ -349,7 +353,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                         if(ItemStack.isSameItemSameComponents(qslot.itemStack(), menu.getCarried())
                                 && menu.getCarried().getMaxStackSize() > 1) {
                             if(FavoriteSystem.getInstance().clickedSlotWasFav) {
-                                FavoriteSystem.getInstance().toggleFavorite( idx);
+                                FavoriteSystem.getInstance().toggleFavorite(idx, true);
                                 FavoriteSystem.getInstance().clickedSlotWasFav = false;
                             }
                         }else{
@@ -359,19 +363,8 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
                 }
             }
         }
-
-        // Store action into storage window (carrying item, click anywhere on storage window)
-        if (!menu.getCarried().isEmpty() && storageWin != null && storageWin.isVisible()
-                && mouseX >= storageWin.x() && mouseX <= storageWin.x() + storageWin.width()
-                && mouseY >= storageWin.y() && mouseY <= storageWin.y() + storageWin.height()) {
-            PacketDistributor.sendToServer(new MagicStoragePacket(0, menu.getCarried()));
-            getStorageEntity(minecraft.player).setChanged();
-            scheduleRefresh();
-            return true;
-        }
-
         // Let QTCraft widgets handle clicks first (grid, stations row, etc.)
-        if (widgetDelegate.mouseClicked(mouseX, mouseY, button)) return true;
+//        if (widgetDelegate.mouseClicked(mouseX, mouseY, button)) return true;
 
         return super.mouseClicked(mouseX, mouseY, button);
     }

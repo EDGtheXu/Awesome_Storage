@@ -134,7 +134,11 @@ public record MagicStoragePacket(int id, ItemStack item, long extra) implements 
                 return;
             }
 
-
+            // only sync
+            if (id == 6) {
+                entity.syncToClient(context.player());
+                return;
+            }
 
         });
     }

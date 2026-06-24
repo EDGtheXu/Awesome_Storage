@@ -83,6 +83,15 @@ public class FavoriteSystem {
         }
     }
 
+    public void toggleFavorite(int slotIndex, boolean toggle) {
+        if(toggle) {
+            favoriteSlots.add(slotIndex);
+        }else{
+            favoriteSlots.remove(slotIndex);
+        }
+    }
+
+
     public boolean isEmpty() {
         return favoriteSlots.isEmpty();
     }
