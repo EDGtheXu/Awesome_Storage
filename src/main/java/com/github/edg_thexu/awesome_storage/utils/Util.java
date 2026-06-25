@@ -7,13 +7,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.core.NonNullList;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.*;
 
 
 public class Util {
 
-    public static void setStorageEntity(Player player, MagicStorageBlockEntity entity){
+    public static void setStorageEntity(Player player, BlockEntity entity){
         ((IPlayer) player).awesomeStorage$setContainer(entity);
     }
     public static List<ItemStack> getStorageItems(Player player) {

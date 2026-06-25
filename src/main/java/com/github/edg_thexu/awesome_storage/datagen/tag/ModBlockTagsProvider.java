@@ -23,11 +23,23 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.@NotNull Provider provider) {
-        tag(BlockTags.NEEDS_STONE_TOOL).add(ModBlocks.CRAFTING_UNIT_BLOCK.get());
+        tag(BlockTags.NEEDS_STONE_TOOL).add(
+                ModBlocks.CRAFTING_UNIT_BLOCK.get(),
+                ModBlocks.STORAGE_CORE_BLOCK.get(),
+                ModBlocks.STORAGE_ARRAY_BLOCK.get(),
+                ModBlocks.STORAGE_UNIT_BLOCK.get(),
+                ModBlocks.STORAGE_UNIT_COPPER_BLOCK.get(),
+                ModBlocks.STORAGE_UNIT_IRON_BLOCK.get()
+        );
 
 
         this.tag(BlockTags.MINEABLE_WITH_PICKAXE).add(
-                ModBlocks.CRAFTING_UNIT_BLOCK.get()
+                ModBlocks.CRAFTING_UNIT_BLOCK.get(),
+                ModBlocks.STORAGE_CORE_BLOCK.get(),
+                ModBlocks.STORAGE_ARRAY_BLOCK.get(),
+                ModBlocks.STORAGE_UNIT_BLOCK.get(),
+                ModBlocks.STORAGE_UNIT_COPPER_BLOCK.get(),
+                ModBlocks.STORAGE_UNIT_IRON_BLOCK.get()
         );
     }
 

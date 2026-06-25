@@ -71,6 +71,26 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('C',Items.NETHERITE_INGOT)
                 .unlockedBy("has_netherite",has(Items.NETHERITE_INGOT))
                 .save(recipeOutput);
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.STORAGE_UNIT_BLOCK.get())
+                .pattern("ABA")
+                .pattern("BCB")
+                .pattern("ABA")
+                .define('A',Items.IRON_INGOT)
+                .define('B',Items.CHEST)
+                .define('C',Items.REDSTONE_BLOCK)
+                .unlockedBy("has_chest",has(Items.CHEST))
+                .save(recipeOutput);
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.STORAGE_ARRAY_BLOCK.get())
+                .pattern("ABA")
+                .pattern("BCB")
+                .pattern("ABA")
+                .define('A',Items.GOLD_INGOT)
+                .define('B',Items.DIAMOND)
+                .define('C',ModBlocks.STORAGE_UNIT_BLOCK.get())
+                .unlockedBy("has_storage_unit",has(ModBlocks.STORAGE_UNIT_BLOCK.get()))
+                .save(recipeOutput);
     }
 
 }

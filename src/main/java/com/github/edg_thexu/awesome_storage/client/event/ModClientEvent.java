@@ -1,5 +1,6 @@
 package com.github.edg_thexu.awesome_storage.client.event;
 
+import com.github.edg_thexu.awesome_storage.client.screen.StorageArrayScreen;
 import com.github.edg_thexu.awesome_storage.client.screen.magicstorage.MagicStorageScreen;
 import com.github.edg_thexu.awesome_storage.core.registry.ModMenus;
 import net.neoforged.api.distmarker.Dist;
@@ -17,6 +18,7 @@ public class ModClientEvent {
     @SubscribeEvent
     public static void registerMenuScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.MAGIC_STORAGE_MENU.get(), MagicStorageScreen::new);
+        event.register(ModMenus.STORAGE_ARRAY_MENU.get(), StorageArrayScreen::new);
 
     }
 }

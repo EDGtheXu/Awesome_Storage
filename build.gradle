@@ -115,6 +115,9 @@ dependencies {
 
     testImplementation "org.junit.jupiter:junit-jupiter:5.11.0"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+
+    compileOnly "curse.maven:refined-storage-243076:8211701"
+    runtimeOnly "curse.maven:refined-storage-243076:8211701"
 }
 
 tasks.named('test', Test) {

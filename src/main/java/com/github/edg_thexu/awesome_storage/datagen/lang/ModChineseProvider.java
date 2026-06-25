@@ -89,6 +89,8 @@ public class ModChineseProvider extends LanguageProvider {
         add("magic_storage_screen.queue_upgrade_title", "队列升级");
         add("magic_storage_screen.queue_upgrade_total", "总队列槽数: %s");
 
+        add("container.awesome_storage.storage_array", "存储阵列");
+
         chineseProviders.forEach(a->a.accept(this));
     }
 

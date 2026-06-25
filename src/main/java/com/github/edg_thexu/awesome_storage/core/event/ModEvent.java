@@ -5,6 +5,8 @@ import com.github.edg_thexu.awesome_storage.api.adapter.CommonRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.api.adapter.SmithingRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.api.event.RegisterAdapterEvent;
 import com.github.edg_thexu.awesome_storage.api.event.RegisterScreenPageEvent;
+import com.github.edg_thexu.awesome_storage.core.block.StorageArrayBlockEntity;
+import com.github.edg_thexu.awesome_storage.core.block.StorageUnitBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicCraftPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.QueueActionPacket;
@@ -15,10 +17,13 @@ import com.github.edg_thexu.awesome_storage.core.network.s2c.ChunkPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.ConfigSyncPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.QueueSyncPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.StorageItemsSyncPacket;
+import com.github.edg_thexu.awesome_storage.core.registry.ModBlocks;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -51,6 +56,20 @@ public class ModEvent {
     public static void onRegisterAdapter(RegisterAdapterEvent event) {
         event.register(RecipeType.CRAFTING, new CommonRecipeAdapter<>((RecipeType.CRAFTING)));
         event.register(RecipeType.SMITHING, new SmithingRecipeAdapter<>(RecipeType.SMITHING));
+    }
+
+    @SubscribeEvent
+    public static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(
+                Capabilities.ItemHandler.BLOCK,
+                ModBlocks.STORAGE_UNIT_BE.get(),
+                (be, side) -> be.getItemHandler()
+        );
+        event.registerBlockEntity(
+                Capabilities.ItemHandler.BLOCK,
+                ModBlocks.STORAGE_ARRAY_BE.get(),
+                (be, side) -> be.getItemHandler()
+        );
     }
 
 //    @SubscribeEvent

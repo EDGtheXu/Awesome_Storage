@@ -100,6 +100,8 @@ public class ModEnglishProvider extends LanguageProvider {
         add("magic_storage_screen.queue_upgrade_title", "Queue Upgrades");
         add("magic_storage_screen.queue_upgrade_total", "Total queue slots: %s");
 
+        add("container.awesome_storage.storage_array", "Storage Array");
+
         englishProviders.forEach(a->a.accept(this));
     }
 

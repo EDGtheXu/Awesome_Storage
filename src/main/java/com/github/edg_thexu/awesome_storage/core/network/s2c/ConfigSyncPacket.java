@@ -7,8 +7,6 @@ import com.github.edg_thexu.awesome_storage.config.CraftConfig;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
