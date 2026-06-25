@@ -21,10 +21,11 @@ import java.util.*;
 
 public class CraftingQueueManager {
 
-    public static final int DEFAULT_SLOT_COUNT = 6;
+    public static final int BASE_SLOT_COUNT = 1;
     private static final int TICK_INTERVAL = 20;
 
     private final List<QueueSlot> slots;
+    private final Deque<QueuedRecipe> pendingQueue = new ArrayDeque<>();
     private final BlockEntityAccess access;
     private int tickCounter;
 
@@ -37,44 +38,45 @@ public class CraftingQueueManager {
         void syncItemsToTrackingPlayers();
     }
 
+    public void syncToPlayer(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, new QueueSyncPacket(saveSlots()));
+    }
+
     public static class QueueSlot {
-        public final Deque<QueuedRecipe> queue = new ArrayDeque<>();
+        @Nullable
+        private QueuedRecipe current;
+
         public boolean paused;
 
         @Nullable
-        public QueuedRecipe current() {
-            return queue.peekFirst();
+        public QueuedRecipe current() { return current; }
+
+        public boolean isIdle() { return current == null; }
+
+        public void assign(QueuedRecipe recipe) { this.current = recipe; }
+
+        /** @return the finished recipe if done, null otherwise */
+        @Nullable
+        public QueuedRecipe finishCurrent() {
+            QueuedRecipe r = current;
+            current = null;
+            return r;
         }
 
-        public void add(QueuedRecipe recipe) {
-            queue.addLast(recipe);
-        }
-
-        public boolean isIdle() {
-            return queue.isEmpty();
-        }
-
-        public void clear() {
-            queue.clear();
-        }
+        public void clear() { current = null; }
 
         public CompoundTag save() {
             CompoundTag tag = new CompoundTag();
             tag.putBoolean("Paused", paused);
-            ListTag list = new ListTag();
-            for (QueuedRecipe r : queue) {
-                list.add(r.save(null));
-            }
-            tag.put("Queue", list);
+            if (current != null) tag.put("Current", current.save(null));
             return tag;
         }
 
         public static QueueSlot load(CompoundTag tag) {
             QueueSlot slot = new QueueSlot();
             slot.paused = tag.getBoolean("Paused");
-            ListTag list = tag.getList("Queue", Tag.TAG_COMPOUND);
-            for (Tag t : list) {
-                slot.queue.add(QueuedRecipe.load((CompoundTag) t));
+            if (tag.contains("Current")) {
+                slot.current = QueuedRecipe.load(tag.getCompound("Current"));
             }
             return slot;
         }
@@ -83,45 +85,58 @@ public class CraftingQueueManager {
     public CraftingQueueManager(BlockEntityAccess access) {
         this.access = access;
         this.slots = new ArrayList<>();
-        for (int i = 0; i < DEFAULT_SLOT_COUNT; i++) {
+        for (int i = 0; i < BASE_SLOT_COUNT; i++) {
             slots.add(new QueueSlot());
         }
     }
 
-    public List<QueueSlot> getSlots() {
-        return slots;
+    public void resizeSlots(int newCount) {
+        newCount = Math.max(BASE_SLOT_COUNT, Math.min(newCount, 20));
+        while (slots.size() < newCount) {
+            slots.add(new QueueSlot());
+        }
+        while (slots.size() > newCount) {
+            QueueSlot removed = slots.remove(slots.size() - 1);
+            if (!removed.isIdle()) removed.paused = true;
+        }
     }
+
+    public List<QueueSlot> getSlots() { return slots; }
+
+    public Deque<QueuedRecipe> getPendingQueue() { return pendingQueue; }
 
     public boolean isIdle() {
-        for (QueueSlot slot : slots) {
-            if (!slot.isIdle()) return false;
-        }
-        return true;
+        for (QueueSlot slot : slots) if (!slot.isIdle()) return false;
+        return pendingQueue.isEmpty();
     }
 
+    /** Add a recipe to the pending queue. Merges with the last entry if identical. */
     public int addToQueue(ResourceLocation recipeId, ResourceLocation recipeTypeId, int quantity, int totalCookTime) {
-        for (QueueSlot slot : slots) {
-            if (slot.isIdle() || (!slot.paused && slot.queue.size() < 16)) {
-                slot.add(new QueuedRecipe(recipeId, recipeTypeId, quantity, totalCookTime));
-                access.setChanged();
-                return slots.indexOf(slot);
-            }
+        QueuedRecipe last = pendingQueue.peekLast();
+        if (last != null && last.recipeId.equals(recipeId) && last.recipeTypeId.equals(recipeTypeId)) {
+            last.quantity += quantity;
+        } else {
+            pendingQueue.addLast(new QueuedRecipe(recipeId, recipeTypeId, quantity, totalCookTime));
         }
-        return -1;
+        access.setChanged();
+        return pendingQueue.size();
     }
 
-    public void removeFromSlot(int slotIndex, int entryIndex) {
-        if (slotIndex < 0 || slotIndex >= slots.size()) return;
-        QueueSlot slot = slots.get(slotIndex);
+    public void removeFromPending(int index) {
         int i = 0;
-        for (QueuedRecipe r : new ArrayList<>(slot.queue)) {
-            if (i == entryIndex) {
-                slot.queue.remove(r);
+        for (QueuedRecipe r : new ArrayList<>(pendingQueue)) {
+            if (i == index) {
+                pendingQueue.remove(r);
                 access.setChanged();
                 return;
             }
             i++;
         }
+    }
+
+    public void clearPending() {
+        pendingQueue.clear();
+        access.setChanged();
     }
 
     public void clearSlot(int slotIndex) {
@@ -136,6 +151,12 @@ public class CraftingQueueManager {
         access.setChanged();
     }
 
+    public void clearAll() {
+        pendingQueue.clear();
+        for (QueueSlot slot : slots) slot.clear();
+        access.setChanged();
+    }
+
     public void tick() {
         if (access.isClientSide()) return;
         tickCounter++;
@@ -146,7 +167,6 @@ public class CraftingQueueManager {
         if (level == null) return;
         RecipeManager recipeManager = level.getRecipeManager();
 
-        // Resolve workstation blocks from accessor IDs
         Set<Block> workstations = new HashSet<>();
         for (String id : access.getBlockAccessors()) {
             Block b = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id));
@@ -154,12 +174,13 @@ public class CraftingQueueManager {
         }
 
         boolean dirty = false;
+
+        // Process active slots
         for (QueueSlot slot : slots) {
             if (slot.paused || slot.isIdle()) continue;
             QueuedRecipe current = slot.current();
             if (current == null) continue;
 
-            // Compute speed multiplier for this recipe based on workstations
             float speed = 1.0f;
             RecipeType<?> recipeType = BuiltInRegistries.RECIPE_TYPE.get(current.recipeTypeId);
             if (recipeType != null) {
@@ -177,20 +198,48 @@ public class CraftingQueueManager {
             if (current.progress >= current.totalCookTime) {
                 current.progress = 0;
                 if (tryCraft(current, recipeManager)) {
-                    current.quantity--;
-                    if (current.isDone()) {
-                        slot.queue.pollFirst();
-                    }
-                    // Sync items to all players viewing this storage
                     access.syncItemsToTrackingPlayers();
+                }
+                slot.finishCurrent();
+            }
+        }
+
+        // Assign pending items to idle slots — each slot takes exactly 1 craft
+        for (QueueSlot slot : slots) {
+            if (slot.paused || !slot.isIdle()) continue;
+            if (pendingQueue.isEmpty()) break;
+            // Skip pending items that can't be crafted (insufficient ingredients)
+            while (!pendingQueue.isEmpty()) {
+                QueuedRecipe next = pendingQueue.peekFirst();
+                if (next == null) break;
+                if (canCraft(next, recipeManager)) {
+                    // Take only 1 from the entry
+                    slot.assign(new QueuedRecipe(next.recipeId, next.recipeTypeId, 1, next.totalCookTime));
+                    next.quantity--;
+                    if (next.quantity <= 0) pendingQueue.pollFirst();
+                    dirty = true;
+                    break;
                 } else {
-                    slot.paused = true;
+                    pendingQueue.pollFirst(); // skip this item
+                    dirty = true;
                 }
             }
         }
-        if (dirty) {
-            access.setChanged();
-        }
+
+        if (dirty) access.setChanged();
+    }
+
+    private boolean canCraft(QueuedRecipe queued, RecipeManager recipeManager) {
+        Level level = access.getLevel();
+        if (level == null) return false;
+        var optRecipe = recipeManager.byKey(queued.recipeId);
+        if (optRecipe.isEmpty()) return false;
+        RecipeType<?> recipeType = BuiltInRegistries.RECIPE_TYPE.get(queued.recipeTypeId);
+        if (recipeType == null) return false;
+        AbstractMagicCraftRecipeAdapter adapter = AdapterManager.Adapters.get(recipeType);
+        if (adapter == null) return false;
+        @SuppressWarnings("unchecked") NonNullList<Ingredient> ingredients = adapter.getIngredients((RecipeHolder) optRecipe.get());
+        return access.getItemOps().hasIngredients(ingredients);
     }
 
     private boolean tryCraft(QueuedRecipe queued, RecipeManager recipeManager) {
@@ -216,14 +265,6 @@ public class CraftingQueueManager {
         return true;
     }
 
-    public void syncToPlayer(ServerPlayer player) {
-        PacketDistributor.sendToPlayer(player, new QueueSyncPacket(saveSlots()));
-    }
-
-    private void syncToAllPlayers() {
-        // lazy: just mark dirty; the client reads via ContainerData or separate sync
-    }
-
     public CompoundTag saveSlots() {
         CompoundTag tag = new CompoundTag();
         ListTag list = new ListTag();
@@ -231,6 +272,12 @@ public class CraftingQueueManager {
             list.add(slot.save());
         }
         tag.put("Slots", list);
+        // Save pending queue
+        ListTag pendingList = new ListTag();
+        for (QueuedRecipe r : pendingQueue) {
+            pendingList.add(r.save(null));
+        }
+        tag.put("Pending", pendingList);
         return tag;
     }
 
@@ -240,8 +287,16 @@ public class CraftingQueueManager {
         for (Tag t : list) {
             slots.add(QueueSlot.load((CompoundTag) t));
         }
-        while (slots.size() < DEFAULT_SLOT_COUNT) {
+        while (slots.size() < BASE_SLOT_COUNT) {
             slots.add(new QueueSlot());
+        }
+        // Load pending queue
+        pendingQueue.clear();
+        if (tag.contains("Pending")) {
+            ListTag pendingList = tag.getList("Pending", Tag.TAG_COMPOUND);
+            for (Tag t : pendingList) {
+                pendingQueue.add(QueuedRecipe.load((CompoundTag) t));
+            }
         }
     }
 }

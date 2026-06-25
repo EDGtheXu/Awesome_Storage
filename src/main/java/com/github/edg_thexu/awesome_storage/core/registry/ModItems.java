@@ -4,6 +4,7 @@ import com.github.edg_thexu.awesome_storage.AwesomeStorage;
 import com.github.edg_thexu.awesome_storage.core.data_component.LevelAccessorComponent;
 import com.github.edg_thexu.awesome_storage.core.data_component.RangeComponent;
 import com.github.edg_thexu.awesome_storage.core.item.RemoteController;
+import com.github.edg_thexu.awesome_storage.core.item.QueueUpgradeItem;
 import com.github.edg_thexu.awesome_storage.core.item.WirelessNetworkCard;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
@@ -40,6 +41,15 @@ public class ModItems {
 
     public static final DeferredHolder<Item,Item> FINAL_NETWORK_CARD = register("final_wireless_network_card","终极无线网卡",
             () -> new WirelessNetworkCard(new Item.Properties().stacksTo(1), 100));
+
+    public static final DeferredHolder<Item,Item> QUEUE_UPGRADE_1 = register("queue_upgrade_1","队列升级 I",
+            () -> new QueueUpgradeItem(new Item.Properties().stacksTo(1), 1));
+
+    public static final DeferredHolder<Item,Item> QUEUE_UPGRADE_2 = register("queue_upgrade_2","队列升级 II",
+            () -> new QueueUpgradeItem(new Item.Properties().stacksTo(1), 2));
+
+    public static final DeferredHolder<Item,Item> QUEUE_UPGRADE_3 = register("queue_upgrade_3","队列升级 III",
+            () -> new QueueUpgradeItem(new Item.Properties().stacksTo(1), 3));
 
     public static DeferredHolder<Item,Item> register(String en, String zh, Supplier<Item> supplier) {
         DeferredItem<Item> holder = ITEMS.register(en, supplier);

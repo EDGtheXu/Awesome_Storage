@@ -305,6 +305,24 @@ public class ItemOperationManager {
         updateClient();
     }
 
+    public boolean hasIngredients(NonNullList<Ingredient> ingredients) {
+        List<Container> containers = getAllContainers();
+        for (Ingredient ing : ingredients) {
+            if (ing.isEmpty()) continue;
+            int required = ing.getItems().length == 0 ? 1 : ing.getItems()[0].getCount();
+            int available = 0;
+            for (Container c : containers) {
+                for (int i = 0; i < c.getContainerSize(); i++) {
+                    ItemStack s = c.getItem(i);
+                    if (s.isEmpty() || !ing.test(s)) continue;
+                    available += s.getCount();
+                }
+            }
+            if (available < required) return false;
+        }
+        return true;
+    }
+
     public List<ItemStack> craftAndConsume(NonNullList<Ingredient> ingredients, Set<ItemStack> excludedItems) {
         Level level = blockEntity.getLevel();
         List<Container> containers = getAllContainers();

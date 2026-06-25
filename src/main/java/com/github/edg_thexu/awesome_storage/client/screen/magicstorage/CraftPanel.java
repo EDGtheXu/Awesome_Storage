@@ -6,6 +6,7 @@ import com.github.edg_thexu.awesome_storage.api.adapter.CommonRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.client.widget.CapacityBar;
 import com.github.edg_thexu.awesome_storage.config.CraftConfig;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
+import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicCraftPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.QueueActionPacket;
@@ -58,6 +59,7 @@ class CraftPanel extends QWidget {
     private final QSmoothScrollArea craftableScrollArea;
     private boolean showCraftableOnly = true;
     private final List<Integer> craftDisplayIndex = new ArrayList<>();
+    private final Set<RecipeHolder<?>> craftableSet = new HashSet<>();
     private final QLabel qtyLabelCtrl;
     private final QPushButton craftBtnCtrl;
     private final com.github.edg_thexu.qtcraft_api.core.widget.info.QItemWidget takeItemCtrl;
@@ -144,6 +146,8 @@ class CraftPanel extends QWidget {
         craftBtnCtrl.setOnClick(() -> {
             if (!infoPanel.hasRecipe || infoPanel.parent.selectedRecipe == null || infoPanel.parent.selectedAdapter == null)
                 return;
+            // Only allow crafting if recipe is in the craftable list
+            if (!craftableSet.contains(infoPanel.parent.selectedRecipe)) return;
             int count = Math.max(1, infoPanel.craftQuantity);
             var recipeId = infoPanel.parent.selectedRecipe.id();
             var adapterId = BuiltInRegistries.RECIPE_TYPE.getKey(infoPanel.parent.selectedAdapter.getRecipe());
@@ -313,8 +317,41 @@ class CraftPanel extends QWidget {
             if (!merged) haveIngredients.put(s.copy(), s.getCount());
         }
 
+        // Subtract ingredients reserved by the crafting queue
+        MagicStorageBlockEntity be = Util.getStorageEntity(Minecraft.getInstance().player);
+        if (be != null && be.getQueueManager() != null) {
+            var reserved = new HashMap<Ingredient, Integer>();
+            // Collect all queued recipes (pending + active slots)
+            var qm = be.getQueueManager();
+            for (var qr : qm.getPendingQueue()) {
+                addReservedIngredients(reserved, qr.recipeId, qr.recipeTypeId);
+            }
+            for (var slot : qm.getSlots()) {
+                if (!slot.isIdle()) {
+                    var qr = slot.current();
+                    if (qr != null) addReservedIngredients(reserved, qr.recipeId, qr.recipeTypeId);
+                }
+            }
+            // Subtract reserved amounts from haveIngredients
+            for (var e : reserved.entrySet()) {
+                Ingredient ing = e.getKey();
+                int need = e.getValue();
+                for (var hi : new ArrayList<>(haveIngredients.entrySet())) {
+                    if (ing.test(hi.getKey())) {
+                        int subtract = Math.min(need, hi.getValue());
+                        haveIngredients.put(hi.getKey(), hi.getValue() - subtract);
+                        need -= subtract;
+                        if (need <= 0) break;
+                    }
+                }
+            }
+            // Clean up zero entries
+            haveIngredients.values().removeIf(v -> v <= 0);
+        }
+
         List<Pair<ItemStack, RecipeHolder<?>>> craftable = new ArrayList<>();
         List<Pair<ItemStack, RecipeHolder<?>>> partial = new ArrayList<>();
+        craftableSet.clear();
         for (Map.Entry<RecipeHolder<?>, AbstractMagicCraftRecipeAdapter> e : recipeMap.entrySet()) {
             var adapter = e.getValue();
             NonNullList<Ingredient> ings = adapter.getIngredients(e.getKey());
@@ -330,7 +367,10 @@ class CraftPanel extends QWidget {
                 else can = false;
             }
             Pair<ItemStack, RecipeHolder<?>> p = new Pair<>(adapter.getResult(e.getKey()), e.getKey());
-            if (can) craftable.add(p);
+            if (can) {
+                craftable.add(p);
+                craftableSet.add(e.getKey());
+            }
             else if (has) partial.add(p);
         }
         craftable.sort(Comparator.comparing(a -> a.getA().getDisplayName().getString()));
@@ -426,6 +466,22 @@ class CraftPanel extends QWidget {
 
     void scheduleRefresh() {
         parent.scheduleRefresh();
+    }
+
+    private void addReservedIngredients(Map<Ingredient, Integer> reserved, net.minecraft.resources.ResourceLocation recipeId, net.minecraft.resources.ResourceLocation recipeTypeId) {
+        var level = Minecraft.getInstance().level;
+        if (level == null) return;
+        var optRecipe = level.getRecipeManager().byKey(recipeId);
+        if (optRecipe.isEmpty()) return;
+        var rt = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.get(recipeTypeId);
+        if (rt == null) return;
+        var adapter = AdapterManager.Adapters.get(rt);
+        if (adapter == null) return;
+        @SuppressWarnings("unchecked") NonNullList<Ingredient> ingredients = adapter.getIngredients((net.minecraft.world.item.crafting.RecipeHolder) optRecipe.get());
+        for (Ingredient ing : ingredients) {
+            if (ing.isEmpty()) continue;
+            reserved.merge(ing, 1, Integer::sum);
+        }
     }
 
     // ========================================================================

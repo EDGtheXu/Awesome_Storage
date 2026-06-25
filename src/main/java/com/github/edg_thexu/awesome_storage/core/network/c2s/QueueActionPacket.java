@@ -70,12 +70,13 @@ public record QueueActionPacket(int action, int slotIndex, int entryIndex, Resou
 
             switch (action) {
                 case ACTION_ADD -> {
+                    if (!hasIngredients(context, be)) return;
                     int cookTime = getCookTime(context);
                     be.getQueueManager().addToQueue(recipeId, adapterID, quantity, cookTime);
                     be.getQueueManager().syncToPlayer((ServerPlayer) context.player());
                 }
                 case ACTION_REMOVE -> {
-                    be.getQueueManager().removeFromSlot(slotIndex, entryIndex);
+                    be.getQueueManager().removeFromPending(entryIndex);
                     be.getQueueManager().syncToPlayer((ServerPlayer) context.player());
                 }
                 case ACTION_CLEAR_SLOT -> {
@@ -83,8 +84,7 @@ public record QueueActionPacket(int action, int slotIndex, int entryIndex, Resou
                     be.getQueueManager().syncToPlayer((ServerPlayer) context.player());
                 }
                 case ACTION_CLEAR_ALL -> {
-                    for (int i = 0; i < be.getQueueManager().getSlots().size(); i++)
-                        be.getQueueManager().clearSlot(i);
+                    be.getQueueManager().clearAll();
                     be.getQueueManager().syncToPlayer((ServerPlayer) context.player());
                 }
                 case ACTION_TOGGLE_PAUSE -> {
@@ -94,6 +94,18 @@ public record QueueActionPacket(int action, int slotIndex, int entryIndex, Resou
                 }
             }
         });
+    }
+
+    private boolean hasIngredients(IPayloadContext context, MagicStorageBlockEntity be) {
+        var optRecipe = context.player().level().getRecipeManager().byKey(recipeId);
+        if (optRecipe.isEmpty()) return false;
+        var recipeType = BuiltInRegistries.RECIPE_TYPE.get(adapterID);
+        if (recipeType == null) return false;
+        AbstractMagicCraftRecipeAdapter<?, ?> adapter = AdapterManager.Adapters.get(recipeType);
+        if (adapter == null) return false;
+        @SuppressWarnings("unchecked")
+        var ingredients = adapter.getIngredients((RecipeHolder) optRecipe.get());
+        return be.getItemOps().hasIngredients(ingredients);
     }
 
     private int getCookTime(IPayloadContext context) {

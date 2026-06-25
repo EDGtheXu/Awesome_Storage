@@ -48,6 +48,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     private QueuePage queuePage;
     private StorageStatsPage statsPage;
     private UpgradePage upgradePage;
+    private CraftUpgradePage craftUpgradePage;
     private long nextRefresh;
     private long lastPeriodicRefresh;
     private List<String> lastAccessors = new ArrayList<>();
@@ -157,6 +158,9 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             // Queue page
             queuePage = new QueuePage(this);
             craftWin.addPage(Component.translatable("magic_storage_screen.queue_title").getString(), queuePage);
+
+            craftUpgradePage = new CraftUpgradePage();
+            craftWin.addPage(Component.translatable("magic_storage_screen.queue_upgrade_title").getString(), craftUpgradePage);
 
             craftWin.connectPages();
 
@@ -285,6 +289,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         if (queuePage != null) queuePage.refresh();
         if (statsPage != null) statsPage.refresh();
         if (upgradePage != null) upgradePage.refresh();
+        if (craftUpgradePage != null) craftUpgradePage.refresh();
     }
 
     @Override

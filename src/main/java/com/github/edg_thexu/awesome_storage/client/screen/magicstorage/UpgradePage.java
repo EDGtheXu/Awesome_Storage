@@ -37,7 +37,6 @@ public class UpgradePage extends QWidget {
         title.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(title);
 
-        // Static UI — built once, never rebuilt
         QLabel slotTitle = new QLabel(Component.translatable("magic_storage_screen.upgrade_slot"));
         slotTitle.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(slotTitle);
@@ -75,9 +74,9 @@ public class UpgradePage extends QWidget {
         connTitle.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(connTitle);
 
-        // Dynamic area — only the core list is rebuilt each refresh
         coreScroll = new QSmoothScrollArea();
         coreScroll.setWidgetResizable(true);
+        coreScroll.setFixedHeight(100);
         coreContent = new QWidget();
         coreScroll.setWidget(coreContent);
         vl.addWidget(coreScroll, 1);
@@ -96,7 +95,6 @@ public class UpgradePage extends QWidget {
             rangeLabel.setVisible(false);
         }
 
-        // Only rebuild the core list
         coreContent = new QWidget();
         QVBoxLayout cl = new QVBoxLayout(coreContent);
         cl.setSpacing(2);
@@ -157,7 +155,6 @@ public class UpgradePage extends QWidget {
             if (be == null) return;
             ItemStack carried = player.containerMenu.getCarried();
             if (be.getUpgradeSlot().isEmpty() && !carried.isEmpty() && carried.getItem() instanceof WirelessNetworkCard) {
-                // Optimistically update client side for instant feedback
                 ItemStack toSlot = carried.copy();
                 toSlot.setCount(1);
                 be.setUpgradeSlot(toSlot);

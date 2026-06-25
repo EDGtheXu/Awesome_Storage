@@ -1,5 +1,6 @@
 package com.github.edg_thexu.awesome_storage.core.block;
 
+import com.github.edg_thexu.awesome_storage.core.item.QueueUpgradeItem;
 import com.github.edg_thexu.awesome_storage.core.item.WirelessNetworkCard;
 import com.github.edg_thexu.awesome_storage.core.manager.CraftingQueueManager;
 import com.github.edg_thexu.awesome_storage.core.manager.ItemOperationManager;
@@ -47,6 +48,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
 
     private ItemStack upgradeSlot = ItemStack.EMPTY;
     private int frequency;
+    private final ItemStack[] queueUpgradeSlots = new ItemStack[4];
 
     public MagicStorageBlockEntity(BlockEntityType<MagicStorageBlockEntity> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -54,6 +56,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         this.itemOps = new ItemOperationManager(this, scanner);
         this.workstationMgr = new WorkstationManager(this);
         this.queueMgr = new CraftingQueueManager(this);
+        for (int i = 0; i < queueUpgradeSlots.length; i++) queueUpgradeSlots[i] = ItemStack.EMPTY;
     }
 
     public MagicStorageBlockEntity(BlockPos pos, BlockState state) {
@@ -104,11 +107,37 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         }
     }
 
+    // -- Queue Upgrades --
+
+    public ItemStack[] getQueueUpgradeSlots() { return queueUpgradeSlots; }
+
+    public void setQueueUpgradeSlot(int index, ItemStack stack) {
+        if (index < 0 || index >= queueUpgradeSlots.length) return;
+        queueUpgradeSlots[index] = stack.copy();
+        setChanged();
+        recalculateQueueSlots();this.updateClient();
+    }
+
+    public int getTotalQueueSlots() {
+        int total = CraftingQueueManager.BASE_SLOT_COUNT;
+        for (ItemStack s : queueUpgradeSlots) {
+            if (s.getItem() instanceof QueueUpgradeItem q) {
+                total += q.getExtraSlots();
+            }
+        }
+        return Math.min(total, 20); // cap at 20
+    }
+
+    private void recalculateQueueSlots() {
+        queueMgr.resizeSlots(getTotalQueueSlots());
+    }
+
     @Override
     public void onLoad() {
         super.onLoad();
         if (level != null && !level.isClientSide) {
             updateWirelessRegistration();
+            recalculateQueueSlots();
         }
     }
 
@@ -256,9 +285,27 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
             upgradeSlot = ItemStack.parseOptional(lookupProvider, tag.getCompound("UpgradeSlot"));
         }
         frequency = tag.getInt("Frequency");
+        loadQueueUpgradeSlots(tag, lookupProvider);
         if(tag.contains("DisplayName")) {
             this.displayName = Component.Serializer.fromJson(tag.getString("DisplayName"), lookupProvider);
         }
+    }
+
+    private void loadQueueUpgradeSlots(CompoundTag tag, HolderLookup.Provider registries) {
+        if (tag.contains("QueueUpgradeSlots", 9)) {
+            var list = tag.getList("QueueUpgradeSlots", 10);
+            for (int i = 0; i < Math.min(list.size(), queueUpgradeSlots.length); i++) {
+                queueUpgradeSlots[i] = ItemStack.parseOptional(registries, list.getCompound(i));
+            }
+        }
+    }
+
+    private void saveQueueUpgradeSlots(CompoundTag tag, HolderLookup.Provider registries) {
+        var list = new net.minecraft.nbt.ListTag();
+        for (ItemStack s : queueUpgradeSlots) {
+            list.add(s.saveOptional(registries));
+        }
+        tag.put("QueueUpgradeSlots", list);
     }
 
     @Override
@@ -272,6 +319,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
             upgradeSlot = ItemStack.parseOptional(registries, tag.getCompound("UpgradeSlot"));
         }
         frequency = tag.getInt("Frequency");
+        loadQueueUpgradeSlots(tag, registries);
         if(tag.contains("DisplayName")) {
             this.displayName = Component.Serializer.fromJson(tag.getString("DisplayName"), registries);
         }
@@ -286,6 +334,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
             tag.put("UpgradeSlot", upgradeSlot.saveOptional(registries));
         }
         tag.putInt("Frequency", frequency);
+        saveQueueUpgradeSlots(tag, registries);
         tag.putString("DisplayName", Component.Serializer.toJson(displayName, registries));
         return tag;
     }
@@ -299,6 +348,7 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
             tag.put("UpgradeSlot", upgradeSlot.saveOptional(registries));
         }
         tag.putInt("Frequency", frequency);
+        saveQueueUpgradeSlots(tag, registries);
         tag.putString("DisplayName", Component.Serializer.toJson(displayName, registries));
     }
 

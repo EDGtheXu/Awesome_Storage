@@ -67,6 +67,9 @@ public class ModEnglishProvider extends LanguageProvider {
         add("magic_storage_screen.queue", "Queue");
         add("magic_storage_screen.queue_title", "Crafting Queue");
         add("magic_storage_screen.queue_idle", "Idle");
+        add("magic_storage_screen.queue_pending", "Pending");
+        add("magic_storage_screen.queue_empty", "No items in queue");
+        add("magic_storage_screen.queue_status", "Queue Slots: %s");
         add("magic_storage_screen.queue_clear_all", "Clear All");
 
         add("magic_storage_screen.stats_title", "Statistics");
@@ -87,6 +90,10 @@ public class ModEnglishProvider extends LanguageProvider {
         add("magic_storage_screen.upgrade_no_cores", "No cores found");
 
         add("magic_storage.tooltip.network_range", "Range: %s");
+        add("magic_storage.tooltip.queue_upgrade", "Adds %s queue slot(s)");
+
+        add("magic_storage_screen.queue_upgrade_title", "Queue Upgrades");
+        add("magic_storage_screen.queue_upgrade_total", "Total queue slots: %s");
 
         englishProviders.forEach(a->a.accept(this));
     }
