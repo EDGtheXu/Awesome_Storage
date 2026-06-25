@@ -8,7 +8,9 @@ import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.Event;
 import net.neoforged.fml.event.IModBusEvent;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Event fired during mod initialization to register block-recipe type mappings.
@@ -27,11 +29,11 @@ import java.util.List;
 public class RegisterWorkstationEvent extends Event implements IModBusEvent {
 
     private void put(RecipeType<net.minecraft.world.item.crafting.Recipe<net.minecraft.world.item.crafting.RecipeInput>> type, Block block) {
-        List<Block> existing = CraftConfig.ENABLED_RECIPES.get(type);
+        Set<Block> existing = CraftConfig.ENABLED_RECIPES.get(type);
         if (existing != null && !existing.contains(block)) {
             existing.add(block);
         } else if (existing == null) {
-            CraftConfig.ENABLED_RECIPES.put(type, new java.util.ArrayList<>(List.of(block)));
+            CraftConfig.ENABLED_RECIPES.put(type, new HashSet<>(List.of(block)));
         }
     }
 

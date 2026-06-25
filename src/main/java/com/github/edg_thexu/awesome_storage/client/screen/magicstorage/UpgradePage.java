@@ -109,8 +109,12 @@ public class UpgradePage extends QWidget {
                 cl.addWidget(none);
             } else {
                 for (var pos : cores) {
+                    Component appendName = Component.empty();
+                    if(Minecraft.getInstance().level.getBlockEntity(pos) instanceof MagicStorageBlockEntity mbe) {
+                        appendName = Component.literal("   #").append(mbe.displayName);
+                    }
                     QLabel coreLabel = new QLabel(Component.literal(
-                            "[" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + "]"));
+                            "[" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + "]").append(appendName));
                     coreLabel.setTextColor(new QColor(0xFF88FF88));
                     cl.addWidget(coreLabel);
                 }

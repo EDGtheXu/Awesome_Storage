@@ -20,6 +20,7 @@ import com.github.edg_thexu.qtcraft_api.core.signal_slot.SignalSlotUtil;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QContainer;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QMainWindow;
+import com.github.edg_thexu.qtcraft_api.core.widget.container.QSmoothScrollArea;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QSlot;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
@@ -49,6 +50,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
     private StorageStatsPage statsPage;
     private UpgradePage upgradePage;
     private CraftUpgradePage craftUpgradePage;
+    private CraftInfoPage craftInfoPage;
     private long nextRefresh;
     private long lastPeriodicRefresh;
     private List<String> lastAccessors = new ArrayList<>();
@@ -162,6 +164,9 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             craftUpgradePage = new CraftUpgradePage();
             craftWin.addPage(Component.translatable("magic_storage_screen.queue_upgrade_title").getString(), craftUpgradePage);
 
+            craftInfoPage = new CraftInfoPage();
+            craftWin.addPage(Component.translatable("magic_storage_screen.craft_info_title").getString(), craftInfoPage);
+
             craftWin.connectPages();
 
             craftWin.setWidget(craftPanel);
@@ -183,7 +188,10 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             statsPage = new StorageStatsPage();
             storageWin.addPage(Component.translatable("magic_storage_screen.stats_title").getString(), statsPage);
             upgradePage = new UpgradePage();
-            storageWin.addPage(Component.translatable("magic_storage_screen.upgrade_title").getString(), upgradePage);
+            QSmoothScrollArea area = new QSmoothScrollArea();
+            area.setWidget(upgradePage);
+            area.setWidgetResizable(true);
+            storageWin.addPage(Component.translatable("magic_storage_screen.upgrade_title").getString(), area);
             storageWin.connectPages();
 
             storageWin.setWidget(storagePanel);
@@ -290,6 +298,7 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         if (statsPage != null) statsPage.refresh();
         if (upgradePage != null) upgradePage.refresh();
         if (craftUpgradePage != null) craftUpgradePage.refresh();
+        if (craftInfoPage != null) craftInfoPage.refresh();
     }
 
     @Override

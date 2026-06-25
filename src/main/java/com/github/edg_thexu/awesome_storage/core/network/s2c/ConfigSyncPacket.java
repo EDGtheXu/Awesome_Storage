@@ -1,5 +1,6 @@
 package com.github.edg_thexu.awesome_storage.core.network.s2c;
 
+import com.github.edg_thexu.awesome_storage.AwesomeStorage;
 import com.github.edg_thexu.awesome_storage.api.adapter.AdapterManager;
 import com.github.edg_thexu.awesome_storage.config.AbstractJsonConfig;
 import com.github.edg_thexu.awesome_storage.config.CraftConfig;
@@ -33,14 +34,15 @@ public record ConfigSyncPacket(
     }
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
-            System.out.println("Received ConfigSyncPacket");
+            AwesomeStorage.LOGGER.info("Received ConfigSyncPacket");
             craft.loadConfig();
             GsonBuilder builder = new GsonBuilder();
 //            builder.setPrettyPrinting();
             String craftJson = builder.create().toJson(craft.rawConfig());
             String adapters = String.valueOf(AdapterManager.Adapters.size());
             String message = "Craft Config:\n" + craftJson + "\n\nLoaded Recipe Adapters: " + adapters;
-            Minecraft.getInstance().player.sendSystemMessage(Component.literal("Awesome Storage: Reload config success from server! "+message));
+            AwesomeStorage.LOGGER.info(message);
+//            Minecraft.getInstance().player.sendSystemMessage(Component.literal("Awesome Storage: Reload config success from server! "+message));
         });
     }
 }

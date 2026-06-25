@@ -16,7 +16,7 @@ import java.util.*;
 
 public class CraftConfig extends AbstractJsonConfig{
 
-    public static Map<RecipeType<Recipe<RecipeInput>>,List<Block>> ENABLED_RECIPES = new HashMap<>();
+    public static Map<RecipeType<Recipe<RecipeInput>>, Set<Block>> ENABLED_RECIPES = new HashMap<>();
     private static final Set<Block> ENABLED_BLOCKS = new HashSet<>();
     public static boolean isEnabledBlock(Block block){
         return ENABLED_BLOCKS.contains(block);
@@ -38,7 +38,7 @@ public class CraftConfig extends AbstractJsonConfig{
         for (String blockId : blockIds) {
             Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(blockId));
             if (block == null || block == Blocks.AIR) continue;
-            ENABLED_RECIPES.computeIfAbsent(key, k -> new ArrayList<>()).add(block);
+            ENABLED_RECIPES.computeIfAbsent(key, k -> new HashSet<>()).add(block);
             if (!ENABLED_BLOCKS.contains(block)) ENABLED_BLOCKS.add(block);
         }
     }
@@ -75,8 +75,8 @@ public class CraftConfig extends AbstractJsonConfig{
         map.getFirst().stream().forEach(access ->
                 ENABLED_RECIPES.put(
                         (RecipeType<Recipe<RecipeInput>>) BuiltInRegistries.RECIPE_TYPE.get(access.recipeType),
-                        new ArrayList<>(access.blocks.stream().map(BuiltInRegistries.BLOCK::get).toList())));
-        ENABLED_BLOCKS.addAll(ENABLED_RECIPES.values().stream().flatMap(List::stream).toList());
+                        new HashSet<>(access.blocks.stream().map(BuiltInRegistries.BLOCK::get).toList())));
+        ENABLED_BLOCKS.addAll(ENABLED_RECIPES.values().stream().flatMap(Set::stream).toList());
 
     }
 

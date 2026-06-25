@@ -71,6 +71,8 @@ public class ModEnglishProvider extends LanguageProvider {
         add("magic_storage_screen.queue_empty", "No items in queue");
         add("magic_storage_screen.queue_status", "Queue Slots: %s");
         add("magic_storage_screen.queue_clear_all", "Clear All");
+        add("magic_storage_screen.queue_pause_all", "Pause All");
+        add("magic_storage_screen.queue_resume_all", "Resume All");
 
         add("magic_storage_screen.stats_title", "Statistics");
         add("magic_storage_screen.stats_overview", "Overview");
@@ -90,6 +92,9 @@ public class ModEnglishProvider extends LanguageProvider {
         add("magic_storage_screen.upgrade_no_cores", "No cores found");
 
         add("magic_storage.tooltip.network_range", "Range: %s");
+        add("magic_storage_screen.craft_info_title", "Recipe Info");
+        add("magic_storage_screen.craft_info_empty", "No recipes configured");
+        add("magic_storage_screen.craft_info_unsupported", "Unsupported Recipe Types");
         add("magic_storage.tooltip.queue_upgrade", "Adds %s queue slot(s)");
 
         add("magic_storage_screen.queue_upgrade_title", "Queue Upgrades");

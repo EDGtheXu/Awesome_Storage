@@ -55,10 +55,11 @@ class StoragePanel extends QWidget {
         searchRow.addWidget(searchField, 1);
         vl.addLayout(searchRow);
 
-        QHBoxLayout filterRow = new QHBoxLayout();
+        QWidget filterBarContainer = new QWidget();
+        QHBoxLayout filterRow = new QHBoxLayout(filterBarContainer);
         filterRow.setSpacing(2);
         filterBar = new FilterBar(filterRow, this, "s", this::refresh);
-        vl.addLayout(filterRow);
+        vl.addWidget(filterBarContainer);
 
         scrollArea = new QSmoothScrollArea();
         itemGrid = new ItemGridWidget();

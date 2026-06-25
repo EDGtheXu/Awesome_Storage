@@ -101,6 +101,17 @@ public class QueuePage extends QWidget {
 
         // Controls
         QHBoxLayout ctrlRow = new QHBoxLayout();
+        ctrlRow.setSpacing(4);
+        QPushButton pauseAllBtn = new QPushButton(Component.translatable("magic_storage_screen.queue_pause_all"));
+        pauseAllBtn.setFixedHeight(14);
+        pauseAllBtn.setOnClick(() -> PacketDistributor.sendToServer(QueueActionPacket.pauseAll()));
+        ctrlRow.addWidget(pauseAllBtn);
+
+        QPushButton resumeAllBtn = new QPushButton(Component.translatable("magic_storage_screen.queue_resume_all"));
+        resumeAllBtn.setFixedHeight(14);
+        resumeAllBtn.setOnClick(() -> PacketDistributor.sendToServer(QueueActionPacket.resumeAll()));
+        ctrlRow.addWidget(resumeAllBtn);
+
         QPushButton clearPendingBtn = new QPushButton(Component.translatable("magic_storage_screen.queue_clear_all"));
         clearPendingBtn.setFixedHeight(14);
         clearPendingBtn.setOnClick(() -> PacketDistributor.sendToServer(QueueActionPacket.clearAll()));

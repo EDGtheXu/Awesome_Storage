@@ -24,6 +24,8 @@ public record QueueActionPacket(int action, int slotIndex, int entryIndex, Resou
     public static final int ACTION_CLEAR_SLOT = 2;
     public static final int ACTION_CLEAR_ALL = 3;
     public static final int ACTION_TOGGLE_PAUSE = 4;
+    public static final int ACTION_PAUSE_ALL = 5;
+    public static final int ACTION_RESUME_ALL = 6;
 
     private static final ResourceLocation EMPTY = ResourceLocation.withDefaultNamespace("_");
 
@@ -58,6 +60,14 @@ public record QueueActionPacket(int action, int slotIndex, int entryIndex, Resou
         return new QueueActionPacket(ACTION_TOGGLE_PAUSE, slotIndex, 0, EMPTY, EMPTY, 0);
     }
 
+    public static QueueActionPacket pauseAll() {
+        return new QueueActionPacket(ACTION_PAUSE_ALL, 0, 0, EMPTY, EMPTY, 0);
+    }
+
+    public static QueueActionPacket resumeAll() {
+        return new QueueActionPacket(ACTION_RESUME_ALL, 0, 0, EMPTY, EMPTY, 0);
+    }
+
     @Override
     public @NotNull Type<QueueActionPacket> type() {
         return TYPE;
@@ -90,6 +100,16 @@ public record QueueActionPacket(int action, int slotIndex, int entryIndex, Resou
                 case ACTION_TOGGLE_PAUSE -> {
                     var slot = be.getQueueManager().getSlots().get(slotIndex);
                     be.getQueueManager().setPaused(slotIndex, !slot.paused);
+                    be.getQueueManager().syncToPlayer((ServerPlayer) context.player());
+                }
+                case ACTION_PAUSE_ALL -> {
+                    for (int i = 0; i < be.getQueueManager().getSlots().size(); i++)
+                        be.getQueueManager().setPaused(i, true);
+                    be.getQueueManager().syncToPlayer((ServerPlayer) context.player());
+                }
+                case ACTION_RESUME_ALL -> {
+                    for (int i = 0; i < be.getQueueManager().getSlots().size(); i++)
+                        be.getQueueManager().setPaused(i, false);
                     be.getQueueManager().syncToPlayer((ServerPlayer) context.player());
                 }
             }

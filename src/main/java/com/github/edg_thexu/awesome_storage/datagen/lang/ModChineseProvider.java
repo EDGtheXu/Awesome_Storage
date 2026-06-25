@@ -60,6 +60,8 @@ public class ModChineseProvider extends LanguageProvider {
         add("magic_storage_screen.queue_empty", "队列为空");
         add("magic_storage_screen.queue_status", "队列槽数: %s");
         add("magic_storage_screen.queue_clear_all", "清空全部");
+        add("magic_storage_screen.queue_pause_all", "全部暂停");
+        add("magic_storage_screen.queue_resume_all", "全部继续");
 
         add("magic_storage_screen.stats_title", "统计");
         add("magic_storage_screen.stats_overview", "概览");
@@ -79,6 +81,9 @@ public class ModChineseProvider extends LanguageProvider {
         add("magic_storage_screen.upgrade_no_cores", "未找到核心");
 
         add("magic_storage.tooltip.network_range", "范围: %s");
+        add("magic_storage_screen.craft_info_title", "配方信息");
+        add("magic_storage_screen.craft_info_empty", "未配置合成配方");
+        add("magic_storage_screen.craft_info_unsupported", "不支持的配方类型");
         add("magic_storage.tooltip.queue_upgrade", "增加 %s 个队列槽");
 
         add("magic_storage_screen.queue_upgrade_title", "队列升级");
