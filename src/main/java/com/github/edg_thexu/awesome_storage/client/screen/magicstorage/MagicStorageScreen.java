@@ -6,6 +6,7 @@ import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.block.StorageCoreBlock;
 import com.github.edg_thexu.awesome_storage.core.menu.MagicStorageMenu;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
+import com.github.edg_thexu.awesome_storage.utils.AutoStockSystem;
 import com.github.edg_thexu.awesome_storage.utils.FavoriteSystem;
 import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.client.painter.ModernDrawDevice;
@@ -187,6 +188,10 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
             event.buildPages();
             statsPage = new StorageStatsPage();
             storageWin.addPage(Component.translatable("awesome_storage.magic_storage_screen.stats_title").getString(), statsPage);
+
+            AutoStockPage autoStockPage = new AutoStockPage();
+            autoStockPage.refresh();
+            storageWin.addPage(Component.translatable("awesome_storage.magic_storage_screen.auto_stock_title").getString(), autoStockPage);
             upgradePage = new UpgradePage();
             QSmoothScrollArea area = new QSmoothScrollArea();
             area.setWidget(upgradePage);
