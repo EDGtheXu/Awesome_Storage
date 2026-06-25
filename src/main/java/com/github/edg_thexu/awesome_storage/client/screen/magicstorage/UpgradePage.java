@@ -33,11 +33,11 @@ public class UpgradePage extends QWidget {
         vl.setSpacing(4);
         vl.setContentsMargins(5, 5, 5, 5);
 
-        QLabel title = new QLabel(Component.translatable("magic_storage_screen.upgrade_title"));
+        QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.upgrade_title"));
         title.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(title);
 
-        QLabel slotTitle = new QLabel(Component.translatable("magic_storage_screen.upgrade_slot"));
+        QLabel slotTitle = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.upgrade_slot"));
         slotTitle.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(slotTitle);
 
@@ -49,17 +49,17 @@ public class UpgradePage extends QWidget {
         rangeLabel.setTextColor(new QColor(0xFF88FF88));
         vl.addWidget(rangeLabel);
 
-        QLabel freqTitle = new QLabel(Component.translatable("magic_storage_screen.upgrade_frequency"));
+        QLabel freqTitle = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.upgrade_frequency"));
         freqTitle.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(freqTitle);
 
         QHBoxLayout freqRow = new QHBoxLayout();
         freqInput = new QLineEdit();
-        freqInput.setPlaceholderText(Component.translatable("magic_storage_screen.upgrade_freq_hint").getString());
+        freqInput.setPlaceholderText(Component.translatable("awesome_storage.magic_storage_screen.upgrade_freq_hint").getString());
         freqInput.setFixedHeight(16);
         freqRow.addWidget(freqInput, 1);
 
-        QPushButton setFreqBtn = new QPushButton(Component.translatable("magic_storage_screen.upgrade_set"));
+        QPushButton setFreqBtn = new QPushButton(Component.translatable("awesome_storage.magic_storage_screen.upgrade_set"));
         setFreqBtn.setFixedHeight(14);
         setFreqBtn.setOnClick(() -> {
             try {
@@ -70,7 +70,7 @@ public class UpgradePage extends QWidget {
         freqRow.addWidget(setFreqBtn);
         vl.addLayout(freqRow);
 
-        QLabel connTitle = new QLabel(Component.translatable("magic_storage_screen.upgrade_connected"));
+        QLabel connTitle = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.upgrade_connected"));
         connTitle.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(connTitle);
 
@@ -89,7 +89,7 @@ public class UpgradePage extends QWidget {
         slotWidget.update();
 
         if (be.getUpgradeSlot().getItem() instanceof WirelessNetworkCard card) {
-            rangeLabel.setText(Component.translatable("magic_storage_screen.upgrade_range", card.getRange()));
+            rangeLabel.setText(Component.translatable("awesome_storage.magic_storage_screen.upgrade_range", card.getRange()));
             rangeLabel.setVisible(true);
         } else {
             rangeLabel.setVisible(false);
@@ -104,7 +104,7 @@ public class UpgradePage extends QWidget {
                     .findConnectedCores(be.getBlockPos(), Minecraft.getInstance().level.dimension(),
                             be.getFrequency(), be.getWirelessRange());
             if (cores.isEmpty()) {
-                QLabel none = new QLabel(Component.translatable("magic_storage_screen.upgrade_no_cores"));
+                QLabel none = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.upgrade_no_cores"));
                 none.setTextColor(QColor.GRAY);
                 cl.addWidget(none);
             } else {
@@ -120,7 +120,7 @@ public class UpgradePage extends QWidget {
                 }
             }
         } else {
-            QLabel none = new QLabel(Component.translatable("magic_storage_screen.upgrade_no_cores"));
+            QLabel none = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.upgrade_no_cores"));
             none.setTextColor(QColor.GRAY);
             cl.addWidget(none);
         }

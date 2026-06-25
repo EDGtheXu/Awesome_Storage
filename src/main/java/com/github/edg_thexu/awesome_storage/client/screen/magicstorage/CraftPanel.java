@@ -6,14 +6,14 @@ import com.github.edg_thexu.awesome_storage.api.adapter.CommonRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.client.widget.CapacityBar;
 import com.github.edg_thexu.awesome_storage.config.CraftConfig;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
-import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicCraftPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.QueueActionPacket;
+import com.github.edg_thexu.awesome_storage.utils.RecipeFavoriteSystem;
 import com.github.edg_thexu.awesome_storage.utils.Util;
-import com.github.edg_thexu.qtcraft_api.core.QSizePolicy;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
+import com.github.edg_thexu.qtcraft_api.core.geometry.QPoint;
 import com.github.edg_thexu.qtcraft_api.core.geometry.QSize;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QHBoxLayout;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QLayout;
@@ -21,8 +21,11 @@ import com.github.edg_thexu.qtcraft_api.core.layouts.QVBoxLayout;
 import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
 import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.signal_slot.slots.SlotKeyConsumer;
+import com.github.edg_thexu.qtcraft_api.core.signal_slot.slots.SlotKeyRunner;
+import com.github.edg_thexu.qtcraft_api.core.widget.QAction;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.button.QPushButton;
+import com.github.edg_thexu.qtcraft_api.core.widget.container.QMenu;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QSmoothScrollArea;
 import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QLineEdit;
@@ -52,18 +55,26 @@ class CraftPanel extends QWidget {
     private final MagicStorageScreen parent;
     private final QLineEdit searchField;
     private final FilterBar filterBar;
+    private final QWidget filterBarWidget = new QWidget();;
     private final StationsRowWidget stationsRow;
     ItemGridWidget craftableGrid;
     private final CapacityBar capacityBar;
     final CraftInfoPanel infoPanel;
     private final QSmoothScrollArea craftableScrollArea;
     private boolean showCraftableOnly = true;
+    private boolean showFavoritesOnly = false;
     private final List<Integer> craftDisplayIndex = new ArrayList<>();
     private final Set<RecipeHolder<?>> craftableSet = new HashSet<>();
     private final QLabel qtyLabelCtrl;
     private final QPushButton craftBtnCtrl;
     private final com.github.edg_thexu.qtcraft_api.core.widget.info.QItemWidget takeItemCtrl;
     private final QLabel takeLabelRef;
+    private final QPushButton showMenuBtn;
+    private final FavoriteButton favBtn;
+
+    private static boolean ifShowFilter = true;
+    private static boolean ifShowStations = true;
+    private static boolean ifShowLeftMenu = true;
 
 
     List<ItemStack> results = new ArrayList<>();
@@ -75,6 +86,8 @@ class CraftPanel extends QWidget {
 
     CraftPanel(MagicStorageScreen parent) {
         this.parent = parent;
+        stationsRow = new StationsRowWidget(parent);
+
         QHBoxLayout mainLayout = new QHBoxLayout(this);
         mainLayout.setSpacing(3);
         mainLayout.setContentsMargins(3, 3, 3, 3);
@@ -85,36 +98,132 @@ class CraftPanel extends QWidget {
 
         QHBoxLayout funcRow = new QHBoxLayout();
         funcRow.setSpacing(2);
-        QPushButton showCraftBtn = new QPushButton(Component.translatable("magic_storage_screen.craftable"));
-        showCraftBtn.setFixedHeight(16);
-        showCraftBtn.setOnClick(() -> {
-            showCraftableOnly = true;
-            refresh();
+        showMenuBtn = new QPushButton(Component.translatable("awesome_storage.magic_storage_screen.craftable"));
+        showMenuBtn.setFixedHeight(16);
+        QMenu menu = new QMenu() {
+            @Override
+            protected void paintEvent(QPaintEvent event) {
+                event.painter().push();
+                event.painter().translate(0, 0, 300);
+                super.paintEvent(event);
+                event.painter().pop();
+            }
+        };
+        menu.setVisible(false);
+        {
+            QAction favAct = new QAction(Component.translatable("awesome_storage.magic_storage_screen.favorites_only").getString());
+            favAct.setCheckable(true);
+            favAct.connect(QAction.TRIGGERED, this, new SlotKeyRunner<>("favAct", (self) -> {
+                showFavoritesOnly = favAct.isChecked();
+                showMenuBtn.setText(Component.translatable(showFavoritesOnly ? "awesome_storage.magic_storage_screen.favorites_only" : (showCraftableOnly ? "awesome_storage.magic_storage_screen.craftable" : "awesome_storage.magic_storage_screen.all")));
+                refresh();
+            }));
+            menu.addAction(favAct);
+
+            menu.addSeparator();
+
+            QMenu filterMenu = new QMenu(Component.translatable("awesome_storage.magic_storage_screen.craftable").getString() + "...") {
+                @Override
+                protected void paintEvent(QPaintEvent event) {
+                    event.painter().push();
+                    event.painter().translate(0, 0, 300);
+                    super.paintEvent(event);
+                    event.painter().pop();
+                }
+            };
+            QAction craftAct = new QAction(Component.translatable("awesome_storage.magic_storage_screen.craftable").getString());
+            QAction allAct = new QAction(Component.translatable("awesome_storage.magic_storage_screen.all").getString());
+            craftAct.setCheckable(true);
+            craftAct.setChecked(true);
+            craftAct.connect(QAction.TRIGGERED, this, new SlotKeyRunner<>("craftAct", (self) -> {
+                showCraftableOnly = true;
+                craftAct.setChecked(true);
+                allAct.setChecked(false);
+                showMenuBtn.setText(Component.translatable("awesome_storage.magic_storage_screen.craftable"));
+                menu.dismiss();
+                refresh();
+            }));
+            filterMenu.addAction(craftAct);
+            allAct.setCheckable(true);
+            allAct.connect(QAction.TRIGGERED, this, new SlotKeyRunner<>("allAct", (self) -> {
+                showCraftableOnly = false;
+                craftAct.setChecked(false);
+                allAct.setChecked(true);
+                showMenuBtn.setText(Component.translatable("awesome_storage.magic_storage_screen.all"));
+                menu.dismiss();
+                refresh();
+            }));
+            filterMenu.addAction(allAct);
+            menu.addMenu(filterMenu);
+
+            QMenu displayMenu = new QMenu(Component.translatable("awesome_storage.magic_storage_screen.display").getString() + "...") {
+                @Override
+                protected void paintEvent(QPaintEvent event) {
+                    event.painter().push();
+                    event.painter().translate(0, 0, 300);
+                    super.paintEvent(event);
+                    event.painter().pop();
+                }
+            };
+            QAction hideFilter = new QAction(Component.translatable("awesome_storage.magic_storage_screen.filter").getString());
+            hideFilter.setCheckable(true);
+            hideFilter.setChecked(ifShowFilter);
+            hideFilter.connect(QAction.TRIGGERED, this, new SlotKeyRunner<>("hideFilter", (self) -> {
+                ifShowFilter = hideFilter.isChecked();
+                this.filterBarWidget.setVisible(ifShowFilter);
+                menu.dismiss();
+            }));
+            displayMenu.addAction(hideFilter);
+            QAction hideStations = new QAction(Component.translatable("awesome_storage.magic_storage_screen.stations").getString());
+            hideStations.setCheckable(true);
+            hideStations.setChecked(ifShowStations);
+            hideStations.connect(QAction.TRIGGERED, this, new SlotKeyRunner<>("hideStations", (self) -> {
+                ifShowStations = hideStations.isChecked();
+                this.stationsRow.setVisible(ifShowStations);
+                menu.dismiss();
+            }));
+            displayMenu.addAction(hideStations);
+            QAction hideLeftMenu = new QAction(Component.translatable("awesome_storage.magic_storage_screen.leftmenu").getString());
+            hideLeftMenu.setCheckable(true);
+            hideLeftMenu.setChecked(ifShowLeftMenu);
+            hideLeftMenu.connect(QAction.TRIGGERED, this, new SlotKeyRunner<>("hideStations", (self) -> {
+                ifShowLeftMenu = hideLeftMenu.isChecked();
+                parent.craftWin.leftMenu.setVisible(ifShowLeftMenu);
+                menu.dismiss();
+            }));
+            displayMenu.addAction(hideLeftMenu);
+            menu.addMenu(displayMenu);
+
+            this.filterBarWidget.setVisible(ifShowFilter);
+            this.stationsRow.setVisible(ifShowStations);
+            parent.craftWin.leftMenu.setVisible(ifShowLeftMenu);
+
+        }
+        showMenuBtn.setOnClick(() -> {
+            if(menu.isVisible()) {
+                menu.dismiss();
+            } else {
+                menu.popup(showMenuBtn.mapToGlobal(QPoint.ZERO).x(), showMenuBtn.mapToGlobal(QPoint.ZERO).y() + showMenuBtn.height(), this);
+            }
         });
-        funcRow.addWidget(showCraftBtn);
-        QPushButton showAllBtn = new QPushButton(Component.translatable("magic_storage_screen.all"));
-        showAllBtn.setFixedHeight(16);
-        showAllBtn.setOnClick(() -> {
-            showCraftableOnly = false;
-            refresh();
-        });
-        funcRow.addWidget(showAllBtn);
+        funcRow.addWidget(showMenuBtn);
         searchField = new QLineEdit();
-        searchField.setPlaceholderText(Component.translatable("magic_storage_screen.search").getString());
+        searchField.setPlaceholderText(Component.translatable("awesome_storage.magic_storage_screen.search").getString());
         searchField.setFixedHeight(16);
         searchField.connect(QLineEdit.TEXT_CHANGED, this, new SlotKeyConsumer<>("cs", (self, v) -> refresh()));
         funcRow.addWidget(searchField, 1);
         leftLayout.addLayout(funcRow);
 
         // Filter row: sort / category / stack / mod
-        QHBoxLayout filterRow = new QHBoxLayout();
+
+        QHBoxLayout filterRow = new QHBoxLayout(filterBarWidget);
         filterRow.setSpacing(2);
         filterBar = new FilterBar(filterRow, this, "c", () -> {
             if (craftableGrid != null) refresh();
         });
-        leftLayout.addLayout(filterRow);
+        leftLayout.addWidget(filterBarWidget);
 
-        stationsRow = new StationsRowWidget(parent);
+
         stationsRow.setFixedHeight(16);
         leftLayout.addWidget(stationsRow);
 
@@ -141,7 +250,7 @@ class CraftPanel extends QWidget {
         // Control buttons below info panel
         qtyLabelCtrl = new QLabel(Component.literal("x1   "));
         qtyLabelCtrl.setTextColor(new QColor(0xFFFFAA00));
-        craftBtnCtrl = new QPushButton(Component.translatable("magic_storage_screen.craft"));
+        craftBtnCtrl = new QPushButton(Component.translatable("awesome_storage.magic_storage_screen.craft"));
         craftBtnCtrl.setFixedHeight(14);
         craftBtnCtrl.setOnClick(() -> {
             if (!infoPanel.hasRecipe || infoPanel.parent.selectedRecipe == null || infoPanel.parent.selectedAdapter == null)
@@ -187,7 +296,7 @@ class CraftPanel extends QWidget {
 
         QPushButton p1 = new QPushButton(Component.literal("+1")), p10 = new QPushButton(Component.literal("+10")), p100 = new QPushButton(Component.literal("+100"));
         QPushButton m1 = new QPushButton(Component.literal("-1")), m10 = new QPushButton(Component.literal("-10")), m100 = new QPushButton(Component.literal("-100"));
-        QPushButton maxB = new QPushButton(Component.translatable("magic_storage_screen.max")), rstB = new QPushButton(Component.translatable("magic_storage_screen.reset"));
+        QPushButton maxB = new QPushButton(Component.translatable("awesome_storage.magic_storage_screen.max")), rstB = new QPushButton(Component.translatable("awesome_storage.magic_storage_screen.reset"));
         for (QPushButton b : new QPushButton[]{p1, p10, p100, m1, m10, m100, maxB, rstB}) {
             b.setFixedHeight(12);
         }
@@ -260,12 +369,23 @@ class CraftPanel extends QWidget {
         optRow.setSpacing(2);
         optRow.addWidget(maxB);
         optRow.addWidget(rstB);
+        favBtn = new FavoriteButton();
+        favBtn.setFixedSize(16, 12);
+        favBtn.setOnClick(() -> {
+            if (selectedRecipe != null) {
+                RecipeFavoriteSystem.getInstance().toggleFavorite(selectedRecipe.id());
+                favBtn.updateState(RecipeFavoriteSystem.getInstance().isFavorited(selectedRecipe.id()));
+                if (showFavoritesOnly) refresh();
+            }
+        });
+        optRow.addWidget(favBtn);
         rvl.addLayout(optRow);
 
 
         takeLabelRef = takeLabel;
         mainLayout.addWidget(rightSide);
 
+        RecipeFavoriteSystem.getInstance().loadFavorites();
         try {
             reloadRecipes();
         } catch (Exception e) {
@@ -379,6 +499,17 @@ class CraftPanel extends QWidget {
         if (!showCraftableOnly) cachedResults.addAll(partial);
 
         List<ItemStack> resultItems = cachedResults.stream().map(p -> p.getA()).collect(Collectors.toList());
+        if (showFavoritesOnly) {
+            resultItems = resultItems.stream().filter(rs -> {
+                for (var cp : cachedResults) {
+                    if (ItemStack.isSameItemSameComponents(cp.getA(), rs)
+                            && RecipeFavoriteSystem.getInstance().isFavorited(cp.getB().id())) {
+                        return true;
+                    }
+                }
+                return false;
+            }).collect(Collectors.toList());
+        }
         List<ItemStack> filtered = filterBar.apply(resultItems, searchField.text().toLowerCase());
         List<ItemStack> display = new ArrayList<>();
         for (ItemStack fs : filtered) {
@@ -451,6 +582,9 @@ class CraftPanel extends QWidget {
             if (selectedRecipe != null && selectedAdapter != null) {
                 infoPanel.showRecipe(selectedRecipe, selectedAdapter, pair.getA(), haveIngredients);
 
+                if (favBtn != null) {
+                    favBtn.updateState(RecipeFavoriteSystem.getInstance().isFavorited(selectedRecipe.id()));
+                }
                 if (qtyLabelCtrl != null) qtyLabelCtrl.setText(Component.literal("x" + infoPanel.craftQuantity));
                 int totalH = countByItem(stack.getItem());
                 if (takeItemCtrl != null) {
@@ -481,6 +615,45 @@ class CraftPanel extends QWidget {
         for (Ingredient ing : ingredients) {
             if (ing.isEmpty()) continue;
             reserved.merge(ing, 1, Integer::sum);
+        }
+    }
+
+    // ========================================================================
+    // Favorite Button — star icon, yellow when favorited
+    // ========================================================================
+    private static class FavoriteButton extends QWidget {
+        private boolean isFav;
+        private Runnable onClick;
+
+        FavoriteButton() {
+            setFocusPolicy(FocusPolicy.NoFocus);
+        }
+
+        void setOnClick(Runnable r) { this.onClick = r; }
+
+        void updateState(boolean fav) {
+            this.isFav = fav;
+            update();
+        }
+
+        @Override
+        protected void mousePressEvent(QMouseEvent event) {
+            event.accept();
+            if (onClick != null) onClick.run();
+        }
+
+        @Override
+        protected void paintEvent(QPaintEvent event) {
+            QPainter p = event.painter();
+            if (p == null) return;
+            int w = width(), h = height();
+            if (isFav) {
+                p.fillRect(0, 0, w, h, new QColor(0xFFFFDD00));
+            } else if (isHovered()) {
+                p.fillRect(0, 0, w, h, new QColor(0xFF555555));
+            }
+            p.setColor(isFav ? new QColor(0xFF333300) : new QColor(0xFF888888));
+            p.drawText("★", (w - p.textWidth("★")) / 2, (h - p.textHeight()) / 2);
         }
     }
 
@@ -638,7 +811,7 @@ class CraftPanel extends QWidget {
 
             if (!hasRecipe) {
                 p.setColor(new QColor(0xFF888888));
-                p.drawText(Component.translatable("magic_storage_screen.select_item").getString(), 8, 20);
+                p.drawText(Component.translatable("awesome_storage.magic_storage_screen.select_item").getString(), 8, 20);
                 return;
             }
 
@@ -650,7 +823,7 @@ class CraftPanel extends QWidget {
             int y = 6, ss = 18, cw = width();
 
             p.setColor(new QColor(0xFFFFAA00));
-            p.drawText(Component.translatable("magic_storage_screen.output").getString(), 6, y);
+            p.drawText(Component.translatable("awesome_storage.magic_storage_screen.output").append(":").getString(), 6, y);
             y += 11;
             MagicStorageScreen.renderSlot(p, 6, y, 20, outputItem, false);
             hoverSlots.add(outputItem);
@@ -666,7 +839,7 @@ class CraftPanel extends QWidget {
             }
 
             p.setColor(QColor.WHITE);
-            p.drawText(Component.translatable("magic_storage_screen.ingredients").getString(), 6, y);
+            p.drawText(Component.translatable("awesome_storage.magic_storage_screen.ingredients").append(":").getString(), 6, y);
             y += 11;
             int ix = 6;
             for (ItemStack ing : ingredients) {
@@ -701,7 +874,7 @@ class CraftPanel extends QWidget {
             }
             if (!ingredients.isEmpty()) y += (ix > 6 ? ss + 6 : 4);
 
-            p.drawText(Component.translatable("magic_storage_screen.stations").getString(), 6, y);
+            p.drawText(Component.translatable("awesome_storage.magic_storage_screen.stations").append(":").getString(), 6, y);
             y += 11;
             ix = 6;
             for (ItemStack st : requiredStations) {
@@ -719,7 +892,7 @@ class CraftPanel extends QWidget {
             if (!requiredStations.isEmpty()) y += ss + 6;
 
             // In Storage: show each component-group that matches any ingredient — red overlay if excluded
-            p.drawText(Component.translatable("magic_storage_screen.in_storage").getString(), 6, y);
+            p.drawText(Component.translatable("awesome_storage.magic_storage_screen.in_storage").append(":").getString(), 6, y);
             y += 11;
             ix = 6;
             storageItems.clear();

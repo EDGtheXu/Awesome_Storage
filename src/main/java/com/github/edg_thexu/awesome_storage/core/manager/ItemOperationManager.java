@@ -348,23 +348,37 @@ public class ItemOperationManager {
             int remaining = ing.getItems().length == 0 ? 1 : ing.getItems()[0].getCount();
 
             for (Container c : containers) {
-                for (int i = 0; i < c.getContainerSize(); i++) {
-                    if (remaining <= 0) break;
-                    ItemStack s = c.getItem(i);
-                    if (s.isEmpty() || !ing.test(s)) continue;
-                    if (isExcluded(s, excludedItems)) continue;
+                if (c instanceof StorageContainerScanner.ItemHandlerContainer ihc) {
+                    var h = ihc.handler;
+                    for (int i = 0; i < h.getSlots() && remaining > 0; i++) {
+                        ItemStack s = h.getStackInSlot(i);
+                        if (s.isEmpty() || !ing.test(s)) continue;
+                        if (isExcluded(s, excludedItems)) continue;
+                        int take = Math.min(remaining, s.getCount());
+                        ItemStack extracted = h.extractItem(i, take, false);
+                        if (!extracted.isEmpty()) {
+                            consumed.add(extracted);
+                            remaining -= extracted.getCount();
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < c.getContainerSize() && remaining > 0; i++) {
+                        ItemStack s = c.getItem(i);
+                        if (s.isEmpty() || !ing.test(s)) continue;
+                        if (isExcluded(s, excludedItems)) continue;
 
-                    int take = Math.min(remaining, s.getCount());
-                    ItemStack part = s.copy();
-                    part.setCount(take);
-                    consumed.add(part);
+                        int take = Math.min(remaining, s.getCount());
+                        ItemStack part = s.copy();
+                        part.setCount(take);
+                        consumed.add(part);
 
-                    s.shrink(take);
-                    if (s.isEmpty()) c.setItem(i, ItemStack.EMPTY);
-                    else c.setItem(i, s);
-                    c.setChanged();
+                        s.shrink(take);
+                        if (s.isEmpty()) c.setItem(i, ItemStack.EMPTY);
+                        else c.setItem(i, s);
+                        c.setChanged();
 
-                    remaining -= take;
+                        remaining -= take;
+                    }
                 }
             }
         }

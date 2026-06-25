@@ -25,7 +25,7 @@ public class ControllerWidget  {
         QHBoxLayout nameLayout = new QHBoxLayout();
 
         QLineEdit rename = new QLineEdit();
-        rename.setPlaceholderText(Component.translatable("magic_storage_screen.rename").getString());
+        rename.setPlaceholderText(Component.translatable("awesome_storage.magic_storage_screen.rename").getString());
         rename.setText(Util.getStorageEntity(Minecraft.getInstance().player).displayName.getString());
         nameLayout.addWidget(rename, 1);
 

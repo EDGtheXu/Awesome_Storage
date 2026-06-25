@@ -27,7 +27,7 @@ public class CraftUpgradePage extends QWidget {
         vl.setSpacing(4);
         vl.setContentsMargins(5, 5, 5, 5);
 
-        QLabel title = new QLabel(Component.translatable("magic_storage_screen.queue_upgrade_title"));
+        QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.queue_upgrade_title"));
         title.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(title);
 
@@ -51,7 +51,7 @@ public class CraftUpgradePage extends QWidget {
         MagicStorageBlockEntity be = Util.getStorageEntity(Minecraft.getInstance().player);
         if (be == null) return;
         for (var ws : queueSlots) ws.update();
-        totalSlotsLabel.setText(Component.translatable("magic_storage_screen.queue_upgrade_total", be.getTotalQueueSlots()));
+        totalSlotsLabel.setText(Component.translatable("awesome_storage.magic_storage_screen.queue_upgrade_total", be.getTotalQueueSlots()));
     }
 
     private static class QueueSlotWidget extends QWidget {

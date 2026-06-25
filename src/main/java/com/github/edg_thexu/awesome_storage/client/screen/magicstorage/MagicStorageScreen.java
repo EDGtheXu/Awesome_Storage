@@ -41,8 +41,8 @@ import static com.github.edg_thexu.awesome_storage.utils.Util.getStorageEntity;
 
 public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu> {
 
-    private FloatingWindow storageWin;
-    private FloatingWindow craftWin;
+    FloatingWindow storageWin;
+    FloatingWindow craftWin;
     private boolean storageOnly;
     private StoragePanel storagePanel;
     private CraftPanel craftPanel;
@@ -150,8 +150,8 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
 
         if (!storageOnly) {
             // Craft window
+            craftWin = new FloatingWindow(Component.translatable("awesome_storage.magic_storage_screen.craft").getString());
             craftPanel = new CraftPanel(this);
-            craftWin = new FloatingWindow(Component.translatable("magic_storage_screen.craft").getString());
             craftWin.setParent(win);
 
             craftWin.addPage(craftWin.windowTitle(), craftPanel);
@@ -159,13 +159,13 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
 
             // Queue page
             queuePage = new QueuePage(this);
-            craftWin.addPage(Component.translatable("magic_storage_screen.queue_title").getString(), queuePage);
+            craftWin.addPage(Component.translatable("awesome_storage.magic_storage_screen.queue_title").getString(), queuePage);
 
             craftUpgradePage = new CraftUpgradePage();
-            craftWin.addPage(Component.translatable("magic_storage_screen.queue_upgrade_title").getString(), craftUpgradePage);
+            craftWin.addPage(Component.translatable("awesome_storage.magic_storage_screen.queue_upgrade_title").getString(), craftUpgradePage);
 
             craftInfoPage = new CraftInfoPage();
-            craftWin.addPage(Component.translatable("magic_storage_screen.craft_info_title").getString(), craftInfoPage);
+            craftWin.addPage(Component.translatable("awesome_storage.magic_storage_screen.craft_info_title").getString(), craftInfoPage);
 
             craftWin.connectPages();
 
@@ -178,20 +178,20 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
         }else{
             // Storage window
             storagePanel = new StoragePanel(this);
-            storageWin = new FloatingWindow(Component.translatable("magic_storage_screen.storage").getString());
+            storageWin = new FloatingWindow(Component.translatable("awesome_storage.magic_storage_screen.storage").getString());
             storageWin.setParent(win);
 
             storageWin.addPage(storageWin.windowTitle(), storagePanel);
             var event = ModLoader.postEventWithReturn(new RegisterScreenPageEvent.Storage(craftWin));
-            storageWin.addPage(Component.translatable("magic_storage_screen.controller").getString(), ControllerWidget.create(event));
+            storageWin.addPage(Component.translatable("awesome_storage.magic_storage_screen.controller").getString(), ControllerWidget.create(event));
             event.buildPages();
             statsPage = new StorageStatsPage();
-            storageWin.addPage(Component.translatable("magic_storage_screen.stats_title").getString(), statsPage);
+            storageWin.addPage(Component.translatable("awesome_storage.magic_storage_screen.stats_title").getString(), statsPage);
             upgradePage = new UpgradePage();
             QSmoothScrollArea area = new QSmoothScrollArea();
             area.setWidget(upgradePage);
             area.setWidgetResizable(true);
-            storageWin.addPage(Component.translatable("magic_storage_screen.upgrade_title").getString(), area);
+            storageWin.addPage(Component.translatable("awesome_storage.magic_storage_screen.upgrade_title").getString(), area);
             storageWin.connectPages();
 
             storageWin.setWidget(storagePanel);

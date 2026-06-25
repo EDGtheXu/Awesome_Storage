@@ -28,7 +28,7 @@ public class CraftInfoPage extends QWidget {
         vl.setSpacing(4);
         vl.setContentsMargins(5, 5, 5, 5);
 
-        QLabel title = new QLabel(Component.translatable("magic_storage_screen.craft_info_title"));
+        QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.craft_info_title"));
         title.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(title);
 
@@ -81,7 +81,7 @@ public class CraftInfoPage extends QWidget {
         }
 
         if (CraftConfig.ENABLED_RECIPES.isEmpty()) {
-            QLabel empty = new QLabel(Component.translatable("magic_storage_screen.craft_info_empty"));
+            QLabel empty = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.craft_info_empty"));
             empty.setTextColor(QColor.GRAY);
             layout.addWidget(empty);
         }
@@ -95,7 +95,7 @@ public class CraftInfoPage extends QWidget {
         }
 
         if (!unsupported.isEmpty()) {
-            QLabel sep = new QLabel(Component.translatable("magic_storage_screen.craft_info_unsupported"));
+            QLabel sep = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.craft_info_unsupported"));
             sep.setTextColor(new QColor(0xFFAA4444));
             layout.addWidget(sep);
 

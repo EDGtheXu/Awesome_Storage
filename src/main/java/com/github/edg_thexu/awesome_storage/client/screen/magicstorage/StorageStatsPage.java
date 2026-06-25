@@ -28,7 +28,7 @@ public class StorageStatsPage extends QWidget {
         vl.setSpacing(4);
         vl.setContentsMargins(5, 5, 5, 5);
 
-        QLabel title = new QLabel(Component.translatable("magic_storage_screen.stats_title"));
+        QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.stats_title"));
         title.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(title);
 
@@ -54,10 +54,10 @@ public class StorageStatsPage extends QWidget {
         for (ItemStack s : items) totalCount += s.getCount();
 
         // === Overview Section ===
-        section(layout, "magic_storage_screen.stats_overview");
+        section(layout, "awesome_storage.magic_storage_screen.stats_overview");
 
-        addStatRow(layout, "magic_storage_screen.stats_unique_types", String.valueOf(uniqueTypes));
-        addStatRow(layout, "magic_storage_screen.stats_total_count", String.valueOf(totalCount));
+        addStatRow(layout, "awesome_storage.magic_storage_screen.stats_unique_types", String.valueOf(uniqueTypes));
+        addStatRow(layout, "awesome_storage.magic_storage_screen.stats_total_count", String.valueOf(totalCount));
 
         // Capacity bar
         QWidget capBar = new CapacityStatBar(usedSlots, totalSlots);
@@ -65,7 +65,7 @@ public class StorageStatsPage extends QWidget {
         layout.addWidget(capBar);
 
         // === Top Items Section ===
-        section(layout, "magic_storage_screen.stats_top_items");
+        section(layout, "awesome_storage.magic_storage_screen.stats_top_items");
 
         List<ItemStack> sorted = items.stream()
                 .sorted((a, b) -> Integer.compare(b.getCount(), a.getCount()))
@@ -101,13 +101,13 @@ public class StorageStatsPage extends QWidget {
         }
 
         if (sorted.isEmpty()) {
-            QLabel empty = new QLabel(Component.translatable("magic_storage_screen.stats_empty"));
+            QLabel empty = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.stats_empty"));
             empty.setTextColor(QColor.GRAY);
             layout.addWidget(empty);
         }
 
         // === Mod Distribution Section ===
-        section(layout, "magic_storage_screen.stats_mods");
+        section(layout, "awesome_storage.magic_storage_screen.stats_mods");
 
         Map<String, Integer> modCounts = new HashMap<>();
         for (ItemStack s : items) {

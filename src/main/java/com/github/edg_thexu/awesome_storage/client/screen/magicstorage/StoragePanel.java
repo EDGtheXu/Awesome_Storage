@@ -49,7 +49,7 @@ class StoragePanel extends QWidget {
         depositBtn.setFixedSize(32, 16);
         searchRow.addWidget(depositBtn);
         searchField = new QLineEdit();
-        searchField.setPlaceholderText(Component.translatable("magic_storage_screen.search").getString());
+        searchField.setPlaceholderText(Component.translatable("awesome_storage.magic_storage_screen.search").getString());
         searchField.setFixedHeight(16);
         searchField.connect(QLineEdit.TEXT_CHANGED, this, new SlotKeyConsumer<>("ss", (self, v) -> refresh()));
         searchRow.addWidget(searchField, 1);
@@ -125,7 +125,7 @@ class StoragePanel extends QWidget {
             p.setColor(new QColor(0xFF666666));
             p.drawRect(0, 0, w, h);
             p.setColor(new QColor(0xFFFFFFFF));
-            p.drawCenteredText(Component.translatable("magic_storage_screen.save").getString(), w / 2, (h - p.textHeight()) / 2 );
+            p.drawCenteredText(Component.translatable("awesome_storage.magic_storage_screen.store_all").getString(), w / 2, (h - p.textHeight()) / 2 );
         }
 
         @Override
@@ -157,7 +157,7 @@ class StoragePanel extends QWidget {
 
         @Override
         public WidgetTooltip toolTip() {
-            return WidgetTooltip.create(Component.translatable("magic_storage.deposit_btn.tooltip"));
+            return WidgetTooltip.create(Component.translatable("awesome_storage.deposit_btn.tooltip"));
         }
     }
 }

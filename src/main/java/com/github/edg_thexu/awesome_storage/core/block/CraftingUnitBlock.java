@@ -69,7 +69,7 @@ public class CraftingUnitBlock extends BaseEntityBlock {
 
                     }
                     else
-                        player.sendSystemMessage(Component.translatable("magic_storage.message.no_component"+ ModDataComponent.CONTROLLER_RANGE.get()));
+                        player.sendSystemMessage(Component.translatable("awesome_storage.message.no_component"+ ModDataComponent.CONTROLLER_RANGE.get()));
                     return ItemInteractionResult.SUCCESS;
                 }
                 ((IPlayer) player).awesomeStorage$setContainer(magic);

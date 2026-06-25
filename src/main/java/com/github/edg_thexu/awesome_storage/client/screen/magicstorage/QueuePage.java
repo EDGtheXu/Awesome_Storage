@@ -41,7 +41,7 @@ public class QueuePage extends QWidget {
         vl.setSpacing(4);
         vl.setContentsMargins(5, 5, 5, 5);
 
-        QLabel title = new QLabel(Component.translatable("magic_storage_screen.queue_title"));
+        QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.queue_title"));
         title.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(title);
 
@@ -60,13 +60,13 @@ public class QueuePage extends QWidget {
         layout.setContentsMargins(5, 5, 5, 5);
 
         // Pending items grid
-        QLabel pendingTitle = new QLabel(Component.translatable("magic_storage_screen.queue_pending"));
+        QLabel pendingTitle = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.queue_pending"));
         pendingTitle.setTextColor(new QColor(0xFFFFAA00));
         layout.addWidget(pendingTitle);
 
         var pending = be.getQueueManager().getPendingQueue();
         if (pending.isEmpty()) {
-            QLabel empty = new QLabel(Component.translatable("magic_storage_screen.queue_empty"));
+            QLabel empty = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.queue_empty"));
             empty.setTextColor(QColor.GRAY);
             layout.addWidget(empty);
         } else {
@@ -88,7 +88,7 @@ public class QueuePage extends QWidget {
         }
 
         // Divider
-        QLabel statusLabel = new QLabel(Component.translatable("magic_storage_screen.queue_status",
+        QLabel statusLabel = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.queue_status",
                 be.getQueueManager().getSlots().size()));
         statusLabel.setTextColor(new QColor(0xFF8888FF));
         layout.addWidget(statusLabel);
@@ -102,17 +102,17 @@ public class QueuePage extends QWidget {
         // Controls
         QHBoxLayout ctrlRow = new QHBoxLayout();
         ctrlRow.setSpacing(4);
-        QPushButton pauseAllBtn = new QPushButton(Component.translatable("magic_storage_screen.queue_pause_all"));
+        QPushButton pauseAllBtn = new QPushButton(Component.translatable("awesome_storage.magic_storage_screen.queue_pause_all"));
         pauseAllBtn.setFixedHeight(14);
         pauseAllBtn.setOnClick(() -> PacketDistributor.sendToServer(QueueActionPacket.pauseAll()));
         ctrlRow.addWidget(pauseAllBtn);
 
-        QPushButton resumeAllBtn = new QPushButton(Component.translatable("magic_storage_screen.queue_resume_all"));
+        QPushButton resumeAllBtn = new QPushButton(Component.translatable("awesome_storage.magic_storage_screen.queue_resume_all"));
         resumeAllBtn.setFixedHeight(14);
         resumeAllBtn.setOnClick(() -> PacketDistributor.sendToServer(QueueActionPacket.resumeAll()));
         ctrlRow.addWidget(resumeAllBtn);
 
-        QPushButton clearPendingBtn = new QPushButton(Component.translatable("magic_storage_screen.queue_clear_all"));
+        QPushButton clearPendingBtn = new QPushButton(Component.translatable("awesome_storage.magic_storage_screen.queue_clear_all"));
         clearPendingBtn.setFixedHeight(14);
         clearPendingBtn.setOnClick(() -> PacketDistributor.sendToServer(QueueActionPacket.clearAll()));
         ctrlRow.addWidget(clearPendingBtn);
@@ -206,7 +206,7 @@ public class QueuePage extends QWidget {
 
             if (slot.isIdle()) {
                 p.setColor(QColor.GRAY);
-                p.drawText(Component.translatable("magic_storage_screen.queue_idle").getString(), 4, 40);
+                p.drawText(Component.translatable("awesome_storage.magic_storage_screen.queue_idle").getString(), 4, 40);
             } else {
                 QueuedRecipe current = slot.current();
                 if (current == null) return;

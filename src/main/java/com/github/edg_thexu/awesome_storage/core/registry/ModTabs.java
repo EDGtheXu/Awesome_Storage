@@ -18,7 +18,7 @@ public class ModTabs {
     public static final Supplier<CreativeModeTab> CARD = TABS.register("cards",
             () -> CreativeModeTab.builder()
                     .icon(Items.ENDER_CHEST::getDefaultInstance)
-                    .title(Component.translatable("creativetab.magic_storage.cards"))
+                    .title(Component.translatable("creativetab.awesome_storage.cards"))
                     .displayItems((parameters, output) -> {
                         ModBlocks.BLOCKS.getEntries().forEach(item -> output.accept(item.get()));
                         ModItems.ITEMS.getEntries().forEach(item -> output.accept(item.get()));

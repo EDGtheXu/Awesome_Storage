@@ -23,6 +23,6 @@ public class QueueUpgradeItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.translatable("magic_storage.tooltip.queue_upgrade", extraSlots));
+        tooltip.add(Component.translatable("awesome_storage.tooltip.queue_upgrade", extraSlots));
     }
 }

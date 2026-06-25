@@ -33,7 +33,7 @@ public class RemoteController extends Item {
         var data1 = stack.get(ModDataComponent.CONTROLLER_RANGE);
         // 必须有范围
         if(data1== null){
-            if(!level.isClientSide) player.sendSystemMessage(Component.translatable("magic_storage.message.no_component"+ ModDataComponent.CONTROLLER_RANGE.get()));
+            if(!level.isClientSide) player.sendSystemMessage(Component.translatable("awesome_storage.message.no_component"+ ModDataComponent.CONTROLLER_RANGE.get()));
             return super.use(level, player, usedHand);
         }
 
@@ -50,7 +50,7 @@ public class RemoteController extends Item {
             }else{
                 var l = player.getServer().getLevel(levelData.key());
                 if(l != level && !levelData.on()){
-                    player.sendSystemMessage(Component.translatable("magic_storage.message.no_level"));
+                    player.sendSystemMessage(Component.translatable("awesome_storage.message.no_level"));
                     return super.use(level, player, usedHand);
                 }
                 entity = l.getBlockEntity(data.pos());
@@ -59,7 +59,7 @@ public class RemoteController extends Item {
             BlockPos pos = data.pos();
             double distance = player.distanceToSqr((float)pos.getX(), (float)pos.getY(), (float)pos.getZ());
             if(Math.sqrt(distance) > data1.range() && data1.range() != -1){
-                player.sendSystemMessage(Component.translatable("magic_storage.message.too_far"));
+                player.sendSystemMessage(Component.translatable("awesome_storage.message.too_far"));
             }else {
                 if (entity instanceof MagicStorageBlockEntity entity1 ) {
                     ((IPlayer) player).awesomeStorage$setContainer(entity1);
@@ -87,23 +87,23 @@ public class RemoteController extends Item {
                 if(levelData == null) return;
                 ResourceKey<Level> real = context.level().dimension();
                 if(real != levelData.key() && !levelData.on()){
-                    tooltipComponents.add(Component.translatable("magic_storage.tooltip.error_level"));
+                    tooltipComponents.add(Component.translatable("awesome_storage.tooltip.error_level"));
                     return;
                 }
                 String posText = "X: " + data1.pos().getX() + " Y: " + data1.pos().getY() + " Z: " + data1.pos().getZ();
-                tooltipComponents.add(Component.translatable("magic_storage.tooltip.block_pos").append(posText));
+                tooltipComponents.add(Component.translatable("awesome_storage.tooltip.block_pos").append(posText));
                 BlockPos pos = data1.pos();
                 double distance = 0;
                 if (Minecraft.getInstance().player != null) {
                     distance = Minecraft.getInstance().player.distanceToSqr((float) pos.getX(), (float) pos.getY(), (float) pos.getZ());
-                    Component distanceText = Component.translatable("magic_storage.tooltip.distance").append(" " + (int) Math.sqrt(distance)).withColor(
+                    Component distanceText = Component.translatable("awesome_storage.tooltip.distance").append(" " + (int) Math.sqrt(distance)).withColor(
                             data.range() != -1 && Math.sqrt(distance)-1 > data.range() ? 0xff0000 : 0x00ff00
                     );
                     tooltipComponents.add(distanceText);
                 }
             }
             tooltipComponents.add(Component.literal(""));
-            tooltipComponents.add(Component.translatable("magic_storage.tooltip.controller_range").append(data.range() == -1 ? "inf" : String.valueOf(data.range())));
+            tooltipComponents.add(Component.translatable("awesome_storage.tooltip.controller_range").append(data.range() == -1 ? "inf" : String.valueOf(data.range())));
 
 
 
