@@ -1,6 +1,7 @@
 package com.github.edg_thexu.awesome_storage.client.screen.magicstorage;
 
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
+import com.github.edg_thexu.awesome_storage.utils.AutoStockSystem;
 import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
@@ -10,6 +11,8 @@ import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.util.WidgetTooltip;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -133,6 +136,23 @@ public class ItemGridWidget extends QWidget {
             if (idx >= 0 && idx < items.size() && !items.get(idx).isEmpty() && clickHandler != null && col < cols) {
                 clickHandler.accept(items.get(idx), idx);
                 selIndex = idx;
+                event.accept();
+            }
+        } else if (event.button() == QMouseEvent.Button.Right) {
+            updateCols();
+            int col = event.x() / slotSize, row = event.y() / slotSize;
+            int idx = row * cols + col;
+            if (idx >= 0 && idx < items.size() && !items.get(idx).isEmpty() && col < cols) {
+                ItemStack stack = items.get(idx);
+                if (Screen.hasShiftDown()) {
+                    AutoStockSystem.getInstance().removeTarget(stack);
+                } else {
+                    int target = AutoStockSystem.getInstance().hasTarget(stack)
+                            ? 0 : stack.getMaxStackSize();
+                    AutoStockSystem.getInstance().setTarget(stack, target);
+                }
+                markDirty();
+                update();
                 event.accept();
             }
         }

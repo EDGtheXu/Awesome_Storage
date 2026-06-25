@@ -2,7 +2,9 @@ package com.github.edg_thexu.awesome_storage.client.screen.magicstorage;
 
 import com.github.edg_thexu.awesome_storage.client.widget.CapacityBar;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
+import com.github.edg_thexu.awesome_storage.core.network.c2s.AutoStockPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
+import com.github.edg_thexu.awesome_storage.utils.AutoStockSystem;
 import com.github.edg_thexu.awesome_storage.utils.FavoriteSystem;
 import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
@@ -22,6 +24,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import java.util.List;
 
 import static com.github.edg_thexu.awesome_storage.utils.Util.getStorageEntity;
@@ -40,6 +45,7 @@ class StoragePanel extends QWidget {
 
     StoragePanel(MagicStorageScreen parent) {
         this.parent = parent;
+        AutoStockSystem.getInstance().load();
         QVBoxLayout vl = new QVBoxLayout(this);
         vl.setSpacing(1);
         vl.setContentsMargins(3, 3, 3, 3);
@@ -48,6 +54,9 @@ class StoragePanel extends QWidget {
         DepositButton depositBtn = new DepositButton();
         depositBtn.setFixedSize(32, 16);
         searchRow.addWidget(depositBtn);
+        StockButton stockBtn = new StockButton();
+        stockBtn.setFixedSize(24, 16);
+        searchRow.addWidget(stockBtn);
         searchField = new QLineEdit();
         searchField.setPlaceholderText(Component.translatable("awesome_storage.magic_storage_screen.search").getString());
         searchField.setFixedHeight(16);
@@ -158,6 +167,68 @@ class StoragePanel extends QWidget {
         @Override
         public WidgetTooltip toolTip() {
             return WidgetTooltip.create(Component.translatable("awesome_storage.deposit_btn.tooltip"));
+        }
+    }
+
+    private class StockButton extends QWidget {
+        private boolean pressed;
+
+        StockButton() {
+            setFocusPolicy(FocusPolicy.NoFocus);
+        }
+
+        @Override
+        protected void paintEvent(QPaintEvent event) {
+            QPainter p = event.painter();
+            if (p == null) return;
+            int w = width(), h = height();
+            if (pressed) {
+                p.fillRect(0, 0, w, h, new QColor(0xFF555555));
+            } else if (isHovered()) {
+                p.fillRect(0, 0, w, h, new QColor(0xFF4A4A4A));
+            } else {
+                p.fillRect(0, 0, w, h, new QColor(0xFF3C3C3C));
+            }
+            p.setColor(new QColor(0xFF666666));
+            p.drawRect(0, 0, w, h);
+            p.setColor(new QColor(0xFFFFAA00));
+            p.drawCenteredText(Component.literal("S"), w / 2, (h - p.textHeight()) / 2);
+        }
+
+        @Override
+        protected void mousePressEvent(QMouseEvent event) {
+            event.accept();
+            pressed = true;
+            update();
+        }
+
+        @Override
+        protected void mouseReleaseEvent(QMouseEvent event) {
+            event.accept();
+            pressed = false;
+            update();
+            if (event.button() == QMouseEvent.Button.Left) {
+                var targets = AutoStockSystem.getInstance().getAllTargets();
+                if (targets.isEmpty()) return;
+                List<ItemStack> list = new ArrayList<>();
+                for (var e : targets.entrySet()) {
+                    ItemStack stack = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                            net.minecraft.resources.ResourceLocation.parse(e.getKey())));
+                    if (!stack.isEmpty()) {
+                        stack.setCount(e.getValue());
+                        list.add(stack);
+                    }
+                }
+                if (!list.isEmpty()) {
+                    PacketDistributor.sendToServer(new AutoStockPacket(list));
+                    parent.scheduleRefresh();
+                }
+            }
+        }
+
+        @Override
+        public WidgetTooltip toolTip() {
+            return WidgetTooltip.create(Component.translatable("awesome_storage.auto_stock_btn.tooltip"));
         }
     }
 }

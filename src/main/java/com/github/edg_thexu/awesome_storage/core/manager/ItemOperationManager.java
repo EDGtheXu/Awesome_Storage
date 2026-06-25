@@ -190,47 +190,54 @@ public class ItemOperationManager {
     }
 
     public ItemStack takeItem(ItemStack stack) {
-        Level level = blockEntity.getLevel();
-        List<ItemStack> all = getStoredItems();
-        for (int i = 0; i < all.size(); i++) {
-            if (ItemStack.isSameItemSameComponents(all.get(i), stack)) {
-                return takeItem(i, all);
-            }
-        }
-        return ItemStack.EMPTY;
-    }
-    public ItemStack takeItem(int index) {
-        return takeItem(index, getStoredItems());
+        return takeItem(stack, stack.getMaxStackSize());
     }
 
-    private ItemStack takeItem(int index, List<ItemStack> all) {
+    public ItemStack takeItem(ItemStack stack, int amount) {
         Level level = blockEntity.getLevel();
-//        List<ItemStack> all = getStoredItems();
-        if (index < 0 || index >= all.size()) return ItemStack.EMPTY;
-        ItemStack target = all.get(index);
-        int needed = Math.min(target.getCount(), target.getMaxStackSize());
-        ItemStack result = target.copy();
+        ItemStack result = stack.copy();
         result.setCount(0);
-
-        outer:
+        int remaining = amount;
         for (Container c : getAllContainers()) {
-            for (int i = 0; i < c.getContainerSize(); i++) {
-                ItemStack s = c.getItem(i);
-                if (!s.isEmpty() && ItemStack.isSameItemSameComponents(s, target)) {
-                    int take = Math.min(needed - result.getCount(), s.getCount());
-                    if (take > 0) {
-                        result.grow(take);
-                        s.shrink(take);
-                        if (s.isEmpty()) c.setItem(i, ItemStack.EMPTY);
-                        else c.setItem(i, s);
-                        c.setChanged();
-                        if (result.getCount() >= needed) break outer;
+            if (remaining <= 0) break;
+            if (c instanceof StorageContainerScanner.ItemHandlerContainer ihc) {
+                var h = ihc.handler;
+                for (int i = 0; i < h.getSlots() && remaining > 0; i++) {
+                    ItemStack s = h.getStackInSlot(i);
+                    if (s.isEmpty() || !ItemStack.isSameItemSameComponents(s, stack)) continue;
+                    int take = Math.min(remaining, s.getCount());
+                    ItemStack extracted = h.extractItem(i, take, false);
+                    if (!extracted.isEmpty()) {
+                        result.grow(extracted.getCount());
+                        remaining -= extracted.getCount();
                     }
+                }
+            } else {
+                for (int i = 0; i < c.getContainerSize() && remaining > 0; i++) {
+                    ItemStack s = c.getItem(i);
+                    if (s.isEmpty() || !ItemStack.isSameItemSameComponents(s, stack)) continue;
+                    int take = Math.min(remaining, s.getCount());
+                    result.grow(take);
+                    s.shrink(take);
+                    if (s.isEmpty()) c.setItem(i, ItemStack.EMPTY);
+                    else c.setItem(i, s);
+                    c.setChanged();
+                    remaining -= take;
                 }
             }
         }
         updateClient();
         return result.isEmpty() ? ItemStack.EMPTY : result;
+    }
+
+    public ItemStack takeItem(int index) {
+        return takeItem(index, getStoredItems());
+    }
+
+    private ItemStack takeItem(int index, List<ItemStack> all) {
+        if (index < 0 || index >= all.size()) return ItemStack.EMPTY;
+        ItemStack target = all.get(index);
+        return takeItem(target, target.getCount());
     }
 
     public void depositAll(Player player, long favoriteMask) {

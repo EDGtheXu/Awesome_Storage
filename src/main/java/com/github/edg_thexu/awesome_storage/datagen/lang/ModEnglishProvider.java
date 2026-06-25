@@ -49,6 +49,7 @@ public class ModEnglishProvider extends LanguageProvider {
         add("awesome_storage.magic_storage_screen.craftable", "Craftable");
         add("awesome_storage.magic_storage_screen.all", "All");
         add("awesome_storage.magic_storage_screen.favorites_only", "Favorites Only");
+        add("awesome_storage.auto_stock_btn.tooltip", "Auto Stock - Right-click items to set stock target");
         add("awesome_storage.magic_storage_screen.max", "Max");
         add("awesome_storage.magic_storage_screen.reset", "Reset");
         add("awesome_storage.magic_storage_screen.select_item", "Select an item");

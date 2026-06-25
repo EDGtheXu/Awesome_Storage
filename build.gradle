@@ -118,6 +118,9 @@ dependencies {
 
     compileOnly "curse.maven:refined-storage-243076:8211701"
     runtimeOnly "curse.maven:refined-storage-243076:8211701"
+
+    compileOnly "curse.maven:farmers-delight-398521:8083481"
+    runtimeOnly "curse.maven:farmers-delight-398521:8083481"
 }
 
 tasks.named('test', Test) {

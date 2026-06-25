@@ -236,6 +236,10 @@ public final class MagicStorageBlockEntity extends BlockEntity implements MenuPr
         return itemOps.takeItem(stack);
     }
 
+    public ItemStack takeItem(ItemStack stack, int amount) {
+        return itemOps.takeItem(stack, amount);
+    }
+
     public void depositAll(Player player, long favoriteMask) {
         itemOps.depositAll(player, favoriteMask);
     }

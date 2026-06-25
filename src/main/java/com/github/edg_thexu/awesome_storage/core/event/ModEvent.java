@@ -7,6 +7,7 @@ import com.github.edg_thexu.awesome_storage.api.event.RegisterAdapterEvent;
 import com.github.edg_thexu.awesome_storage.api.event.RegisterScreenPageEvent;
 import com.github.edg_thexu.awesome_storage.core.block.StorageArrayBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.block.StorageUnitBlockEntity;
+import com.github.edg_thexu.awesome_storage.core.network.c2s.AutoStockPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicCraftPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.QueueActionPacket;
@@ -49,6 +50,8 @@ public class ModEvent {
         registrar.playToClient(QueueSyncPacket.TYPE, QueueSyncPacket.STREAM_CODEC, QueueSyncPacket::handle);
 
         registrar.playToServer(UpgradePacket.TYPE, UpgradePacket.STREAM_CODEC, UpgradePacket::handle);
+
+        registrar.playToServer(AutoStockPacket.TYPE, AutoStockPacket.STREAM_CODEC, AutoStockPacket::handle);
 
     }
 
