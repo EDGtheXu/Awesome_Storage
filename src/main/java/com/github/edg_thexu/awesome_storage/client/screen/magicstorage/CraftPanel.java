@@ -545,6 +545,7 @@ class CraftPanel extends QWidget {
         stationsRow.refresh();
         updateCapacity();
         updateTakeLabel();
+        infoPanel.refreshStorage();
     }
 
     void updateCapacity() {
@@ -949,6 +950,73 @@ class CraftPanel extends QWidget {
                 extraLabel.setVisible(false);
                 extraGrid.setVisible(false);
             }
+
+            markDirty(); update();
+        }
+
+        /** Rebuild only the storage section and ingredients from current haveIngredients (after craft/refresh). */
+        void refreshStorage() {
+            if (!hasRecipe) return;
+
+            rebuildIngredients();
+            // Rebuild ingredient grid with quantity-aware shortage overlay
+            {
+                for (QObject child : new ArrayList<>(ingredientGrid.children())) {
+                    if (child instanceof QWidget w) w.destroy();
+                }
+                int cols = Math.max(1, (width() - 12) / 20);
+                int rows = 0;
+                for (int i = 0; i < ingredients.size(); i++) {
+                    ItemStack ing = ingredients.get(i);
+                    int need = ing.getCount() * Math.max(1, craftQuantity);
+                    Ingredient matchIng = null;
+                    for (Ingredient in : ings) {
+                        if (!in.isEmpty() && in.getItems().length > 0 && in.getItems()[0].getItem() == ing.getItem()) {
+                            matchIng = in; break;
+                        }
+                    }
+                    int have = 0;
+                    if (matchIng != null) {
+                        for (Map.Entry<ItemStack, Integer> e : parent.haveIngredients.entrySet()) {
+                            if (isExcluded(e.getKey())) continue;
+                            if (matchIng.test(e.getKey())) have += e.getValue();
+                        }
+                    }
+                    boolean miss = have < need;
+                    int col = i % cols, row = i / cols;
+                    InfoSlot slot = new InfoSlot(ing, miss, null);
+                    slot.setParent(ingredientGrid);
+                    slot.move(col * 20, row * 20);
+                    rows = row + 1;
+                }
+                ingredientGrid.setFixedHeight(rows * 20);
+                ingredientGrid.markDirty();
+            }
+
+            List<ItemStack> matched = new ArrayList<>();
+            for (Map.Entry<ItemStack, Integer> e : parent.haveIngredients.entrySet()) {
+                for (Ingredient ing : ings) {
+                    if (!ing.isEmpty() && ing.test(e.getKey())) { matched.add(e.getKey()); break; }
+                }
+            }
+            matched.sort(Comparator.<ItemStack, String>comparing(
+                    s -> BuiltInRegistries.ITEM.getKey(s.getItem()).toString())
+                    .thenComparing(s -> s.getDisplayName().getString())
+                    .thenComparing(s -> s.getComponentsPatch().hashCode()));
+            List<ItemStack> finalMatched = matched;
+            buildWrappedGrid(storageGrid, matched, false, idx -> {
+                if (idx < 0 || idx >= finalMatched.size()) return;
+                ItemStack clicked = finalMatched.get(idx);
+                boolean removed = excludedItems.removeIf(ex -> ItemStack.isSameItemSameComponents(ex, clicked));
+                if (!removed) excludedItems.add(clicked.copy());
+                List<ItemStack> updated = new ArrayList<>(finalMatched);
+                buildWrappedGrid(storageGrid, updated, true, null, 8);
+                for (int i = 0; i < updated.size() && i < 8; i++) {
+                    QWidget child = storageGrid.widgetChildren().get(i);
+                    if (child instanceof InfoSlot is) is.overlay = isExcluded(updated.get(i));
+                }
+                storageGrid.markDirty(); storageGrid.update();
+            }, 8);
 
             markDirty(); update();
         }
