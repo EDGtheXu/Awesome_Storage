@@ -1,5 +1,6 @@
 package com.github.edg_thexu.awesome_storage.core.network.c2s;
 
+import com.github.edg_thexu.awesome_storage.config.CraftConfig;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.api.adapter.AdapterManager;
 import com.github.edg_thexu.awesome_storage.utils.Util;
@@ -9,8 +10,11 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.RecipeCraftingHolder;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.block.EntityBlock;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,7 +38,8 @@ public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID, 
             var recipeOpt = context.player().level().getRecipeManager().byKey(id);
             if (recipeOpt.isEmpty()) return;
             var recipe = recipeOpt.get();
-            var adapter = AdapterManager.Adapters.get(BuiltInRegistries.RECIPE_TYPE.get(adapterID));
+            RecipeType<?> recipeType = BuiltInRegistries.RECIPE_TYPE.get(adapterID);
+            var adapter = AdapterManager.Adapters.get(recipeType);
             if (adapter == null) return;
 
             NonNullList<Ingredient> ingredients = adapter.getIngredients((RecipeHolder<Recipe<RecipeInput>>) recipe);
@@ -57,10 +62,26 @@ public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID, 
                 result.setCount(remaining);
                 context.player().getInventory().placeItemBackInInventory(result);
             }
+//            for (var block: CraftConfig.ENABLED_RECIPES.get(recipeType)) {
+//                if(block instanceof EntityBlock block1) {
+//                    var be = block1.newBlockEntity(context.player().blockPosition(), block.defaultBlockState());
+//                    if(be instanceof RecipeCraftingHolder holder) {
+//                        this.checkTakeAchievements(result, context.player(), holder, consumed);
+//                    }
+//                }
+//            }
+
             adapter.onCraftFinish((RecipeHolder) recipe, consumed, context.player(), context.player().level());
             entity.syncToClient(context.player());
         });
     }
+
+//    void checkTakeAchievements(ItemStack stack, Player player, RecipeCraftingHolder recipe, List<ItemStack>  consumed) {
+//        stack.onCraftedBy(player.level(), player, stack.getCount());
+//        if (!player.level().isClientSide) {
+//            recipe.awardUsedRecipes(player, consumed);
+//        }
+//    }
 
     @Override
     public @NotNull Type<MagicCraftPacket> type() {

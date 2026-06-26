@@ -2,7 +2,6 @@ package com.github.edg_thexu.awesome_storage.api.adapter;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
-import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
@@ -10,8 +9,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
-import java.util.List;
-import java.util.Set;
+import java.lang.reflect.Field;
+import java.util.*;
 
 public class CommonRecipeAdapter<I extends RecipeInput,R extends Recipe<I>> extends  AbstractMagicCraftRecipeAdapter<I,R> {
 
@@ -59,14 +58,36 @@ public class CommonRecipeAdapter<I extends RecipeInput,R extends Recipe<I>> exte
 
     @Override
     public void onCraftFinish(RecipeHolder<R> recipe, List<ItemStack> consumed, Player player, Level level) {
-        if (player != null) {
-            try {
-                var f = recipe.value().getClass().getField("experience");
-                float xp = f.getFloat(recipe.value());
-                if (xp > 0) player.giveExperiencePoints(Math.round(xp));
-            } catch (Exception ignored) {
-            }
+        if (player == null) return;
+        try {
+            this.awardExp(player, getExperienceFromRecipe(recipe.value()));
+        } catch (Exception ignored) {
         }
     }
+
+    private float getExperienceFromRecipe(Object recipe) throws Exception {
+        Class<?> clazz = recipe.getClass();
+        if (CACHE_HAS_EXPERIENCE.containsKey(clazz)) {
+            Optional<Field> field = CACHE_HAS_EXPERIENCE.get(clazz);
+            if (field.isPresent()) {
+                return field.get().getFloat(recipe);
+            }
+            return 0f;
+        }
+        while (clazz != null) {
+            try {
+                Field field = clazz.getDeclaredField("experience");
+                field.setAccessible(true);
+                CACHE_HAS_EXPERIENCE.put(clazz, Optional.of(field));
+                return field.getFloat(recipe);
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        CACHE_HAS_EXPERIENCE.put(recipe.getClass(), Optional.empty());
+        return 0f;
+    }
+
+    static final Map<Class<?>, Optional<Field>> CACHE_HAS_EXPERIENCE = new HashMap<>();
 
 }

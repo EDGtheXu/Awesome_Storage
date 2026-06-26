@@ -2,6 +2,11 @@ package com.github.edg_thexu.awesome_storage.api.adapter;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
@@ -17,6 +22,10 @@ public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R e
 
     public AbstractMagicCraftRecipeAdapter(RecipeType<R> recipeType){
         this.recipeType = recipeType;
+    }
+
+    public AbstractMagicCraftRecipeAdapter(String recipeId){
+        this((RecipeType) BuiltInRegistries.RECIPE_TYPE.get(ResourceLocation.parse(recipeId)));
     }
 
     public void loadRecipe(RecipeHolder recipe, List<ItemStack> results, Map<RecipeHolder<?>, AbstractMagicCraftRecipeAdapter> recipeMap) {
@@ -81,6 +90,22 @@ public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R e
      * @param level    the level where crafting occurred
      */
     public void onCraftFinish(RecipeHolder<R> recipe, List<ItemStack> consumed, Player player, Level level) {
+    }
+
+    protected void awardExp(Player player, float exp) {
+        int xp = this.calExp(exp);
+        if(player.level() instanceof ServerLevel serverLevel) {
+            ExperienceOrb.award(serverLevel, player.position(), xp);
+        }
+    }
+
+    protected int calExp(float exp) {
+        int i = Mth.floor(exp);
+        float f = Mth.frac(exp);
+        if (f != 0.0F && Math.random() < (double)f) {
+            i++;
+        }
+        return i;
     }
 
 }
