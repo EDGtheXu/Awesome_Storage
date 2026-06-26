@@ -16,6 +16,7 @@ import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.signal_slot.slots.SlotKeyConsumer;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QSmoothScrollArea;
+import com.github.edg_thexu.qtcraft_api.core.widget.container.QToast;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QLineEdit;
 import com.github.edg_thexu.qtcraft_api.util.WidgetTooltip;
 import net.minecraft.client.Minecraft;
@@ -73,6 +74,7 @@ class StoragePanel extends QWidget {
         scrollArea = new QSmoothScrollArea();
         itemGrid = new ItemGridWidget();
         itemGrid.setClickHandler(this::onItemClick);
+        itemGrid.setRightClickHandler(this::onItemRightClick);
         scrollArea.setWidget(itemGrid);
         scrollArea.setWidgetResizable(true);
         vl.addWidget(scrollArea, 1);
@@ -109,6 +111,22 @@ class StoragePanel extends QWidget {
             PacketDistributor.sendToServer(new MagicStoragePacket(0, parent.getMenu().getCarried()));
             getStorageEntity(Minecraft.getInstance().player).setChanged();
             parent.scheduleRefresh();
+        }
+    }
+
+    void onItemRightClick(ItemStack stack, int index) {
+        if (Screen.hasShiftDown()) {
+            AutoStockSystem.getInstance().removeTarget(stack);
+
+        } else {
+            int target = AutoStockSystem.getInstance().hasTarget(stack)
+                    ? 0 : stack.getMaxStackSize();
+            AutoStockSystem.getInstance().setTarget(stack, target);
+            if(target > 0) {
+                QToast.show(this.parent.rootWindow(), "added ", QToast.Type.Warning);
+            } else {
+                QToast.show(this.parent.rootWindow(), "removed ");
+            }
         }
     }
 

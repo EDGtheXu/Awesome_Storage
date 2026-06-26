@@ -1,7 +1,6 @@
 package com.github.edg_thexu.awesome_storage.client.screen.magicstorage;
 
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
-import com.github.edg_thexu.awesome_storage.utils.AutoStockSystem;
 import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
@@ -11,12 +10,11 @@ import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.util.WidgetTooltip;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 // ========================================================================
 // Item Grid
@@ -39,7 +37,8 @@ public class ItemGridWidget extends QWidget {
 
     private int cols = 8;
     private final int slotSize = 18;
-    private java.util.function.BiConsumer<ItemStack, Integer> clickHandler;
+    private BiConsumer<ItemStack, Integer> clickHandler;
+    private BiConsumer<ItemStack, Integer> rightClickHandler;
 
     ItemGridWidget() {
         setFocusPolicy(FocusPolicy.NoFocus);
@@ -91,8 +90,12 @@ public class ItemGridWidget extends QWidget {
         return -1;
     }
 
-    void setClickHandler(java.util.function.BiConsumer<ItemStack, Integer> h) {
+    void setClickHandler(BiConsumer<ItemStack, Integer> h) {
         this.clickHandler = h;
+    }
+
+    void setRightClickHandler(BiConsumer<ItemStack, Integer> h) {
+        this.rightClickHandler = h;
     }
 
     private void updateCols() {
@@ -142,17 +145,8 @@ public class ItemGridWidget extends QWidget {
             updateCols();
             int col = event.x() / slotSize, row = event.y() / slotSize;
             int idx = row * cols + col;
-            if (idx >= 0 && idx < items.size() && !items.get(idx).isEmpty() && col < cols) {
-                ItemStack stack = items.get(idx);
-                if (Screen.hasShiftDown()) {
-                    AutoStockSystem.getInstance().removeTarget(stack);
-                } else {
-                    int target = AutoStockSystem.getInstance().hasTarget(stack)
-                            ? 0 : stack.getMaxStackSize();
-                    AutoStockSystem.getInstance().setTarget(stack, target);
-                }
-                markDirty();
-                update();
+            if (idx >= 0 && idx < items.size() && !items.get(idx).isEmpty() && rightClickHandler != null && col < cols) {
+                rightClickHandler.accept(items.get(idx), idx);
                 event.accept();
             }
         }

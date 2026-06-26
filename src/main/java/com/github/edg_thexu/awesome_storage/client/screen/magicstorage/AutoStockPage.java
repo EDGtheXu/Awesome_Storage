@@ -10,7 +10,6 @@ import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QSmoothScrollArea;
 import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -30,13 +29,21 @@ public class AutoStockPage extends QWidget {
         vl.setSpacing(4);
         vl.setContentsMargins(5, 5, 5, 5);
 
-        QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.auto_stock_title"));
+        QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.auto_stock_desc"));
         title.setTextColor(new QColor(0xFFFFAA00));
         vl.addWidget(title);
 
         scroll = new QSmoothScrollArea();
         scroll.setWidgetResizable(true);
         vl.addWidget(scroll, 1);
+    }
+
+    @Override
+    public void setVisible(boolean visible){
+        if(this.isVisible() != visible && visible) {
+            this.refresh();
+        }
+        super.setVisible(visible);
     }
 
     public void refresh() {
@@ -104,7 +111,15 @@ public class AutoStockPage extends QWidget {
                     @Override
                     protected void mousePressEvent(QMouseEvent e) {
                         e.accept();
-                        int newCount = Math.max(1, count - 1);
+                        int newCount = count;
+                        if(e.button() == QMouseEvent.Button.Right) {
+                            newCount -= 10;
+                        } else if(e.button() == QMouseEvent.Button.Left) {
+                            newCount -= 1;
+                        }else if(e.button() == QMouseEvent.Button.Middle) {
+                            newCount -= 64;
+                        }
+                        newCount = Math.max(newCount, 1);
                         AutoStockSystem.getInstance().setTarget(stack, newCount);
                         refresh();
                     }
@@ -125,10 +140,18 @@ public class AutoStockPage extends QWidget {
                     @Override
                     protected void mousePressEvent(QMouseEvent e) {
                         e.accept();
-                        int newCount = count + 1;
+                        int newCount = count;
+                        if(e.button() == QMouseEvent.Button.Right) {
+                            newCount += 10;
+                        } else if(e.button() == QMouseEvent.Button.Left) {
+                            newCount += 1;
+                        }else if(e.button() == QMouseEvent.Button.Middle) {
+                            newCount += 64;
+                        }
                         AutoStockSystem.getInstance().setTarget(stack, newCount);
                         refresh();
                     }
+
                 };
                 incBtn.setFixedSize(16, 14);
                 rowLayout.addWidget(incBtn);

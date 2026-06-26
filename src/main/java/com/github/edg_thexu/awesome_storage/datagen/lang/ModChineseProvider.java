@@ -40,6 +40,7 @@ public class ModChineseProvider extends LanguageProvider {
         add("awesome_storage.magic_storage_screen.favorites_only", "仅收藏");
         add("awesome_storage.auto_stock_btn.tooltip", "自动补货 - 对物品右键设定库存目标");
         add("awesome_storage.magic_storage_screen.auto_stock_title", "补货设置");
+        add("awesome_storage.magic_storage_screen.auto_stock_desc", "设置数量: 左键-1 右键-10 中键e-64");
         add("awesome_storage.magic_storage_screen.auto_stock_empty", "未设定任何补货目标");
         add("awesome_storage.magic_storage_screen.max", "最大");
         add("awesome_storage.magic_storage_screen.reset", "重置");

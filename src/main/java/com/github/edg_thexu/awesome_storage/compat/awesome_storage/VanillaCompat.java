@@ -1,4 +1,4 @@
-package com.github.edg_thexu.awesome_storage.compat;
+package com.github.edg_thexu.awesome_storage.compat.awesome_storage;
 
 import com.github.edg_thexu.awesome_storage.api.adapter.SmithingRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.api.event.RecipeWorkstation;

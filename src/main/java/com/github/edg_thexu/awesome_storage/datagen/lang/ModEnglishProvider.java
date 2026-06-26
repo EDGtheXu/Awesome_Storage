@@ -51,6 +51,7 @@ public class ModEnglishProvider extends LanguageProvider {
         add("awesome_storage.magic_storage_screen.favorites_only", "Favorites Only");
         add("awesome_storage.auto_stock_btn.tooltip", "Auto Stock - Right-click items to set stock target");
         add("awesome_storage.magic_storage_screen.auto_stock_title", "Stock Settings");
+        add("awesome_storage.magic_storage_screen.auto_stock_desc", "Set Count: Left-1 Right-10 Middle-64");
         add("awesome_storage.magic_storage_screen.auto_stock_empty", "No stock targets set");
         add("awesome_storage.magic_storage_screen.max", "Max");
         add("awesome_storage.magic_storage_screen.reset", "Reset");
