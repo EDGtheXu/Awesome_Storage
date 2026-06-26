@@ -99,39 +99,22 @@ class CraftPanel extends QWidget {
 
         QHBoxLayout funcRow = new QHBoxLayout();
         funcRow.setSpacing(2);
-        showMenuBtn = new QPushButton(Component.translatable("awesome_storage.magic_storage_screen.craftable"));
+        showMenuBtn = new QPushButton(Component.literal("☰"));
         showMenuBtn.setFixedHeight(16);
-        QMenu menu = new QMenu() {
-            @Override
-            protected void paintEvent(QPaintEvent event) {
-                event.painter().push();
-                event.painter().translate(0, 0, 300);
-                super.paintEvent(event);
-                event.painter().pop();
-            }
-        };
+        QMenu menu = new ForeShowMenu();
         menu.setVisible(false);
         {
             QAction favAct = new QAction(Component.translatable("awesome_storage.magic_storage_screen.favorites_only").getString());
             favAct.setCheckable(true);
             favAct.connect(QAction.TRIGGERED, this, new SlotKeyRunner<>("favAct", (self) -> {
                 showFavoritesOnly = favAct.isChecked();
-                showMenuBtn.setText(Component.translatable(showFavoritesOnly ? "awesome_storage.magic_storage_screen.favorites_only" : (showCraftableOnly ? "awesome_storage.magic_storage_screen.craftable" : "awesome_storage.magic_storage_screen.all")));
                 refresh();
             }));
             menu.addAction(favAct);
 
             menu.addSeparator();
 
-            QMenu filterMenu = new QMenu(Component.translatable("awesome_storage.magic_storage_screen.craftable").getString() + "...") {
-                @Override
-                protected void paintEvent(QPaintEvent event) {
-                    event.painter().push();
-                    event.painter().translate(0, 0, 300);
-                    super.paintEvent(event);
-                    event.painter().pop();
-                }
-            };
+            QMenu filterMenu = new ForeShowMenu(Component.translatable("awesome_storage.magic_storage_screen.craftable").getString() + "...");
             QAction craftAct = new QAction(Component.translatable("awesome_storage.magic_storage_screen.craftable").getString());
             QAction allAct = new QAction(Component.translatable("awesome_storage.magic_storage_screen.all").getString());
             craftAct.setCheckable(true);
@@ -140,7 +123,6 @@ class CraftPanel extends QWidget {
                 showCraftableOnly = true;
                 craftAct.setChecked(true);
                 allAct.setChecked(false);
-                showMenuBtn.setText(Component.translatable("awesome_storage.magic_storage_screen.craftable"));
                 menu.dismiss();
                 refresh();
             }));
@@ -150,22 +132,13 @@ class CraftPanel extends QWidget {
                 showCraftableOnly = false;
                 craftAct.setChecked(false);
                 allAct.setChecked(true);
-                showMenuBtn.setText(Component.translatable("awesome_storage.magic_storage_screen.all"));
                 menu.dismiss();
                 refresh();
             }));
             filterMenu.addAction(allAct);
             menu.addMenu(filterMenu);
 
-            QMenu displayMenu = new QMenu(Component.translatable("awesome_storage.magic_storage_screen.display").getString() + "...") {
-                @Override
-                protected void paintEvent(QPaintEvent event) {
-                    event.painter().push();
-                    event.painter().translate(0, 0, 300);
-                    super.paintEvent(event);
-                    event.painter().pop();
-                }
-            };
+            QMenu displayMenu = new ForeShowMenu(Component.translatable("awesome_storage.magic_storage_screen.display").getString() + "...");
             QAction hideFilter = new QAction(Component.translatable("awesome_storage.magic_storage_screen.filter").getString());
             hideFilter.setCheckable(true);
             hideFilter.setChecked(ifShowFilter);

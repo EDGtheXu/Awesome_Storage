@@ -178,8 +178,8 @@ public class MagicStorageScreen extends QContainerWidgetScreen<MagicStorageMenu>
 
         }else{
             // Storage window
-            storagePanel = new StoragePanel(this);
             storageWin = new FloatingWindow(Component.translatable("awesome_storage.magic_storage_screen.storage").getString());
+            storagePanel = new StoragePanel(this);
             storageWin.setParent(win);
 
             storageWin.addPage(storageWin.windowTitle(), storagePanel);

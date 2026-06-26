@@ -9,12 +9,17 @@ import com.github.edg_thexu.awesome_storage.utils.FavoriteSystem;
 import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
+import com.github.edg_thexu.qtcraft_api.core.geometry.QPoint;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QHBoxLayout;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QVBoxLayout;
 import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
 import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.signal_slot.slots.SlotKeyConsumer;
+import com.github.edg_thexu.qtcraft_api.core.signal_slot.slots.SlotKeyRunner;
+import com.github.edg_thexu.qtcraft_api.core.widget.QAction;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
+import com.github.edg_thexu.qtcraft_api.core.widget.button.QPushButton;
+import com.github.edg_thexu.qtcraft_api.core.widget.container.QMenu;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QSmoothScrollArea;
 import com.github.edg_thexu.qtcraft_api.core.widget.container.QToast;
 import com.github.edg_thexu.qtcraft_api.core.widget.input.QLineEdit;
@@ -28,8 +33,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.ArrayList;
 import java.util.List;
 
-import java.util.List;
-
 import static com.github.edg_thexu.awesome_storage.utils.Util.getStorageEntity;
 import static com.github.edg_thexu.awesome_storage.utils.Util.getStorageItems;
 
@@ -37,12 +40,16 @@ import static com.github.edg_thexu.awesome_storage.utils.Util.getStorageItems;
 // Storage Panel
 // ========================================================================
 class StoragePanel extends QWidget {
+    private static boolean showFilter = true;
+    private static boolean showLeftMenu = true;
+
     private final MagicStorageScreen parent;
     private final QLineEdit searchField;
     private final FilterBar filterBar;
     ItemGridWidget itemGrid;
     private final CapacityBar capacityBar;
     private final QSmoothScrollArea scrollArea;
+    private final QWidget filterBarContainer;
 
     StoragePanel(MagicStorageScreen parent) {
         this.parent = parent;
@@ -51,7 +58,38 @@ class StoragePanel extends QWidget {
         vl.setSpacing(1);
         vl.setContentsMargins(3, 3, 3, 3);
 
+        filterBarContainer = new QWidget();
+        filterBarContainer.setVisible(showFilter);
+        QHBoxLayout filterRow = new QHBoxLayout(filterBarContainer);
+        filterRow.setSpacing(2);
+        filterBar = new FilterBar(filterRow, this, "s", this::refresh);
+
         QHBoxLayout searchRow = new QHBoxLayout();
+        QPushButton menuBtn = new QPushButton(Component.literal("☰"));
+        menuBtn.setFixedSize(16, 16);
+        QMenu menu = new ForeShowMenu();
+        {
+            QAction filterAct = new QAction(Component.translatable("awesome_storage.magic_storage_screen.filter").getString());
+            filterAct.setCheckable(true);
+            filterAct.setChecked(showFilter);
+            filterAct.connect(QAction.TRIGGERED, this, new SlotKeyRunner<>("filterAct", (self) -> {
+                showFilter = filterAct.isChecked();
+                filterBarContainer.setVisible(showFilter);
+            }));
+            menu.addAction(filterAct);
+            QAction leftMenuAct = new QAction(Component.translatable("awesome_storage.magic_storage_screen.leftmenu").getString());
+            leftMenuAct.setCheckable(true);
+            leftMenuAct.setChecked(showLeftMenu);
+            leftMenuAct.connect(QAction.TRIGGERED, this, new SlotKeyRunner<>("leftMenuAct", (self) -> {
+                showLeftMenu = leftMenuAct.isChecked();
+                parent.storageWin.leftMenu.setVisible(showLeftMenu);
+            }));
+            menu.addAction(leftMenuAct);
+        }
+        menuBtn.setOnClick(() -> {
+            menu.popup(menuBtn.mapToGlobal(QPoint.ZERO).x(), menuBtn.mapToGlobal(QPoint.ZERO).y() + menuBtn.height(), this);
+        });
+        searchRow.addWidget(menuBtn);
         DepositButton depositBtn = new DepositButton();
         depositBtn.setFixedSize(32, 16);
         searchRow.addWidget(depositBtn);
@@ -64,11 +102,6 @@ class StoragePanel extends QWidget {
         searchField.connect(QLineEdit.TEXT_CHANGED, this, new SlotKeyConsumer<>("ss", (self, v) -> refresh()));
         searchRow.addWidget(searchField, 1);
         vl.addLayout(searchRow);
-
-        QWidget filterBarContainer = new QWidget();
-        QHBoxLayout filterRow = new QHBoxLayout(filterBarContainer);
-        filterRow.setSpacing(2);
-        filterBar = new FilterBar(filterRow, this, "s", this::refresh);
         vl.addWidget(filterBarContainer);
 
         scrollArea = new QSmoothScrollArea();
@@ -95,6 +128,9 @@ class StoragePanel extends QWidget {
         MagicStorageBlockEntity be = Util.getStorageEntity(Minecraft.getInstance().player);
         if (be != null) {
             capacityBar.setSlots(be.getUsedSlots(), be.getTotalSlots());
+        }
+        if (parent.storageWin != null) {
+            parent.storageWin.leftMenu.setVisible(showLeftMenu);
         }
     }
 
