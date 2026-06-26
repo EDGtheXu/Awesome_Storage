@@ -22,6 +22,7 @@ import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
 import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.signal_slot.slots.SlotKeyConsumer;
 import com.github.edg_thexu.qtcraft_api.core.signal_slot.slots.SlotKeyRunner;
+import com.github.edg_thexu.qtcraft_api.core.QObject;
 import com.github.edg_thexu.qtcraft_api.core.widget.QAction;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.button.QPushButton;
@@ -658,7 +659,7 @@ class CraftPanel extends QWidget {
     }
 
     // ========================================================================
-    // Craft Info Panel
+    // Craft Info Panel — QWidget layout based
     // ========================================================================
     static class CraftInfoPanel extends QWidget {
         private final CraftPanel parent;
@@ -666,37 +667,135 @@ class CraftPanel extends QWidget {
         private final List<ItemStack> ingredients = new ArrayList<>();
         private final List<ItemStack> requiredStations = new ArrayList<>();
         private boolean hasRecipe;
-        private int craftQuantity = 1;
-        private int cookTime;
+        int craftQuantity = 1;
+        int cookTime;
 
-        // The raw ingredients list for proper Ingredient.test() matching
-        private NonNullList<Ingredient> ings = NonNullList.create();
-        // Item stacks excluded from crafting (matched by isSameItemSameComponents)
-        private final Set<ItemStack> excludedItems = new HashSet<>();
-        // Items currently displayed in "In Storage" section and their slot positions
-        private final List<ItemStack> storageItems = new ArrayList<>();
-        private final int[] storageSlotX = new int[8];
-        private final int[] storageSlotY = new int[8];
-        // Tooltip tracking for all rendered slots
-        private ItemStack hoveredStack = ItemStack.EMPTY;
-        private final List<ItemStack> hoverSlots = new ArrayList<>();
-        private final List<Integer> hoverSlotX = new ArrayList<>();
-        private final List<Integer> hoverSlotY = new ArrayList<>();
-        private final List<Integer> hoverSlotSize = new ArrayList<>();
-        // Cycled ingredient display
+        NonNullList<Ingredient> ings = NonNullList.create();
+        final Set<ItemStack> excludedItems = new HashSet<>();
         private int cycleIndex = 0;
         private long lastCycleTime = 0;
 
+        private InfoSlot outputSlot;
+        private final QLabel cookTimeLabel;
+        private final QWidget ingredientGrid;
+        private final QWidget stationGrid;
+        private final QWidget storageGrid;
+        private final QLabel extraLabel;
+        private final QWidget extraGrid;
 
         CraftInfoPanel(CraftPanel parent) {
             this.parent = parent;
-            setMinimumSize(180, 200);
             setFixedSize(180, 300);
+            setMinimumSize(180, 200);
 
+            QVBoxLayout layout = new QVBoxLayout(this);
+            layout.setSpacing(2);
+            layout.setContentsMargins(6, 6, 6, 6);
+
+            addHeader(layout, "awesome_storage.magic_storage_screen.output");
+            outputSlot = new InfoSlot(ItemStack.EMPTY);
+            outputSlot.setFixedSize(20, 20);
+            layout.addWidget(outputSlot);
+
+            cookTimeLabel = new QLabel();
+            cookTimeLabel.setTextColor(new QColor(0xFF8888FF));
+            cookTimeLabel.setVisible(false);
+            layout.addWidget(cookTimeLabel);
+
+            addHeader(layout, "awesome_storage.magic_storage_screen.ingredients");
+            ingredientGrid = new QWidget();
+            layout.addWidget(ingredientGrid);
+
+            addHeader(layout, "awesome_storage.magic_storage_screen.stations");
+            stationGrid = new QWidget();
+            layout.addWidget(stationGrid);
+
+            addHeader(layout, "awesome_storage.magic_storage_screen.in_storage");
+            storageGrid = new QWidget();
+            layout.addWidget(storageGrid);
+
+            extraLabel = new QLabel();
+            extraLabel.setTextColor(new QColor(0xFFFFAA00));
+            extraLabel.setVisible(false);
+            layout.addWidget(extraLabel);
+            extraGrid = new QWidget();
+            extraGrid.setVisible(false);
+            layout.addWidget(extraGrid);
+
+            layout.addStretch(1);
         }
 
+        private void addHeader(QVBoxLayout layout, String key) {
+            QLabel label = new QLabel(Component.translatable(key).append(":"));
+            label.setTextColor(new QColor(0xFFFFAA00));
+            layout.addWidget(label);
+        }
+
+        // ====================================================================
+        // Info slot widget
+        // ====================================================================
+        private static class InfoSlot extends QWidget {
+            ItemStack stack;
+            boolean overlay;
+            Runnable onClick;
+            ItemStack tooltipStack;
+
+            InfoSlot(ItemStack stack) { this(stack, false, null); }
+            InfoSlot(ItemStack stack, boolean overlay, Runnable onClick) {
+                this.stack = stack;
+                this.overlay = overlay;
+                this.onClick = onClick;
+                this.tooltipStack = stack;
+                setFixedSize(18, 18);
+            }
+            void setStack(ItemStack s) { this.stack = s; this.tooltipStack = s; markDirty(); update(); }
+
+            @Override
+            protected void mousePressEvent(QMouseEvent event) {
+                if (onClick != null && event.button() == QMouseEvent.Button.Left) {
+                    onClick.run();
+                    event.accept();
+                }
+            }
+            @Override
+            public WidgetTooltip toolTip() {
+                return tooltipStack.isEmpty() ? null : WidgetTooltip.create(tooltipStack);
+            }
+            @Override
+            protected void paintEvent(QPaintEvent event) {
+                QPainter p = event.painter();
+                if (p == null) return;
+                if (stack.isEmpty()) { p.fillRect(0, 0, width(), height(), new QColor(0xCC333333)); return; }
+                MagicStorageScreen.renderSlot(p, 0, 0, width(), stack, isHovered(), overlay);
+            }
+        }
+
+        // ====================================================================
+        // Layout helpers
+        // ====================================================================
+        private void buildWrappedGrid(QWidget parent, List<ItemStack> items, boolean overlay,
+                                      java.util.function.Consumer<Integer> onClick, int maxItems) {
+            for (QObject child : new ArrayList<>(parent.children())) {
+                if (child instanceof QWidget w) w.destroy();
+            }
+            int cols = Math.max(1, (width() - 12) / 20);
+            int rows = 0;
+            for (int i = 0; i < Math.min(items.size(), maxItems); i++) {
+                int idx = i, col = i % cols, row = i / cols;
+                InfoSlot slot = new InfoSlot(items.get(i), overlay,
+                        onClick != null ? () -> onClick.accept(idx) : null);
+                slot.setParent(parent);
+                slot.move(col * 20, row * 20);
+                rows = row + 1;
+            }
+            parent.setFixedHeight(rows * 20);
+            parent.markDirty();
+        }
+
+        // ====================================================================
+        // Logic methods unchanged
+        // ====================================================================
         private int getMaxCraftable() {
-            // Group ingredient slots by first item (same as ingredient display)
             LinkedHashMap<Item, Integer> needPerCraft = new LinkedHashMap<>();
             LinkedHashMap<Item, Ingredient> ingByItem = new LinkedHashMap<>();
             for (Ingredient ing : ings) {
@@ -720,7 +819,7 @@ class CraftPanel extends QWidget {
             return Math.max(1, maxP);
         }
 
-        private boolean isExcluded(ItemStack stack) {
+        boolean isExcluded(ItemStack stack) {
             for (ItemStack ex : excludedItems) {
                 if (ItemStack.isSameItemSameComponents(stack, ex)) return true;
             }
@@ -753,17 +852,18 @@ class CraftPanel extends QWidget {
                 cycleIndex++;
                 lastCycleTime = now;
                 rebuildIngredients();
-                markDirty();
-                update();
+                if (hasRecipe) {
+                    buildWrappedGrid(ingredientGrid, ingredients, false, null, Integer.MAX_VALUE);
+                    markDirty(); update();
+                }
             }
         }
 
-        private void clampedAdd(int delta) {
+        void clampedAdd(int delta) {
             craftQuantity = Math.max(1, Math.min(getMaxCraftable(), craftQuantity + delta));
         }
 
-
-        private void doTake() {
+        void doTake() {
             List<ItemStack> stored = getStorageItems(Minecraft.getInstance().player);
             if (stored == null || outputItem.isEmpty()) return;
             for (int i = 0; i < stored.size(); i++) {
@@ -777,222 +877,85 @@ class CraftPanel extends QWidget {
             }
         }
 
-
         @SuppressWarnings("unchecked")
-        void showRecipe(RecipeHolder<?> recipe, AbstractMagicCraftRecipeAdapter adapter, ItemStack output, Map<ItemStack, Integer> have) {
+        void showRecipe(RecipeHolder<?> recipe, AbstractMagicCraftRecipeAdapter adapter, ItemStack output,
+                        Map<ItemStack, Integer> have) {
             outputItem = output;
             ingredients.clear();
             requiredStations.clear();
             excludedItems.clear();
             craftQuantity = 1;
 
-            var casted = (AbstractMagicCraftRecipeAdapter<RecipeInput, Recipe<RecipeInput>>) adapter;
-            ings = casted.getIngredients((RecipeHolder<Recipe<RecipeInput>>) (Object) recipe);
+            var casted = (AbstractMagicCraftRecipeAdapter) adapter;
+            ings = casted.getIngredients((RecipeHolder) recipe);
             rebuildIngredients();
+
+            requiredStations.clear();
             if (CraftConfig.ENABLED_RECIPES.containsKey(adapter.getRecipe())) {
                 Set<Block> seen = new HashSet<>();
                 for (Block b : CraftConfig.ENABLED_RECIPES.get(adapter.getRecipe())) {
                     if (seen.add(b)) requiredStations.add(new ItemStack(b));
                 }
             }
-            cookTime = adapter.getCookTime((RecipeHolder) recipe);
+            cookTime = adapter.getCookTime(recipe);
             hasRecipe = true;
 
-            markDirty();
-            update();
-        }
-
-        @Override
-        protected void paintEvent(QPaintEvent event) {
-            QPainter p = event.painter();
-            if (p == null) return;
-            p.fillRect(0, 0, width(), height(), new QColor(0xCC2A2A2A));
-            p.drawRect(0, 0, width(), height(), new QColor(0xFF555555));
-
-            if (!hasRecipe) {
-                p.setColor(new QColor(0xFF888888));
-                p.drawText(Component.translatable("awesome_storage.magic_storage_screen.select_item").getString(), 8, 20);
-                return;
-            }
-
-            hoverSlots.clear();
-            hoverSlotX.clear();
-            hoverSlotY.clear();
-            hoverSlotSize.clear();
-
-            int y = 6, ss = 18, cw = width();
-
-            p.setColor(new QColor(0xFFFFAA00));
-            p.drawText(Component.translatable("awesome_storage.magic_storage_screen.output").append(":").getString(), 6, y);
-            y += 11;
-            MagicStorageScreen.renderSlot(p, 6, y, 20, outputItem, false);
-            hoverSlots.add(outputItem);
-            hoverSlotX.add(6);
-            hoverSlotY.add(y);
-            hoverSlotSize.add(20);
-            y += 38;
+            outputSlot.setStack(outputItem);
 
             if (cookTime > 0) {
-                p.setColor(new QColor(0xFF8888FF));
-                p.drawText("Time: " + (cookTime / 20) + "s", 6, y);
-                y += 11;
-            }
+                cookTimeLabel.setText(Component.literal("Time: " + (cookTime / 20) + "s"));
+                cookTimeLabel.setVisible(true);
+            } else cookTimeLabel.setVisible(false);
 
-            p.setColor(QColor.WHITE);
-            p.drawText(Component.translatable("awesome_storage.magic_storage_screen.ingredients").append(":").getString(), 6, y);
-            y += 11;
-            int ix = 6;
-            for (ItemStack ing : ingredients) {
-                int need = ing.getCount() * Math.max(1, craftQuantity);
-                // Find the corresponding Ingredient for Ingredient.test() matching
-                Ingredient matchIng = null;
-                for (Ingredient i : ings) {
-                    if (!i.isEmpty() && i.getItems().length > 0 && i.getItems()[0].getItem() == ing.getItem()) {
-                        matchIng = i;
-                        break;
-                    }
-                }
-                int have = 0;
-                if (matchIng != null) {
-                    for (Map.Entry<ItemStack, Integer> e : parent.haveIngredients.entrySet()) {
-                        if (isExcluded(e.getKey())) continue;
-                        if (matchIng.test(e.getKey())) have += e.getValue();
-                    }
-                }
-                boolean miss = have < need;
-                MagicStorageScreen.renderSlot(p, ix, y, ss, ing, false);
-                hoverSlots.add(ing);
-                hoverSlotX.add(ix);
-                hoverSlotY.add(y);
-                hoverSlotSize.add(ss);
-                if (miss) p.fillRect(ix, y, ss, ss, new QColor(0x44FF0000));
-                ix += ss + 2;
-                if (ix > cw - ss) {
-                    ix = 6;
-                    y += ss + 2;
-                }
-            }
-            if (!ingredients.isEmpty()) y += (ix > 6 ? ss + 6 : 4);
+            buildWrappedGrid(ingredientGrid, ingredients, false, null, Integer.MAX_VALUE);
+            buildWrappedGrid(stationGrid, requiredStations, false, null, Integer.MAX_VALUE);
 
-            p.drawText(Component.translatable("awesome_storage.magic_storage_screen.stations").append(":").getString(), 6, y);
-            y += 11;
-            ix = 6;
-            for (ItemStack st : requiredStations) {
-                MagicStorageScreen.renderSlot(p, ix, y, ss, st, false);
-                hoverSlots.add(st);
-                hoverSlotX.add(ix);
-                hoverSlotY.add(y);
-                hoverSlotSize.add(ss);
-                ix += ss + 2;
-                if (ix > cw - ss) {
-                    ix = 6;
-                    y += ss + 2;
-                }
-            }
-            if (!requiredStations.isEmpty()) y += ss + 6;
-
-            // In Storage: show each component-group that matches any ingredient — red overlay if excluded
-            p.drawText(Component.translatable("awesome_storage.magic_storage_screen.in_storage").append(":").getString(), 6, y);
-            y += 11;
-            ix = 6;
-            storageItems.clear();
-            // Collect matching entries and sort by stable key (registry ID) to prevent position flickering
-            List<Map.Entry<ItemStack, Integer>> matched = new ArrayList<>();
+            // In Storage
+            List<ItemStack> matched = new ArrayList<>();
             for (Map.Entry<ItemStack, Integer> e : parent.haveIngredients.entrySet()) {
                 for (Ingredient ing : ings) {
-                    if (!ing.isEmpty() && ing.test(e.getKey())) {
-                        matched.add(e);
-                        break;
-                    }
+                    if (!ing.isEmpty() && ing.test(e.getKey())) { matched.add(e.getKey()); break; }
                 }
             }
-            matched.sort(Comparator.<Map.Entry<ItemStack, Integer>, String>comparing(
-                            e -> BuiltInRegistries.ITEM.getKey(e.getKey().getItem()).toString())
-                    .thenComparing(e -> e.getKey().getDisplayName().getString())
-                    .thenComparing(e -> e.getKey().getComponentsPatch().hashCode()));
-            int drawn = 0;
-            for (Map.Entry<ItemStack, Integer> e : matched) {
-                if (drawn >= 8) break;
-                ItemStack display = e.getKey().copy();
-                display.setCount(Math.min(e.getValue(), 9999));
-                boolean excl = isExcluded(e.getKey());
-                MagicStorageScreen.renderSlot(p, ix, y, ss, display, false, excl);
-                hoverSlots.add(display);
-                hoverSlotX.add(ix);
-                hoverSlotY.add(y);
-                hoverSlotSize.add(ss);
-                storageItems.add(display);
-                storageSlotX[drawn] = ix;
-                storageSlotY[drawn] = y;
-                ix += ss + 2;
-                if (ix > cw - ss) {
-                    ix = 6;
-                    y += ss + 2;
+            matched.sort(Comparator.<ItemStack, String>comparing(
+                    s -> BuiltInRegistries.ITEM.getKey(s.getItem()).toString())
+                    .thenComparing(s -> s.getDisplayName().getString())
+                    .thenComparing(s -> s.getComponentsPatch().hashCode()));
+            List<ItemStack> finalMatched = matched;
+            buildWrappedGrid(storageGrid, matched, false, idx -> {
+                if (idx < 0 || idx >= finalMatched.size()) return;
+                ItemStack clicked = finalMatched.get(idx);
+                boolean removed = excludedItems.removeIf(ex -> ItemStack.isSameItemSameComponents(ex, clicked));
+                if (!removed) excludedItems.add(clicked.copy());
+                // Rebuild with overlay indicators
+                List<ItemStack> updated = new ArrayList<>(finalMatched);
+                buildWrappedGrid(storageGrid, updated, true, null, 8);
+                for (int i = 0; i < updated.size() && i < 8; i++) {
+                    QWidget child = storageGrid.widgetChildren().get(i);
+                    if (child instanceof InfoSlot is) is.overlay = isExcluded(updated.get(i));
                 }
-                drawn++;
-            }
-            if (drawn > 0) y += ss + 6;
-            else y += 4;
-            y += 4;
+                storageGrid.markDirty(); storageGrid.update();
+            }, 8);
 
+            // Extra info from adapter (tools, etc.)
+            List<ItemStack> extraItems = adapter.getExtraInfoItems((RecipeHolder) recipe);
+            if (!extraItems.isEmpty()) {
+                String labelKey = adapter.getExtraInfoLabel((RecipeHolder) recipe);
+                extraLabel.setText(Component.translatable(labelKey.isEmpty() ? "awesome_storage.craft_info.extra" : labelKey).append(":"));
+                extraLabel.setVisible(true);
+                buildWrappedGrid(extraGrid, extraItems, false, null, Integer.MAX_VALUE);
+                extraGrid.setVisible(true);
+            } else {
+                extraLabel.setVisible(false);
+                extraGrid.setVisible(false);
+            }
+
+            markDirty(); update();
         }
 
         @Override
-        protected void mousePressEvent(QMouseEvent event) {
-            if (!hasRecipe || event.button() != QMouseEvent.Button.Left) return;
-            // Toggle exclusion on "In Storage" item click (matched by isSameItemSameComponents)
-            int mx = event.x(), my = event.y();
-            for (int i = 0; i < storageItems.size(); i++) {
-                int sx = storageSlotX[i], sy = storageSlotY[i];
-                if (mx >= sx && mx < sx + 18 && my >= sy && my < sy + 18) {
-                    ItemStack clicked = storageItems.get(i);
-                    boolean removed = excludedItems.removeIf(ex -> ItemStack.isSameItemSameComponents(ex, clicked));
-                    if (!removed) {
-                        excludedItems.add(clicked.copy());
-                    }
-                    markDirty();
-                    update();
-                    event.accept();
-                    return;
-                }
-            }
-        }
-
+        public QWidget childAt(int px, int py) { return super.childAt(px, py); }
         @Override
-        public WidgetTooltip toolTip() {
-            if (!hoveredStack.isEmpty()) {
-                return WidgetTooltip.create(hoveredStack);
-            }
-            return null;
-        }
-
-        @Override
-        protected void mouseMoveEvent(QMouseEvent event) {
-            super.mouseMoveEvent(event);
-            int mx = event.x(), my = event.y();
-            ItemStack prev = hoveredStack;
-            hoveredStack = ItemStack.EMPTY;
-            for (int i = 0; i < hoverSlots.size(); i++) {
-                int sx = hoverSlotX.get(i), sy = hoverSlotY.get(i), sz = hoverSlotSize.get(i);
-                if (mx >= sx && mx < sx + sz && my >= sy && my < sy + sz) {
-                    hoveredStack = hoverSlots.get(i);
-                    break;
-                }
-            }
-            if (!ItemStack.isSameItemSameComponents(prev, hoveredStack)) {
-                markDirty();
-                update();
-            }
-        }
-
-        @Override
-        public QWidget childAt(int px, int py) {
-            return super.childAt(px, py);
-        }
-
-        @Override
-        public QSize sizeHint() {
-            return new QSize(100, 300);
-        }
+        public QSize sizeHint() { return new QSize(100, 300); }
     }
 }

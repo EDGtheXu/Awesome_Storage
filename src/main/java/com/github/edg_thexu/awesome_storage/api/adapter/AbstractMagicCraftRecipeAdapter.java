@@ -99,6 +99,22 @@ public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R e
         }
     }
 
+    /**
+     * Returns extra ItemStacks to display in the recipe info panel.
+     * Override to show additional items such as required tools (e.g., knife for CuttingBoardRecipe).
+     */
+    public List<ItemStack> getExtraInfoItems(RecipeHolder<R> recipe) {
+        return List.of();
+    }
+
+    /**
+     * Returns the translation key for the extra info section label.
+     * Only used when {@link #getExtraInfoItems} returns non-empty items.
+     */
+    public String getExtraInfoLabel(RecipeHolder<R> recipe) {
+        return "";
+    }
+
     protected int calExp(float exp) {
         int i = Mth.floor(exp);
         float f = Mth.frac(exp);
