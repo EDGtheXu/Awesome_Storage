@@ -9,7 +9,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
@@ -111,12 +113,13 @@ public class CraftingQueueManager {
     }
 
     /** Add a recipe to the pending queue. Merges with the last entry if identical. */
-    public int addToQueue(ResourceLocation recipeId, ResourceLocation recipeTypeId, int quantity, int totalCookTime) {
+    public int addToQueue(ResourceLocation recipeId, ResourceLocation recipeTypeId, int quantity, int totalCookTime, UUID playerId) {
         QueuedRecipe last = pendingQueue.peekLast();
-        if (last != null && last.recipeId.equals(recipeId) && last.recipeTypeId.equals(recipeTypeId)) {
+        if (last != null && last.recipeId.equals(recipeId) && last.recipeTypeId.equals(recipeTypeId)
+                && Objects.equals(last.playerId, playerId)) {
             last.quantity += quantity;
         } else {
-            pendingQueue.addLast(new QueuedRecipe(recipeId, recipeTypeId, quantity, totalCookTime));
+            pendingQueue.addLast(new QueuedRecipe(recipeId, recipeTypeId, quantity, totalCookTime, playerId));
         }
         access.setChanged();
         return pendingQueue.size();
@@ -214,7 +217,7 @@ public class CraftingQueueManager {
                 if (next == null) break;
                 if (canCraft(next, recipeManager)) {
                     // Take only 1 from the entry
-                    slot.assign(new QueuedRecipe(next.recipeId, next.recipeTypeId, 1, next.totalCookTime));
+                    slot.assign(new QueuedRecipe(next.recipeId, next.recipeTypeId, 1, next.totalCookTime, next.playerId));
                     next.quantity--;
                     if (next.quantity <= 0) pendingQueue.pollFirst();
                     dirty = true;
@@ -262,7 +265,11 @@ public class CraftingQueueManager {
             for (ItemStack c : consumed) access.getItemOps().storeItem(c);
             return false;
         }
-        adapter.onCraftFinish(holder, consumed, null, level);
+        Player crafter = null;
+        if (queued.playerId != null && level instanceof ServerLevel sl) {
+            crafter = sl.getPlayerByUUID(queued.playerId);
+        }
+        adapter.onCraftFinish(holder, consumed, crafter, level);
         return true;
     }
 

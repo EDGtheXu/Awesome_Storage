@@ -82,7 +82,7 @@ public record QueueActionPacket(int action, int slotIndex, int entryIndex, Resou
                 case ACTION_ADD -> {
                     if (!hasIngredients(context, be)) return;
                     int cookTime = getCookTime(context);
-                    be.getQueueManager().addToQueue(recipeId, adapterID, quantity, cookTime);
+                    be.getQueueManager().addToQueue(recipeId, adapterID, quantity, cookTime, context.player().getUUID());
                     be.getQueueManager().syncToPlayer((ServerPlayer) context.player());
                 }
                 case ACTION_REMOVE -> {
