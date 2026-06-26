@@ -57,6 +57,7 @@ public record MagicCraftPacket(ResourceLocation id, ResourceLocation adapterID, 
                 result.setCount(remaining);
                 context.player().getInventory().placeItemBackInInventory(result);
             }
+            adapter.onCraftFinish((RecipeHolder) recipe, consumed, context.player(), context.player().level());
             entity.syncToClient(context.player());
         });
     }

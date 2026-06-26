@@ -2,11 +2,15 @@ package com.github.edg_thexu.awesome_storage.api.adapter;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
+import java.util.List;
 import java.util.Set;
 
 public class CommonRecipeAdapter<I extends RecipeInput,R extends Recipe<I>> extends  AbstractMagicCraftRecipeAdapter<I,R> {
@@ -51,6 +55,18 @@ public class CommonRecipeAdapter<I extends RecipeInput,R extends Recipe<I>> exte
             mult *= 2.0f;
         }
         return mult;
+    }
+
+    @Override
+    public void onCraftFinish(RecipeHolder<R> recipe, List<ItemStack> consumed, Player player, Level level) {
+        if (player != null) {
+            try {
+                var f = recipe.value().getClass().getField("experience");
+                float xp = f.getFloat(recipe.value());
+                if (xp > 0) player.giveExperiencePoints(Math.round(xp));
+            } catch (Exception ignored) {
+            }
+        }
     }
 
 }

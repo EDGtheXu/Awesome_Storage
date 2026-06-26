@@ -7,8 +7,11 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import vectorwing.farmersdelight.common.crafting.CookingPotRecipe;
 
@@ -75,5 +78,24 @@ public class CookingPotAdapter extends AbstractMagicCraftRecipeAdapter<RecipeInp
             mult *= 1.0f;
         }
         return Math.max(mult, 0.25f);
+    }
+
+    @Override
+    public void onCraftFinish(RecipeHolder<Recipe<RecipeInput>> recipe, List<ItemStack> consumed, Player player, Level level) {
+        Recipe<?> raw = recipe.value();
+        if (raw instanceof CookingPotRecipe pot) {
+            // Award experience
+            float xp = pot.getExperience();
+            if (xp > 0 && player != null) {
+                player.giveExperiencePoints(Math.round(xp));
+            }
+            // Drop container item (bowl/plate) if any
+            ItemStack container = pot.getOutputContainer();
+            if (!container.isEmpty() && player != null) {
+                if (!player.getInventory().add(container.copy())) {
+                    player.drop(container.copy(), false);
+                }
+            }
+        }
     }
 }

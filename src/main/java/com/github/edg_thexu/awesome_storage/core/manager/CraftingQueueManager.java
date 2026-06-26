@@ -262,6 +262,7 @@ public class CraftingQueueManager {
             for (ItemStack c : consumed) access.getItemOps().storeItem(c);
             return false;
         }
+        adapter.onCraftFinish(holder, consumed, null, level);
         return true;
     }
 

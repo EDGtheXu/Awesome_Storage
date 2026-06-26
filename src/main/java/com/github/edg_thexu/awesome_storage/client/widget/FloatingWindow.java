@@ -206,9 +206,22 @@ public class FloatingWindow extends QDockWidget {
         if (widget != null) {
             widget.setParent(this);
             widget.setVisible(true);
+            this.relayout();
             this.updateLayout();
         }
 
+    }
+
+    @Override
+    public void relayout() {
+        super.relayout();
+        if (leftMenu != null) {
+            int leftMenuHeight = Math.min(80, 24 * leftMenu.getTabCount() + 2);
+            leftMenu.setGeometry(-80, height() - leftMenuHeight, 80, leftMenuHeight);
+            if(leftMenu.getTabCount() <= 1) {
+                leftMenu.setVisible(false);
+            }
+        }
     }
 
     @Override

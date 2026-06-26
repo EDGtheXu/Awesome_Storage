@@ -2,8 +2,10 @@ package com.github.edg_thexu.awesome_storage.api.adapter;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 
 import java.util.List;
@@ -67,6 +69,18 @@ public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R e
      */
     public float getSpeedMultiplier(RecipeHolder<R> recipe, Set<Block> workstations) {
         return 1.0f;
+    }
+
+    /**
+     * Called after a recipe is successfully crafted and its result has been stored.
+     * Override to grant rewards such as experience, container items, or player effects.
+     *
+     * @param recipe   the recipe that was crafted
+     * @param consumed the actual ItemStacks consumed
+     * @param player   the player who crafted (null for queue-based crafting)
+     * @param level    the level where crafting occurred
+     */
+    public void onCraftFinish(RecipeHolder<R> recipe, List<ItemStack> consumed, Player player, Level level) {
     }
 
 }
