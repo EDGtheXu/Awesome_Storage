@@ -32,9 +32,9 @@ public class CookingPotAdapter extends AbstractMagicCraftRecipeAdapter<RecipeWra
     }
 
     @Override
-    public ItemStack getResult(RecipeHolder<CookingPotRecipe> recipe) {
+    public ItemStack getClientResult(RecipeHolder<CookingPotRecipe> recipe, HolderLookup.Provider registries) {
         CookingPotRecipe pot = recipe.value();
-        ItemStack result = pot.getResultItem(Minecraft.getInstance().level.registryAccess());
+        ItemStack result = pot.getResultItem(registries);
         if (result.isEmpty()) return ItemStack.EMPTY;
         return result;
     }

@@ -33,11 +33,11 @@ public class AwesomeStorage {
     public static List<Consumer<ModEnglishProvider>> englishProviders = new ArrayList<>();
     public static void add_zh_en(DeferredItem<Item> item, String zh){
         chineseProviders.add((c)->c.add(item.get(),zh));
-        englishProviders.add((c)->c.add(item.get(),toTitleCase(item.getId().getPath())));
+        englishProviders.add((c)->c.add(item.get(), toTitleCase(item.getId().getPath())));
     }
     public static <T extends Entity> void add_zh_en(DeferredHolder<EntityType<?>,EntityType<T>> e, String zh){
         chineseProviders.add((c)->c.add(e.get(),zh));
-        englishProviders.add((c)->c.add(e.get(),toTitleCase(e.getId().getPath())));
+        englishProviders.add((c)->c.add(e.get(), toTitleCase(e.getId().getPath())));
     }
 
     public AwesomeStorage(IEventBus modEventBus, ModContainer modContainer) {
@@ -59,5 +59,9 @@ public class AwesomeStorage {
 
     }
 
+    public static void clear() {
+        chineseProviders.clear();
+        englishProviders.clear();
+    }
 
 }

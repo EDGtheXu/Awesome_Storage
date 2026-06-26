@@ -8,7 +8,7 @@ import com.github.edg_thexu.qtcraft_api.core.painting.QPainter;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
 import com.github.edg_thexu.qtcraft_api.util.WidgetTooltip;
-import net.minecraft.client.Minecraft;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -27,9 +27,9 @@ public class CuttingBoardAdapter extends AbstractMagicCraftRecipeAdapter {
     }
 
     @Override
-    public ItemStack getResult(RecipeHolder recipe) {
+    public ItemStack getClientResult(RecipeHolder recipe, HolderLookup.Provider registries) {
         if (recipe.value() instanceof CuttingBoardRecipe cut) {
-            return cut.getResultItem(Minecraft.getInstance().level.registryAccess());
+            return cut.getResultItem(registries);
         }
         return ItemStack.EMPTY;
     }

@@ -1,5 +1,6 @@
 package com.github.edg_thexu.awesome_storage.config;
 
+import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
@@ -13,10 +14,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CraftConfig extends AbstractJsonConfig{
 
-    public static Map<RecipeType<Recipe<RecipeInput>>, Set<Block>> ENABLED_RECIPES = new HashMap<>();
+    public static Map<RecipeType<?>, Set<Block>> ENABLED_RECIPES = new HashMap<>();
     private static final Set<Block> ENABLED_BLOCKS = new HashSet<>();
     public static boolean isEnabledBlock(Block block){
         return ENABLED_BLOCKS.contains(block);
@@ -52,6 +54,29 @@ public class CraftConfig extends AbstractJsonConfig{
         super(config);
     }
 
+    public void loadFrom(CraftConfig other) {
+        var map = RecipeAccess.LIST_CODEC.decode(JsonOps.INSTANCE, other.rawConfig().get("enabled_recipes")).result().get();
+        map.getFirst().stream().forEach(access ->{
+            Operation operation = access.operation;
+            RecipeType<?> recipeType = BuiltInRegistries.RECIPE_TYPE.get(access.recipeType);
+            switch (operation){
+                case ADD -> {
+                    if(!ENABLED_RECIPES.containsKey(recipeType)) {
+                        ENABLED_RECIPES.put(recipeType, new HashSet<>());
+                    }
+                    Set<Block> set = ENABLED_RECIPES.get(recipeType);
+                    Set<Block> added = access.blocks.stream().map(BuiltInRegistries.BLOCK::get).collect(Collectors.toSet());
+                    set.addAll(added);
+                    ENABLED_BLOCKS.addAll(added);
+                }
+                case REMOVE -> {
+                    ENABLED_RECIPES.remove(access.recipeType);
+                }
+            }
+
+        });
+    }
+
     @Override
     protected JsonObject defaultConfig() {
         JsonObject json = new JsonObject();
@@ -80,14 +105,27 @@ public class CraftConfig extends AbstractJsonConfig{
 
     }
 
-    public record RecipeAccess(List<ResourceLocation> blocks, ResourceLocation recipeType){
+    public record RecipeAccess(List<ResourceLocation> blocks, ResourceLocation recipeType, Operation operation) {
+        public RecipeAccess(List<ResourceLocation> blocks, ResourceLocation recipeType) {
+            this(blocks, recipeType, Operation.ADD);
+        }
+
         public static final Codec<RecipeAccess> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                ResourceLocation.CODEC.listOf().fieldOf("blocks").forGetter(RecipeAccess::blocks),
-                ResourceLocation.CODEC.fieldOf("recipe_type").forGetter(RecipeAccess::recipeType)
+                ResourceLocation.CODEC.listOf().optionalFieldOf("blocks", List.of()).forGetter(RecipeAccess::blocks),
+                ResourceLocation.CODEC.fieldOf("recipe_type").forGetter(RecipeAccess::recipeType),
+                Operation.CODEC.optionalFieldOf("operation", Operation.ADD).forGetter(RecipeAccess::operation)
         ).apply(instance, RecipeAccess::new));
 
         public static final Codec<List<RecipeAccess>> LIST_CODEC = CODEC.listOf();
 
+    }
+
+    public enum Operation {
+        ADD,
+        REMOVE,
+        REPLACE;
+
+        public static final Codec<Operation> CODEC = Util.createEnumCodec(Operation.class);
     }
 
 }

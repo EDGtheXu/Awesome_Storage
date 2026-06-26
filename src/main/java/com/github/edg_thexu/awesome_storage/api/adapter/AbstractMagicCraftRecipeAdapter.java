@@ -12,11 +12,17 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import com.github.edg_thexu.awesome_storage.api.event.RecipeWorkstation;
+import com.github.edg_thexu.awesome_storage.api.event.RegisterWorkstationEvent;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * <p> Register adapter by {@link RecipeWorkstation} or {@link RegisterWorkstationEvent}
+ * <p> At least keep one constructor for annotation scan: () / (RecipeType) / (String)
+ */
 public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R extends Recipe<I>> {
     RecipeType<R> recipeType;
 
@@ -28,9 +34,9 @@ public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R e
         this((RecipeType) BuiltInRegistries.RECIPE_TYPE.get(ResourceLocation.parse(recipeId)));
     }
 
-    public void loadRecipe(RecipeHolder recipe, List<ItemStack> results, Map<RecipeHolder<?>, AbstractMagicCraftRecipeAdapter> recipeMap) {
+    public void loadRecipe(RecipeHolder recipe, List<ItemStack> results, Map<RecipeHolder<?>, AbstractMagicCraftRecipeAdapter> recipeMap, HolderLookup.Provider registries) {
         try {
-            ItemStack result = getResult(recipe);
+            ItemStack result = getClientResult(recipe, registries);
             if(result !=null && !result.isEmpty()){
                 results.add(result.copy());
                 recipeMap.put(recipe, this);
@@ -47,7 +53,7 @@ public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R e
     /**
      * @return null / EMPTY : not add to recipeMap
      */
-    public abstract ItemStack getResult(RecipeHolder<R> recipe);
+    public abstract ItemStack getClientResult(RecipeHolder<R> recipe, HolderLookup.Provider registries);
 
     /**
      * Compute the actual craft result using the real consumed ItemStacks.

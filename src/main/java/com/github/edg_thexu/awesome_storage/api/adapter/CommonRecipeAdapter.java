@@ -3,7 +3,7 @@ package com.github.edg_thexu.awesome_storage.api.adapter;
 import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
 import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
 import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
-import net.minecraft.client.Minecraft;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
@@ -16,14 +16,18 @@ import net.minecraft.world.level.block.Blocks;
 import java.lang.reflect.Field;
 import java.util.*;
 
-public class CommonRecipeAdapter<I extends RecipeInput,R extends Recipe<I>> extends  AbstractMagicCraftRecipeAdapter<I,R> {
+public class CommonRecipeAdapter<I extends RecipeInput,R extends Recipe<I>> extends  AbstractMagicCraftRecipeAdapter<I, R> {
 
     public CommonRecipeAdapter(RecipeType<R> recipeType){
         super(recipeType);
     }
 
-    public ItemStack getResult(RecipeHolder<R> recipe){
-        ItemStack res = recipe.value().getResultItem(Minecraft.getInstance().level.registryAccess());
+    public CommonRecipeAdapter(String recipeId){
+        super(recipeId);
+    }
+
+    public ItemStack getClientResult(RecipeHolder<R> recipe, HolderLookup.Provider registries){
+        ItemStack res = recipe.value().getResultItem(registries);
         if(!res.isEmpty() && !recipe.value().getIngredients().isEmpty()){
             return res;
         }

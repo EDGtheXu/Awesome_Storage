@@ -8,6 +8,7 @@ import com.github.edg_thexu.awesome_storage.config.CraftConfig;
 import net.neoforged.fml.ModList;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.nio.file.*;
 import java.util.*;
 import java.util.jar.JarEntry;
@@ -130,8 +131,10 @@ public class RecipeWorkstationScanner {
                     }
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // skip any class that can't be loaded
+        } catch (Throwable ignored) {
+
         }
     }
 
@@ -143,7 +146,6 @@ public class RecipeWorkstationScanner {
                 AwesomeStorage.LOGGER.warn("[RecipeWorkstation] Unknown recipe type: " + typeId);
                 continue;
             }
-            CraftConfig.registerRecipeBlocks(typeId, blockIds);
 
             try {
                 AbstractMagicCraftRecipeAdapter adapter;
@@ -151,7 +153,21 @@ public class RecipeWorkstationScanner {
                     adapter = new CommonRecipeAdapter(type);
                 } else {
                     adapter = ann.adapter().getDeclaredConstructor().newInstance();
+                    for(Constructor<?> c :ann.adapter().getConstructors()) {
+                        if(c.getParameterCount() == 0) {
+                            adapter = (AbstractMagicCraftRecipeAdapter) c.newInstance();
+                            break;
+                        }else if(c.getParameterCount() == 1) {
+                            if(c.getParameterTypes()[0] == RecipeType.class) {
+                                adapter = (AbstractMagicCraftRecipeAdapter) c.newInstance(type);
+                            } else if(c.getParameterTypes()[0] == String.class) {
+                                adapter = (AbstractMagicCraftRecipeAdapter) c.newInstance(typeId);
+                            }
+                            break;
+                        }
+                    }
                 }
+                CraftConfig.registerRecipeBlocks(typeId, blockIds);
                 AdapterManager.registerAdapters(type, adapter);
             } catch (Exception e) {
                 AwesomeStorage.LOGGER.error("[RecipeWorkstation] Failed to create adapter for " + typeId, e);

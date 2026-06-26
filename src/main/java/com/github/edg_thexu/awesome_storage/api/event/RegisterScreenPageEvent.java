@@ -17,6 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+/**
+ * Add a new page in left menu of storage/craft panel.
+ */
 public abstract class RegisterScreenPageEvent extends Event implements IModBusEvent {
 
     FloatingWindow window;

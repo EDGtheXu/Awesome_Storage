@@ -5,14 +5,11 @@ import com.github.edg_thexu.awesome_storage.core.registry.ModBlocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData.BlockEntityInfo;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.level.Level;
 
 import java.util.Map;
 
 public class RemoteBlockEntityCache {
     Map<BlockPos, MagicStorageBlockEntity> CACHE;
-    public static ResourceKey<Level> clientLevelSource = Level.END;
 
     static RemoteBlockEntityCache instance = new RemoteBlockEntityCache();
     public static RemoteBlockEntityCache getInstance(){

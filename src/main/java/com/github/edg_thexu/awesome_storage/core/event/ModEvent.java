@@ -58,7 +58,7 @@ public class ModEvent {
     @SubscribeEvent
     public static void onRegisterAdapter(RegisterAdapterEvent event) {
         event.register(RecipeType.CRAFTING, new CommonRecipeAdapter<>((RecipeType.CRAFTING)));
-        event.register(RecipeType.SMITHING, new SmithingRecipeAdapter<>(RecipeType.SMITHING));
+//        event.register(RecipeType.SMITHING, new SmithingRecipeAdapter<>(RecipeType.SMITHING));
     }
 
     @SubscribeEvent

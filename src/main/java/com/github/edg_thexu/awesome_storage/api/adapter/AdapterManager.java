@@ -22,7 +22,7 @@ public class AdapterManager {
 
         for(var recipeType : ENABLED_RECIPES.keySet()){
             if(!Adapters.containsKey(recipeType))
-                Adapters.put(recipeType, new CommonRecipeAdapter<>(recipeType));
+                Adapters.put(recipeType, new CommonRecipeAdapter(recipeType));
         }
     }
 }

@@ -10,7 +10,6 @@ import com.github.edg_thexu.awesome_storage.utils.Util;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QGridLayout;
-import com.github.edg_thexu.qtcraft_api.core.layouts.QGridLayout;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QHBoxLayout;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QVBoxLayout;
 import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
@@ -136,7 +135,7 @@ public class QueuePage extends QWidget {
         if (rt == null) return ItemStack.EMPTY;
         AbstractMagicCraftRecipeAdapter<?, ?> adapter = AdapterManager.Adapters.get(rt);
         if (adapter == null) return ItemStack.EMPTY;
-        ItemStack result = adapter.getResult((RecipeHolder) optRecipe.get());
+        ItemStack result = adapter.getClientResult((RecipeHolder) optRecipe.get(), Minecraft.getInstance().level.registryAccess());
         if (!result.isEmpty()) resultCache.put(recipeId, result);
         return result;
     }

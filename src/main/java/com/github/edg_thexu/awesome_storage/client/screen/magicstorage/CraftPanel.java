@@ -416,7 +416,7 @@ class CraftPanel extends QWidget {
                                     ? AdapterManager.Adapters.get(rt)
                                     : new CommonRecipeAdapter(rt);
                     var recipes = Minecraft.getInstance().level.getRecipeManager().getAllRecipesFor(adapter.getRecipe());
-                    for (var r : recipes) adapter.loadRecipe(r, results, recipeMap);
+                    for (var r : recipes) adapter.loadRecipe(r, results, recipeMap, Minecraft.getInstance().level.registryAccess());
                 }
             }
         }
@@ -487,7 +487,7 @@ class CraftPanel extends QWidget {
                 if (avail >= req) has = true;
                 else can = false;
             }
-            Pair<ItemStack, RecipeHolder<?>> p = new Pair<>(adapter.getResult(e.getKey()), e.getKey());
+            Pair<ItemStack, RecipeHolder<?>> p = new Pair<>(adapter.getClientResult(e.getKey(), Minecraft.getInstance().level.registryAccess()), e.getKey());
             if (can) {
                 craftable.add(p);
                 craftableSet.add(e.getKey());

@@ -2,6 +2,7 @@ package com.github.edg_thexu.awesome_storage.utils;
 
 import com.github.edg_thexu.awesome_storage.mix_util.IPlayer;
 import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
+import com.mojang.serialization.Codec;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -121,6 +122,13 @@ public class Util {
                 if (item.isEmpty()) break;
             }
         }
+    }
+
+    public static<T extends Enum<T>> Codec<T> createEnumCodec(Class<T> enumClass) {
+        return Codec.STRING.xmap(
+                name->Enum.valueOf(enumClass, name.toUpperCase()),
+                baker-> baker.name().toLowerCase(Locale.ROOT)
+        );
     }
 
 }

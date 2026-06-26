@@ -1,6 +1,5 @@
 package com.github.edg_thexu.awesome_storage.api.adapter;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
@@ -10,19 +9,18 @@ import java.util.List;
 
 public class SmithingRecipeAdapter<R extends SmithingRecipe> extends AbstractMagicCraftRecipeAdapter<SmithingRecipeInput, R> {
 
-    public static class Smithing extends SmithingRecipeAdapter<SmithingRecipe> {
-        public Smithing() {
-            super(RecipeType.SMITHING);
-        }
-    }
 
     public SmithingRecipeAdapter(RecipeType<R> recipeType) {
         super(recipeType);
     }
 
+    public SmithingRecipeAdapter(String recipeId){
+        super(recipeId);
+    }
+
     @Override
-    public ItemStack getResult(RecipeHolder<R> recipe){
-        ItemStack res = recipe.value().getResultItem(Minecraft.getInstance().level.registryAccess());
+    public ItemStack getClientResult(RecipeHolder<R> recipe, HolderLookup.Provider registries){
+        ItemStack res = recipe.value().getResultItem(registries);
         if(recipe.value() instanceof SmithingTransformRecipe transform){
             ItemStack itemstack = transform.base.getItems()[0].transmuteCopy(res.getItem(),res.getCount());
             itemstack.applyComponents(res.getComponentsPatch());
