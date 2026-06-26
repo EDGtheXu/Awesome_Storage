@@ -100,19 +100,14 @@ public abstract class AbstractMagicCraftRecipeAdapter<I extends RecipeInput, R e
     }
 
     /**
-     * Returns extra ItemStacks to display in the recipe info panel.
-     * Override to show additional items such as required tools (e.g., knife for CuttingBoardRecipe).
+     * Called when the recipe info panel builds its UI.
+     * Override to add custom widgets (labels, slots, etc.) into the provided container.
+     * The container is destroyed and recreated on each recipe change.
+     *
+     * @param container a QWidget to add child widgets into (use setParent)
+     * @param recipe    the recipe being displayed
      */
-    public List<ItemStack> getExtraInfoItems(RecipeHolder<R> recipe) {
-        return List.of();
-    }
-
-    /**
-     * Returns the translation key for the extra info section label.
-     * Only used when {@link #getExtraInfoItems} returns non-empty items.
-     */
-    public String getExtraInfoLabel(RecipeHolder<R> recipe) {
-        return "";
+    public void buildExtraInfo(com.github.edg_thexu.qtcraft_api.core.widget.QWidget container, RecipeHolder<R> recipe) {
     }
 
     protected int calExp(float exp) {

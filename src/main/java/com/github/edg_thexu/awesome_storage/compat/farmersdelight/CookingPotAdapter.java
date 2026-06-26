@@ -2,9 +2,13 @@ package com.github.edg_thexu.awesome_storage.compat.farmersdelight;
 
 import com.github.edg_thexu.awesome_storage.api.adapter.AbstractMagicCraftRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.api.event.RecipeWorkstation;
+import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
+import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
+import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
@@ -73,6 +77,18 @@ public class CookingPotAdapter extends AbstractMagicCraftRecipeAdapter<RecipeWra
             if (!player.getInventory().add(container.copy())) {
                 player.drop(container.copy(), false);
             }
+        }
+    }
+
+    @Override
+    public void buildExtraInfo(QWidget container, RecipeHolder<CookingPotRecipe> recipe) {
+        CookingPotRecipe pot = recipe.value();
+        float xp = pot.getExperience();
+        if (xp > 0) {
+            QLabel xpLabel = new QLabel(Component.literal("Experience: " + String.format("%.1f", xp) + " XP"));
+            xpLabel.setTextColor(new QColor(0xFF88FF88));
+            xpLabel.setParent(container);
+            xpLabel.setGeometry(0, 0, container.width(), 12);
         }
     }
 }

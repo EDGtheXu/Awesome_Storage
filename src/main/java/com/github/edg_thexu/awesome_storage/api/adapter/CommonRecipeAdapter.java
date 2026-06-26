@@ -1,7 +1,11 @@
 package com.github.edg_thexu.awesome_storage.api.adapter;
 
+import com.github.edg_thexu.qtcraft_api.core.painting.QColor;
+import com.github.edg_thexu.qtcraft_api.core.widget.QWidget;
+import com.github.edg_thexu.qtcraft_api.core.widget.info.QLabel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
@@ -90,4 +94,18 @@ public class CommonRecipeAdapter<I extends RecipeInput,R extends Recipe<I>> exte
 
     static final Map<Class<?>, Optional<Field>> CACHE_HAS_EXPERIENCE = new HashMap<>();
 
+    @Override
+    public void buildExtraInfo(QWidget container, RecipeHolder<R> recipe) {
+        if (!(recipe.value() instanceof AbstractCookingRecipe)) return;
+        try {
+            float xp = getExperienceFromRecipe(recipe.value());
+            if (xp > 0) {
+                QLabel xpLabel = new QLabel(Component.literal("Experience: " + String.format("%.1f", xp) + " XP"));
+                xpLabel.setTextColor(new QColor(0xFF88FF88));
+                xpLabel.setParent(container);
+                xpLabel.setGeometry(0, 0, container.width(), 12);
+            }
+        } catch (Exception ignored) {
+        }
+    }
 }

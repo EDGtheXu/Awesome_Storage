@@ -681,8 +681,7 @@ class CraftPanel extends QWidget {
         private final QWidget ingredientGrid;
         private final QWidget stationGrid;
         private final QWidget storageGrid;
-        private final QLabel extraLabel;
-        private final QWidget extraGrid;
+        private QWidget extraContainer;
 
         CraftInfoPanel(CraftPanel parent) {
             this.parent = parent;
@@ -715,13 +714,8 @@ class CraftPanel extends QWidget {
             storageGrid = new QWidget();
             layout.addWidget(storageGrid);
 
-            extraLabel = new QLabel();
-            extraLabel.setTextColor(new QColor(0xFFFFAA00));
-            extraLabel.setVisible(false);
-            layout.addWidget(extraLabel);
-            extraGrid = new QWidget();
-            extraGrid.setVisible(false);
-            layout.addWidget(extraGrid);
+            extraContainer = new QWidget();
+            layout.addWidget(extraContainer);
 
             layout.addStretch(1);
         }
@@ -938,18 +932,14 @@ class CraftPanel extends QWidget {
                 storageGrid.markDirty(); storageGrid.update();
             }, 8);
 
-            // Extra info from adapter (tools, etc.)
-            List<ItemStack> extraItems = adapter.getExtraInfoItems((RecipeHolder) recipe);
-            if (!extraItems.isEmpty()) {
-                String labelKey = adapter.getExtraInfoLabel((RecipeHolder) recipe);
-                extraLabel.setText(Component.translatable(labelKey.isEmpty() ? "awesome_storage.craft_info.extra" : labelKey).append(":"));
-                extraLabel.setVisible(true);
-                buildWrappedGrid(extraGrid, extraItems, false, null, Integer.MAX_VALUE);
-                extraGrid.setVisible(true);
-            } else {
-                extraLabel.setVisible(false);
-                extraGrid.setVisible(false);
+            // Extra info from adapter (tools, XP, etc.)
+            for (QObject child : new ArrayList<>(extraContainer.children())) {
+                if (child instanceof QWidget w) w.destroy();
             }
+            QVBoxLayout extraLayout = new QVBoxLayout(extraContainer);
+            extraLayout.setSpacing(2);
+            extraLayout.setContentsMargins(0, 0, 0, 0);
+            adapter.buildExtraInfo(extraContainer, (RecipeHolder) recipe);
 
             markDirty(); update();
         }
