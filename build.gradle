@@ -104,7 +104,7 @@ dependencies {
     compileOnly "curse.maven:jade-324717:6011258"
     runtimeOnly "curse.maven:jade-324717:6011258"
 
-    implementation files("libs/qtcraft-api-1.1.jar")
+    implementation jarJar("com.github.edh_thexu:qtcraft-api:1.1")
 
 
     compileOnly "curse.maven:sophisticated-core-618298:7552275"

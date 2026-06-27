@@ -2,11 +2,7 @@ package com.github.edg_thexu.awesome_storage.core.event;
 
 import com.github.edg_thexu.awesome_storage.AwesomeStorage;
 import com.github.edg_thexu.awesome_storage.api.adapter.CommonRecipeAdapter;
-import com.github.edg_thexu.awesome_storage.api.adapter.SmithingRecipeAdapter;
 import com.github.edg_thexu.awesome_storage.api.event.RegisterAdapterEvent;
-import com.github.edg_thexu.awesome_storage.api.event.RegisterScreenPageEvent;
-import com.github.edg_thexu.awesome_storage.core.block.StorageArrayBlockEntity;
-import com.github.edg_thexu.awesome_storage.core.block.StorageUnitBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.AutoStockPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicCraftPacket;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.MagicStoragePacket;
@@ -19,7 +15,6 @@ import com.github.edg_thexu.awesome_storage.core.network.s2c.ConfigSyncPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.QueueSyncPacket;
 import com.github.edg_thexu.awesome_storage.core.network.s2c.StorageItemsSyncPacket;
 import com.github.edg_thexu.awesome_storage.core.registry.ModBlocks;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -75,9 +70,4 @@ public class ModEvent {
         );
     }
 
-//    @SubscribeEvent
-//    public static void onRegisterController(RegisterScreenPageEvent.Storage event) {
-//        event.registerControllerButton(Component.literal("Add"), (be, player)->{});
-//        event.registerControllerButton(Component.literal("Del"), (be, player)->{});
-//    }
 }

@@ -29,6 +29,7 @@ public class ModChineseProvider extends LanguageProvider {
         add("awesome_storage.tooltip.distance", "距离: ");
         add("awesome_storage.tooltip.block_pos", "位置: ");
         add("awesome_storage.tooltip.error_level", "无信号");
+        add("awesome_storage.tooltip.storage_unit", "可以容纳%d个物品格！");
 
         add("awesome_storage.deposit_btn.tooltip", "存入全部 - 左键: 全部存入, Ctrl+左键: 快速堆叠, 右键: 补货");
 

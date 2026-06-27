@@ -2,6 +2,7 @@ package com.github.edg_thexu.awesome_storage.core.block;
 
 import com.github.edg_thexu.awesome_storage.core.menu.StorageArrayMenu;
 import com.github.edg_thexu.awesome_storage.core.registry.ModBlocks;
+import com.github.edg_thexu.awesome_storage.core.registry.ModDataComponent;
 import com.github.edg_thexu.awesome_storage.core.storage.MapItemHandler;
 import com.github.edg_thexu.awesome_storage.core.storage.StorageEntry;
 import net.minecraft.core.BlockPos;
@@ -15,7 +16,6 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -70,7 +70,8 @@ public class StorageArrayBlockEntity extends BlockEntity implements MenuProvider
     public int getInstalledUnitCount() {
         int count = 0;
         for (ItemStack s : unitSlots) {
-            if (!s.isEmpty() && s.getItem() instanceof BlockItem bi && bi.getBlock() instanceof StorageUnitBlock) {
+            Optional<Integer> cap = getSlotCapacity(s);
+            if (cap.isPresent()) {
                 count++;
             }
         }
@@ -80,8 +81,9 @@ public class StorageArrayBlockEntity extends BlockEntity implements MenuProvider
     public int getTotalCapacity() {
         int totalSlots = 0;
         for (ItemStack s : unitSlots) {
-            if (!s.isEmpty() && s.getItem() instanceof BlockItem bi && bi.getBlock() instanceof StorageUnitBlock sub) {
-                totalSlots += sub.getSlotCapacity();
+            Optional<Integer> cap = getSlotCapacity(s);
+            if (cap.isPresent()) {
+                totalSlots += cap.get();
             }
         }
         return totalSlots * slotItemLimit;
@@ -92,8 +94,9 @@ public class StorageArrayBlockEntity extends BlockEntity implements MenuProvider
         ItemStack stack = unitSlots[slot];
         if (stack.isEmpty()) return false;
         int unitCap = 0;
-        if (stack.getItem() instanceof BlockItem bi && bi.getBlock() instanceof StorageUnitBlock sub) {
-            unitCap = sub.getSlotCapacity() * slotItemLimit;
+        Optional<Integer> cap = getSlotCapacity(stack);
+        if (cap.isPresent()) {
+            unitCap = cap.get() * slotItemLimit;
         }
         int remainingCapacity = getTotalCapacity() - unitCap;
         return getTotalItemCount() <= remainingCapacity;
@@ -109,13 +112,18 @@ public class StorageArrayBlockEntity extends BlockEntity implements MenuProvider
     private void refreshSlotCapacity() {
         int total = 0;
         for (ItemStack s : unitSlots) {
-            if (!s.isEmpty() && s.getItem() instanceof BlockItem bi && bi.getBlock() instanceof StorageUnitBlock sub) {
-                total += sub.getSlotCapacity();
+            Optional<Integer> cap = getSlotCapacity(s);
+            if (cap.isPresent()) {
+                total += cap.get();
             }
         }
         mapHandler.setSlotCapacity(total);
     }
 
+
+    public static Optional<Integer> getSlotCapacity(ItemStack stack) {
+        return Optional.ofNullable(!stack.isEmpty()? stack.get(ModDataComponent.STORAGE_SIZE) : null);
+    }
 
     @Override
     public @NotNull Component getDisplayName() {

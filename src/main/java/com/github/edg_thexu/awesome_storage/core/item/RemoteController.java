@@ -58,7 +58,7 @@ public class RemoteController extends Item {
 
             BlockPos pos = data.pos();
             double distance = player.distanceToSqr((float)pos.getX(), (float)pos.getY(), (float)pos.getZ());
-            if(Math.sqrt(distance) > data1.range() && data1.range() != -1){
+            if(Math.sqrt(distance) > data1 && data1 > 0){
                 player.sendSystemMessage(Component.translatable("awesome_storage.message.too_far"));
             }else {
                 if (entity instanceof MagicStorageBlockEntity entity1 ) {
@@ -97,13 +97,13 @@ public class RemoteController extends Item {
                 if (Minecraft.getInstance().player != null) {
                     distance = Minecraft.getInstance().player.distanceToSqr((float) pos.getX(), (float) pos.getY(), (float) pos.getZ());
                     Component distanceText = Component.translatable("awesome_storage.tooltip.distance").append(" " + (int) Math.sqrt(distance)).withColor(
-                            data.range() != -1 && Math.sqrt(distance)-1 > data.range() ? 0xff0000 : 0x00ff00
+                            data > 0 && Math.sqrt(distance) - 1 > data ? 0xff0000 : 0x00ff00
                     );
                     tooltipComponents.add(distanceText);
                 }
             }
             tooltipComponents.add(Component.literal(""));
-            tooltipComponents.add(Component.translatable("awesome_storage.tooltip.controller_range").append(data.range() == -1 ? "inf" : String.valueOf(data.range())));
+            tooltipComponents.add(Component.translatable("awesome_storage.tooltip.controller_range").append(data <= 0 ? "inf" : String.valueOf(data)));
 
 
 

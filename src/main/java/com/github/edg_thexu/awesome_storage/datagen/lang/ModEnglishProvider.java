@@ -40,6 +40,7 @@ public class ModEnglishProvider extends LanguageProvider {
         add("awesome_storage.tooltip.distance", "Distance: ");
         add("awesome_storage.tooltip.block_pos", "Your Position: ");
         add("awesome_storage.tooltip.error_level", "No Signal");
+        add("awesome_storage.tooltip.storage_unit", "Can store %d item slot!");
 
         add("awesome_storage.deposit_btn.tooltip", "Deposit All - LClick: Store All, Ctrl+LClick: Quick Stack, RClick: Refill");
 

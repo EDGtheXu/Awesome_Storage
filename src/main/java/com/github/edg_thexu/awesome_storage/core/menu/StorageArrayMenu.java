@@ -1,7 +1,6 @@
 package com.github.edg_thexu.awesome_storage.core.menu;
 
 import com.github.edg_thexu.awesome_storage.core.block.StorageArrayBlockEntity;
-import com.github.edg_thexu.awesome_storage.core.block.StorageUnitBlock;
 import com.github.edg_thexu.awesome_storage.core.registry.ModMenus;
 import com.github.edg_thexu.awesome_storage.mix_util.IPlayer;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QGridLayout;
@@ -22,7 +21,6 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
@@ -145,7 +143,7 @@ public class StorageArrayMenu extends QBaseMenu {
 
         @Override
         protected boolean mayPlaceInput(int index, ItemStack stack) {
-            return stack.getItem() instanceof BlockItem bi && bi.getBlock() instanceof StorageUnitBlock;
+            return StorageArrayBlockEntity.getSlotCapacity(stack).isPresent();
         }
 
         @Override
