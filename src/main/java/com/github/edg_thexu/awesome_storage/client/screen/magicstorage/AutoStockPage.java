@@ -1,6 +1,7 @@
 package com.github.edg_thexu.awesome_storage.client.screen.magicstorage;
 
 import com.github.edg_thexu.awesome_storage.utils.AutoStockSystem;
+import com.github.edg_thexu.qtcraft_api.core.QTheme;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QHBoxLayout;
@@ -30,7 +31,7 @@ public class AutoStockPage extends QWidget {
         vl.setContentsMargins(5, 5, 5, 5);
 
         QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.auto_stock_desc"));
-        title.setTextColor(new QColor(0xFFFFAA00));
+        title.setTextColor(QTheme.TEXT.secondary);
         vl.addWidget(title);
 
         scroll = new QSmoothScrollArea();

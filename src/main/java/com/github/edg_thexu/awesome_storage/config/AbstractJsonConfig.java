@@ -14,7 +14,7 @@ import static com.github.edg_thexu.awesome_storage.AwesomeStorage.MODID;
 
 public abstract class AbstractJsonConfig {
     private String path;
-    private JsonObject json;
+    protected JsonObject json;
 
     /**
      * Server
@@ -79,6 +79,21 @@ public abstract class AbstractJsonConfig {
 
     public static JsonElement parseCodec(DataResult<?> result){
         return JsonParser.parseString(new Gson().toJson(result.result().get()));
+    }
+
+    public void save(){
+        if(json == null || path == null) return;
+        try {
+            Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve(MODID);
+            CONFIG_PATH.toFile().mkdirs();
+            Path configFile = CONFIG_PATH.resolve(path +".json");
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            Writer writer = new java.io.FileWriter(configFile.toFile());
+            writer.write(gson.toJson(json));
+            writer.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

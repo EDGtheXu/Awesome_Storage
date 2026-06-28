@@ -100,7 +100,7 @@ class CraftPanel extends QWidget {
         QHBoxLayout funcRow = new QHBoxLayout();
         funcRow.setSpacing(2);
         showMenuBtn = new QPushButton(Component.literal("☰"));
-        showMenuBtn.setFixedHeight(16);
+        showMenuBtn.setFixedSize(16, 16);
         QMenu menu = new ForeShowMenu();
         menu.setVisible(false);
         {

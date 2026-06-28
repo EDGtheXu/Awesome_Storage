@@ -65,9 +65,11 @@ class StoragePanel extends QWidget {
         filterBar = new FilterBar(filterRow, this, "s", this::refresh);
 
         QHBoxLayout searchRow = new QHBoxLayout();
+        searchRow.setSpacing(2);
         QPushButton menuBtn = new QPushButton(Component.literal("☰"));
         menuBtn.setFixedSize(16, 16);
         QMenu menu = new ForeShowMenu();
+        menu.setVisible(false);
         {
             QAction filterAct = new QAction(Component.translatable("awesome_storage.magic_storage_screen.filter").getString());
             filterAct.setCheckable(true);
@@ -87,20 +89,25 @@ class StoragePanel extends QWidget {
             menu.addAction(leftMenuAct);
         }
         menuBtn.setOnClick(() -> {
-            menu.popup(menuBtn.mapToGlobal(QPoint.ZERO).x(), menuBtn.mapToGlobal(QPoint.ZERO).y() + menuBtn.height(), this);
+            if(menu.isVisible()) {
+                menu.dismiss();
+            } else {
+                menu.popup(menuBtn.mapToGlobal(QPoint.ZERO).x(), menuBtn.mapToGlobal(QPoint.ZERO).y() + menuBtn.height(), this);
+            }
         });
         searchRow.addWidget(menuBtn);
-        DepositButton depositBtn = new DepositButton();
-        depositBtn.setFixedSize(32, 16);
-        searchRow.addWidget(depositBtn);
-        StockButton stockBtn = new StockButton();
-        stockBtn.setFixedSize(24, 16);
-        searchRow.addWidget(stockBtn);
         searchField = new QLineEdit();
         searchField.setPlaceholderText(Component.translatable("awesome_storage.magic_storage_screen.search").getString());
         searchField.setFixedHeight(16);
         searchField.connect(QLineEdit.TEXT_CHANGED, this, new SlotKeyConsumer<>("ss", (self, v) -> refresh()));
         searchRow.addWidget(searchField, 1);
+        DepositButton depositBtn = new DepositButton();
+        depositBtn.setFixedHeight(16);
+        searchRow.addWidget(depositBtn);
+        StockButton stockBtn = new StockButton();
+        stockBtn.setFixedSize(16, 16);
+        searchRow.addWidget(stockBtn);
+
         vl.addLayout(searchRow);
         vl.addWidget(filterBarContainer);
 
@@ -171,6 +178,7 @@ class StoragePanel extends QWidget {
 
         DepositButton() {
             setFocusPolicy(FocusPolicy.NoFocus);
+            this.setFixedWidth(4 + fontWidth(Component.translatable("awesome_storage.magic_storage_screen.store_all").getString()));
         }
 
         @Override

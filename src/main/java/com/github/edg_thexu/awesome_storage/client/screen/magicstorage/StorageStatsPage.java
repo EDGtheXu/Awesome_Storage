@@ -28,10 +28,6 @@ public class StorageStatsPage extends QWidget {
         vl.setSpacing(4);
         vl.setContentsMargins(5, 5, 5, 5);
 
-        QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.stats_title"));
-        title.setTextColor(new QColor(0xFFFFAA00));
-        vl.addWidget(title);
-
         scroll = new QSmoothScrollArea();
         scroll.setWidgetResizable(true);
         vl.addWidget(scroll, 1);

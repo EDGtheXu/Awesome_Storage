@@ -44,6 +44,37 @@ public class CraftConfig extends AbstractJsonConfig{
             if (!ENABLED_BLOCKS.contains(block)) ENABLED_BLOCKS.add(block);
         }
     }
+    public boolean addRecipeBlock(String recipeTypeId, String blockId) {
+        ResourceLocation rtId = ResourceLocation.parse(recipeTypeId);
+        RecipeType<?> type = BuiltInRegistries.RECIPE_TYPE.get(rtId);
+        if (type == null) return false;
+
+        ResourceLocation bId = ResourceLocation.parse(blockId);
+        Block block = BuiltInRegistries.BLOCK.get(bId);
+        if (block == null || block == Blocks.AIR) return false;
+
+        ENABLED_RECIPES.computeIfAbsent(type, k -> new HashSet<>()).add(block);
+        if (!ENABLED_BLOCKS.contains(block)) ENABLED_BLOCKS.add(block);
+
+        saveConfig();
+        return true;
+    }
+
+    public void saveConfig() {
+        List<RecipeAccess> list = new ArrayList<>();
+        for (var entry : ENABLED_RECIPES.entrySet()) {
+            RecipeType<?> rt = entry.getKey();
+            ResourceLocation rtId = BuiltInRegistries.RECIPE_TYPE.getKey(rt);
+            if (rtId == null) continue;
+            List<ResourceLocation> blockIds = entry.getValue().stream()
+                    .map(BuiltInRegistries.BLOCK::getKey)
+                    .toList();
+            list.add(new RecipeAccess(blockIds, rtId, Operation.ADD));
+        }
+        json.add("enabled_recipes", RecipeAccess.LIST_CODEC.encodeStart(JsonOps.INSTANCE, list).result().get());
+        save();
+    }
+
     private static final CraftConfig instance = new CraftConfig("magic_craft_config");
     public static CraftConfig INSTANCE() {return instance;}
 

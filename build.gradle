@@ -11,7 +11,7 @@ version = mod_version
 group = mod_group_id
 
 base {
-    archivesName = mod_id
+    archivesName = "AwesomeStorage-NeoForge-1.21.1"
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -121,6 +121,10 @@ dependencies {
 
     compileOnly "curse.maven:farmers-delight-398521:8083481"
     runtimeOnly "curse.maven:farmers-delight-398521:8083481"
+
+//    compileOnly "curse.maven:modern-ui-352491:8206075"
+//    runtimeOnly "curse.maven:modern-ui-352491:8206075"
+
 }
 
 tasks.named('test', Test) {

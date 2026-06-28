@@ -27,10 +27,6 @@ public class CraftUpgradePage extends QWidget {
         vl.setSpacing(4);
         vl.setContentsMargins(5, 5, 5, 5);
 
-        QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.queue_upgrade_title"));
-        title.setTextColor(new QColor(0xFFFFAA00));
-        vl.addWidget(title);
-
         QGridLayout grid = new QGridLayout();
         grid.setSpacing(4);
         for (int i = 0; i < 4; i++) {

@@ -4,6 +4,7 @@ import com.github.edg_thexu.awesome_storage.core.block.MagicStorageBlockEntity;
 import com.github.edg_thexu.awesome_storage.core.item.WirelessNetworkCard;
 import com.github.edg_thexu.awesome_storage.core.network.c2s.UpgradePacket;
 import com.github.edg_thexu.awesome_storage.utils.Util;
+import com.github.edg_thexu.qtcraft_api.core.QTheme;
 import com.github.edg_thexu.qtcraft_api.core.events.QMouseEvent;
 import com.github.edg_thexu.qtcraft_api.core.events.QPaintEvent;
 import com.github.edg_thexu.qtcraft_api.core.layouts.QHBoxLayout;
@@ -33,12 +34,8 @@ public class UpgradePage extends QWidget {
         vl.setSpacing(4);
         vl.setContentsMargins(5, 5, 5, 5);
 
-        QLabel title = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.upgrade_title"));
-        title.setTextColor(new QColor(0xFFFFAA00));
-        vl.addWidget(title);
-
         QLabel slotTitle = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.upgrade_slot"));
-        slotTitle.setTextColor(new QColor(0xFFFFAA00));
+        slotTitle.setTextColor(QTheme.TEXT.title);
         vl.addWidget(slotTitle);
 
         slotWidget = new UpgradeSlotWidget();
@@ -50,7 +47,7 @@ public class UpgradePage extends QWidget {
         vl.addWidget(rangeLabel);
 
         QLabel freqTitle = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.upgrade_frequency"));
-        freqTitle.setTextColor(new QColor(0xFFFFAA00));
+        freqTitle.setTextColor(QTheme.TEXT.secondary);
         vl.addWidget(freqTitle);
 
         QHBoxLayout freqRow = new QHBoxLayout();
@@ -71,7 +68,7 @@ public class UpgradePage extends QWidget {
         vl.addLayout(freqRow);
 
         QLabel connTitle = new QLabel(Component.translatable("awesome_storage.magic_storage_screen.upgrade_connected"));
-        connTitle.setTextColor(new QColor(0xFFFFAA00));
+        connTitle.setTextColor(QTheme.TEXT.secondary);
         vl.addWidget(connTitle);
 
         coreScroll = new QSmoothScrollArea();
